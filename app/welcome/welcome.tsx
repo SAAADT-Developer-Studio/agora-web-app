@@ -31,7 +31,7 @@ export function Welcome({ message }: { message: string }) {
                 </li>
               ))}
               <li className="self-stretch p-3 leading-normal">{message}</li>
-              <li className="self-stretch p-3 leading-normal">testing 123</li>
+              <li className="self-stretch p-3 leading-normal">testing</li>
             </ul>
           </nav>
         </div>
