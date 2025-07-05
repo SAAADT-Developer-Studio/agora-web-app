@@ -36,6 +36,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
           src="https://cloud.umami.is/script.js"
           data-website-id="9a07a807-cf46-4e37-96ef-48802444366e"
         ></script>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="theme-color" content="#FFFFFF" />
       </head>
       <body>
         {children}
