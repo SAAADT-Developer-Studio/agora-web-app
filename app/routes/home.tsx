@@ -1,5 +1,5 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { Header } from "~/components/header";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -13,5 +13,10 @@ export function loader({ context }: Route.LoaderArgs) {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  return <Welcome message={loaderData.message} />;
+  return (
+    <div className="flex h-full flex-col justify-center">
+      <Header />
+      <main className="mx-auto mt-4 h-full w-full max-w-[1280px] flex-1 bg-gray-900 p-4"></main>
+    </div>
+  );
 }
