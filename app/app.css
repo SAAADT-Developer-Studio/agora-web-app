@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 
 /* TODO: uncomment this, figure out what it does and implement light/dark theme switching */
-/* @custom-variant dark (&:is(.dark *)); */
+@custom-variant dark (&:is(.dark *));
 
 @theme {
   --font-sans:

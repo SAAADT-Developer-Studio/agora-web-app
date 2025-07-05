@@ -23,9 +23,24 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+function initTheme() {
+  let theme = localStorage.getItem("theme");
+  if (!theme) {
+    const systemTheme = window.matchMedia(`(prefers-color-scheme: dark)`)
+      .matches
+      ? `dark`
+      : `light`;
+    theme = systemTheme;
+  } else {
+    theme = JSON.parse(theme) as string;
+  }
+  document.documentElement.classList.add(theme);
+  localStorage.setItem("theme", JSON.stringify(theme));
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -36,6 +51,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           src="https://cloud.umami.is/script.js"
           data-website-id="9a07a807-cf46-4e37-96ef-48802444366e"
         ></script>
+        <script
+          suppressHydrationWarning
+        >{`(${initTheme.toString()})()`}</script>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
