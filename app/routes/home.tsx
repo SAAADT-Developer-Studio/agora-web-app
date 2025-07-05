@@ -2,7 +2,10 @@ import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
 
 export function meta({}: Route.MetaArgs) {
-  return [{ title: "Vidik" }, { name: "description", content: "Welcome to Vidik!" }];
+  return [
+    { title: "Vidik" },
+    { name: "description", content: "Welcome to Vidik!" },
+  ];
 }
 
 export function loader({ context }: Route.LoaderArgs) {
