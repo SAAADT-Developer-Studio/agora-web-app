@@ -1,18 +1,10 @@
-# Welcome to React Router!
+# Vidik Web App
 
-A modern, production-ready template for building full-stack React applications using React Router.
+News article aggregation and bias rating platform.
 
-## Features
+## This project is built with React Router
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
 - 📖 [React Router docs](https://reactrouter.com/)
-
-## Getting Started
 
 ### Installation
 
@@ -48,32 +40,21 @@ Create a production build:
 pnpm run build
 ```
 
-## Deployment
-
-Deployment is done using the Wrangler CLI.
-
-To build and deploy directly to production:
-
-```sh
-pnpm run deploy
-```
-
-To deploy a preview URL:
-
-```sh
-pnpx wrangler versions upload
-```
-
-You can then promote a version to production after verification or roll it out progressively.
-
-```sh
-pnpx wrangler versions deploy
-```
-
 ## Styling
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+- [Tailwind CSS](https://tailwindcss.com/)
+- [ShadcnUI](https://ui.shadcn.com/)
 
----
+## Icons
 
-Built with ❤️ using React Router.
+Use [Lucide Icons](https://lucide.dev/icons/) via lucide-react for generic icons.
+
+Use the [Icon](/app/components/icon.tsx) if you want to display a custom svg.
+
+## Components
+
+Use the shadcn cli to add a component to the repo in the **/app/components/ui** directory.
+
+```bash
+pnpm dlx shadcn@latest add [component_name]
+```
