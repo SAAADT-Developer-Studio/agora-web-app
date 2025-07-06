@@ -49,7 +49,7 @@ pnpm run build
 
 Use [Lucide Icons](https://lucide.dev/icons/) via lucide-react for generic icons.
 
-Use the [Icon](/app/components/icon.tsx) if you want to display a custom svg.
+Use the [Icon](/app/components/icon.tsx) if you want to display a custom svg. The svg component need and id="icon" property to work.
 
 ## Components
 
