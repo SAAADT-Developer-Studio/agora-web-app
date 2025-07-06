@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
   --font-sans: "Source Sans Pro", "Inter", system-ui, sans-serif;
   --background: #ffffff;
