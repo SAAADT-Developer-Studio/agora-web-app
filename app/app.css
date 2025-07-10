@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -41,44 +42,44 @@ body {
 
   .p-xl-light {
     font-size: 30px;
-    font-weight: 300;
+    font-weight: 200;
   }
   .p-lg-light {
     font-size: 25px;
-    font-weight: 300;
+    font-weight: 200;
   }
   .p-md-light {
     font-size: 20px;
-    font-weight: 300;
+    font-weight: 200;
   }
   .p-sm-light {
     font-size: 15px;
-    font-weight: 300;
+    font-weight: 200;
   }
   .p-xs-light {
     font-size: 10px;
-    font-weight: 300;
+    font-weight: 200;
   }
 
   .p-xl {
     font-size: 30px;
-    font-weight: 400;
+    font-weight: 600;
   }
   .p-lg {
     font-size: 25px;
-    font-weight: 400;
+    font-weight: 600;
   }
   .p-md {
     font-size: 20px;
-    font-weight: 400;
+    font-weight: 600;
   }
   .p-sm {
     font-size: 15px;
-    font-weight: 400;
+    font-weight: 600;
   }
   .p-xs {
     font-size: 10px;
-    font-weight: 400;
+    font-weight: 600;
   }
 }
 
@@ -87,7 +88,28 @@ body {
     background: var(--background);
     color: var(--primary);
   }
+  .bg-primary {
+    background: var(--background);
+  }
   .bg-secondary {
     background: var(--foreground);
+  }
+  .bg-leftred {
+    background: var(--leftred);
+  }
+  .bg-rightblue {
+    background: var(--rightblue);
+  }
+  .bg-centerwhite {
+    background: var(--primary);
+  }
+  .bg-deepblue {
+    background: var(--deepblue);
+  }
+}
+
+@layer base {
+  .border-blue {
+    border: 1px solid var(--darkdeepblue);
   }
 }

@@ -3,20 +3,32 @@ import logo from "~/assets/logo.svg";
 import { ThemeSwitch } from "~/components/theme-switch";
 
 export function Header() {
-  const categories = ["Vse", "Slovenija", "Evropa", "Svet", "Tehnologija"];
+  const categories = [
+    "POLITIKA",
+    "GOSPODARSTVO",
+    "KRIMINAL",
+    "ŠPORT",
+    "KULTURA",
+    "ZDRAVJE",
+    "OKOLJE",
+    "LOKALNO",
+  ];
   return (
-    <header className="bg-gray-900 text-white">
-      <div className="flex h-[58px] justify-between p-4">
-        <Icon href={logo} className="h-6 w-20 fill-current" />
+    <header className="bg-primary text-white">
+      <div className="flex h-[58px] items-center justify-between px-4 py-8">
+        <Icon href={logo} className="h-10 w-20" />
         <div className="flex gap-3">
-          <button className="border">Prijava</button>
           <ThemeSwitch />
         </div>
       </div>
-      <div className="flex justify-center bg-gray-800 p-3">
-        <div className="flex w-full max-w-[1280px] gap-3">
+      <div className="bg-secondary flex justify-center px-6 py-4">
+        <div className="flex w-full items-center justify-between">
           {categories.map((category) => {
-            return <div key={category}>{category}</div>;
+            return (
+              <p className="p-sm-light" key={category}>
+                {category}
+              </p>
+            );
           })}
         </div>
       </div>
