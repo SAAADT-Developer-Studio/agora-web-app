@@ -16,7 +16,7 @@ export function Header() {
   return (
     <header className="bg-primary text-white">
       <div className="flex h-[58px] items-center justify-between px-4 py-8">
-        <Icon href={logo} className="h-10 w-20" />
+        <img src={logo} className="h-6 w-20" />
         <div className="flex gap-3">
           <ThemeSwitch />
         </div>
