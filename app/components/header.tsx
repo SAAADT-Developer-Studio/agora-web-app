@@ -1,5 +1,4 @@
 import { Icon } from "~/components/icon";
-import logo from "~/assets/logo.svg";
 import { ThemeSwitch } from "~/components/theme-switch";
 
 export function Header() {
@@ -16,7 +15,7 @@ export function Header() {
   return (
     <header className="bg-primary text-white">
       <div className="flex h-[58px] items-center justify-between px-4 py-8">
-        <Icon href={logo} className="h-10 w-20" />
+        <Icon name="logo" height={70} width={70} />
         <div className="flex gap-3">
           <ThemeSwitch />
         </div>

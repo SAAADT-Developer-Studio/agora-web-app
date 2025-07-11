@@ -1,4 +1,3 @@
-import CoverageBar from "./coverage-bar";
 import { SquareArrowOutUpRight } from "lucide-react";
 import Tag from "./ui/tag";
 import type { ArticleProps } from "./article";

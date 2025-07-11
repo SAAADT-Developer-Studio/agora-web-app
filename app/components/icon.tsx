@@ -1,13 +1,53 @@
-export function Icon({
-  href,
-  className = "",
-}: {
-  href: string;
+import type { SVGProps } from "react";
+
+type IconName = "logo";
+
+interface IconProps extends SVGProps<SVGSVGElement> {
+  name: IconName;
+  size?: number;
   className?: string;
-}) {
-  return (
-    <svg className={className} aria-hidden="true" focusable="false">
-      <use width="100%" height="100%" href={`${href}#icon`}></use>
-    </svg>
-  );
+}
+
+export function Icon({
+  name,
+  width = 24,
+  height = 24,
+  className = "",
+  ...props
+}: Readonly<IconProps>) {
+  switch (name) {
+    case "logo":
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 296 91"
+          width={width}
+          height={height}
+          className={className}
+          {...props}
+        >
+          <path
+            fill="#D9D9D9"
+            d="m151 35-17 45h-9l-18-45h11l11 33 11-33h11ZM164 29l-5-2-2-4 2-5 5-1 5 1 2 5-2 4-5 2Zm-5 6h10v45h-10V35ZM197 81c-5 0-10-2-13-7-4-4-5-10-5-17 0-5 0-9 2-12 1-4 4-6 7-8 2-2 6-3 10-3 5 0 9 2 12 6h1V13h10v67h-10v-6c-1 2-3 4-6 5l-8 2Zm2-8c4 0 6-1 8-3s3-5 3-8v-9a11 11 0 0 0-11-11c-3 0-6 1-8 4l-2 11c0 5 1 9 3 12 1 3 4 4 7 4ZM237 29l-4-2c-2-1-2-2-2-4s0-4 2-5l4-1 5 1c2 1 2 3 2 5s0 3-2 4c-1 1-2 2-5 2Zm-5 6h11v45h-11V35ZM284 80l-14-22-6 6v16h-10V13h10v39l18-17h12l-17 17 19 28h-12Z"
+          />
+          <path
+            fill="#D40000"
+            d="M15 6c0-3 3-6 6-6h51a6 6 0 0 1 0 12H21c-3 0-6-3-6-6ZM0 26c0-4 3-7 7-7h49a6 6 0 1 1 0 13H7c-4 0-7-3-7-6Z"
+          />
+          <path
+            fill="#D9D9D9"
+            d="M10 45c0-3 3-6 6-6h50a6 6 0 0 1 0 12H16c-3 0-6-3-6-6Z"
+          />
+          <path
+            fill="#016ED5"
+            d="M19 65c0-4 3-7 7-7h55a6 6 0 1 1 0 13H26c-4 0-7-3-7-6ZM5 85c0-3 3-6 6-6h55a6 6 0 0 1 0 12H11c-3 0-6-3-6-6Z"
+          />
+          <path
+            fill="#D9D9D9"
+            d="M76 45c0-3 3-6 6-6h1a6 6 0 0 1 0 12h-1c-3 0-6-3-6-6Z"
+          />
+          <path fill="#D40000" d="M65 25a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z" />
+        </svg>
+      );
+  }
 }
