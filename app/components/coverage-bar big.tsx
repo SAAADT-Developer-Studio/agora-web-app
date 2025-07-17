@@ -16,7 +16,7 @@ export default function CoverageBarBig({
           className="p-sm-light flex h-full items-center justify-start"
           style={{ width: `${leftPercent}%` }}
         >
-          LEFT: {leftPercent}%
+          LEVA: {leftPercent}%
         </div>
         <div
           className="p-sm-light flex h-full items-center justify-start"
@@ -28,12 +28,12 @@ export default function CoverageBarBig({
           className="p-sm-light flex h-full items-center justify-start"
           style={{ width: `${rightPercent}%` }}
         >
-          RIGHT: {rightPercent}%
+          DESNA: {rightPercent}%
         </div>
       </div>
       <div className="flex h-2 w-full items-center justify-between rounded-lg bg-gray-200">
         <div
-          className="bg-leftred h-full rounded-l-lg"
+          className="bg-gradient-leftred h-full rounded-l-lg"
           style={{ width: `${leftPercent}%` }}
         />
         <div
@@ -41,7 +41,7 @@ export default function CoverageBarBig({
           style={{ width: `${centerPercent}%` }}
         />
         <div
-          className="bg-rightblue h-full rounded-r-lg"
+          className="bg-gradient-rightblue h-full rounded-r-lg"
           style={{ width: `${rightPercent}%` }}
         />
       </div>

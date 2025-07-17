@@ -22,7 +22,7 @@ export function ThemeSwitch({
     <SwitchPrimitive.Root
       data-slot="switch"
       className={cn(
-        "peer focus-visible:border-ring focus-visible:ring-ring/50 inline-flex h-7 w-10 shrink-0 items-center rounded-full border border-transparent bg-gray-700 shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+        "peer focus-visible:border-ring focus-visible:ring-ring/50 bg-secondary inline-flex h-7 w-10 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       onCheckedChange={handleSwitch}
@@ -32,18 +32,15 @@ export function ThemeSwitch({
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
         className={cn(
-          "pointer-events-none flex size-6 items-center justify-center rounded-full bg-gray-300 ring-0 transition-transform",
+          "bg-primary pointer-events-none flex size-6 items-center justify-center rounded-full ring-0 transition-transform",
           "translate-x-[1px] dark:translate-x-[calc(50%+1px)]",
         )}
       >
         <Moon
-          className="hidden fill-gray-900 stroke-gray-900 dark:block"
+          className="fill-primary stroke-primary hidden dark:block"
           size={15}
         />
-        <Sun
-          className="block fill-gray-900 stroke-gray-900 dark:hidden"
-          size={15}
-        />
+        <Sun className="fill-primary stroke-primary dark:hidden" size={15} />
       </SwitchPrimitive.Thumb>
     </SwitchPrimitive.Root>
   );
