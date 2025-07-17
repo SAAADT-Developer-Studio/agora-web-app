@@ -10,7 +10,6 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     },
     () => {
       const data = localStorage.getItem(key);
-      console.log("useLocalStorage", key, data);
       return data ? JSON.parse(data) : initialValue;
     },
     () => initialValue,

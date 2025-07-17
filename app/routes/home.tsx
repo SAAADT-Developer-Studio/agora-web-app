@@ -1,6 +1,6 @@
-import { Article } from "~/components/article";
 import type { Route } from "./+types/home";
-import { Header } from "~/components/header";
+
+import { Article } from "~/components/article";
 import ArticleBig from "~/components/article-big";
 import { VidikBanner, VidikBannerType } from "~/components/vidik-banner";
 import Divider from "~/components/ui/divider";
@@ -30,8 +30,9 @@ export type ArticleType = {
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Vidik" },
+    { title: "Vidik.si" },
     { name: "description", content: "Welcome to Vidik!" },
+    // TODO: Add more meta tags for SEO
   ];
 }
 
@@ -286,62 +287,56 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   ];
 
   return (
-    <div className="h-full">
-      <Header />
-      <main className="bg-primary mx-auto mt-4 h-full w-full max-w-[1200px] flex-1 py-4">
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <HeroArticles articles={dummy} />
-          <VidikBanner type={VidikBannerType.POLITICS} />
-          <CategorySection
-            articles={categoryArticles}
-            people={dummyPeople}
-            dividerText="POLITIKA"
-          />
-          <CategorySection
-            articles={categoryArticles}
-            people={dummyPeople}
-            dividerText="GOSPODARSTVO"
-            reverse
-          />
-          <VidikBanner type={VidikBannerType.SWIPE} />
-          <CategorySection
-            articles={categoryArticles}
-            people={dummyPeople}
-            dividerText="KRIMINAL"
-          />
-          <CategorySection
-            articles={categoryArticles}
-            people={dummyPeople}
-            dividerText="ŠPORT"
-            reverse
-          />
-          <VidikBanner type={VidikBannerType.DONATE} />
-          <CategorySection
-            articles={categoryArticles}
-            people={dummyPeople}
-            dividerText="KULTURA"
-          />
-          <CategorySection
-            articles={categoryArticles}
-            people={dummyPeople}
-            dividerText="ZDRAVJE"
-            reverse
-          />
-          <VidikBanner type={VidikBannerType.CONTACT} />
-          <CategorySection
-            articles={categoryArticles}
-            people={dummyPeople}
-            dividerText="OKOLJE"
-          />
-          <CategorySection
-            articles={categoryArticles}
-            people={dummyPeople}
-            dividerText="LOKALNO"
-            reverse
-          />
-        </div>
-      </main>
-      <Footer />
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <HeroArticles articles={dummy} />
+      <VidikBanner type={VidikBannerType.POLITICS} />
+      <CategorySection
+        articles={categoryArticles}
+        people={dummyPeople}
+        dividerText="POLITIKA"
+      />
+      <CategorySection
+        articles={categoryArticles}
+        people={dummyPeople}
+        dividerText="GOSPODARSTVO"
+        reverse
+      />
+      <VidikBanner type={VidikBannerType.SWIPE} />
+      <CategorySection
+        articles={categoryArticles}
+        people={dummyPeople}
+        dividerText="KRIMINAL"
+      />
+      <CategorySection
+        articles={categoryArticles}
+        people={dummyPeople}
+        dividerText="ŠPORT"
+        reverse
+      />
+      <VidikBanner type={VidikBannerType.DONATE} />
+      <CategorySection
+        articles={categoryArticles}
+        people={dummyPeople}
+        dividerText="KULTURA"
+      />
+      <CategorySection
+        articles={categoryArticles}
+        people={dummyPeople}
+        dividerText="ZDRAVJE"
+        reverse
+      />
+      <VidikBanner type={VidikBannerType.CONTACT} />
+      <CategorySection
+        articles={categoryArticles}
+        people={dummyPeople}
+        dividerText="OKOLJE"
+      />
+      <CategorySection
+        articles={categoryArticles}
+        people={dummyPeople}
+        dividerText="LOKALNO"
+        reverse
+      />
     </div>
   );
 }

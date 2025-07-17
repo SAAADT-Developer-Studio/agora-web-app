@@ -4,20 +4,23 @@ import logo from "~/assets/logo.svg";
 import { ThemeSwitch } from "~/components/theme-switch";
 import Coffee from "~/assets/black-button.png";
 import { Dropdown } from "./ui/dropdown";
+import { Link, NavLink } from "react-router";
+import { twMerge } from "tailwind-merge";
+
+const CATEGORIES: { name: string; path: string }[] = [
+  { name: "AKTUALNO", path: "/" },
+  { name: "POLITIKA", path: "/politika" },
+  { name: "GOSPODARSTVO", path: "/gospodarstvo" },
+  { name: "KRIMINAL", path: "/kriminal" },
+  { name: "ŠPORT", path: "/sport" },
+  { name: "KULTURA", path: "/kultura" },
+  { name: "ZDRAVJE", path: "/zdravje" },
+  { name: "OKOLJE", path: "/okolje" },
+  { name: "LOKALNO", path: "/lokalno" },
+];
 
 export function Header() {
   const [open, setOpen] = useState(false);
-  const categories = [
-    "AKTUALNO",
-    "POLITIKA",
-    "GOSPODARSTVO",
-    "KRIMINAL",
-    "ŠPORT",
-    "KULTURA",
-    "ZDRAVJE",
-    "OKOLJE",
-    "LOKALNO",
-  ];
   return (
     <header className="bg-primary">
       <div className="flex h-[58px] items-center justify-between px-4 py-8">
@@ -33,11 +36,21 @@ export function Header() {
       </div>
       <div className="bg-secondary flex justify-center px-6 py-4">
         <div className="flex w-[1200px] gap-8">
-          {categories.map((category) => {
+          {CATEGORIES.map((category) => {
             return (
-              <p className="p-sm-regular" key={category}>
-                {category}
-              </p>
+              <NavLink
+                to={category.path}
+                className={({ isActive, isPending }) =>
+                  twMerge(
+                    "p-sm-regular hover:text-white",
+                    isActive && "text-white",
+                    isPending && "animate-pulse",
+                  )
+                }
+                key={category.path}
+              >
+                {category.name}
+              </NavLink>
             );
           })}
         </div>
