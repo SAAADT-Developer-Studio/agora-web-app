@@ -1,17 +1,18 @@
 import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/category";
 
-export function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params }: Route.LoaderArgs) {
   const category = params.category;
+  // await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate a delay
 }
 
-// export function clientLoader({ params }: Route.ClientLoaderArgs) {
+// export async function clientLoader({ params }: Route.ClientLoaderArgs) {
 // }
 
 export default function CategoryPage({}: Route.ComponentProps) {
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold">Category Page</h1>
+      <h1 className="bg- text-2xl font-bold">Category Page</h1>
       <p>This is a placeholder for the category content.</p>
     </div>
   );
@@ -20,7 +21,7 @@ export default function CategoryPage({}: Route.ComponentProps) {
 export function meta({ params }: Route.MetaArgs): Route.MetaDescriptors {
   return [
     {
-      title: "Category",
+      title: `${params.category.toUpperCase()} | Vidik.si`,
       name: "description",
       content: "Explore various categories of articles.",
     },
