@@ -1,6 +1,6 @@
-import { Article } from "~/components/article";
 import type { Route } from "./+types/home";
-import { Header } from "~/components/header";
+
+import { Article } from "~/components/article";
 import ArticleBig from "~/components/article-big";
 
 export type Image = {
@@ -21,8 +21,9 @@ export type Article = {
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Vidik" },
+    { title: "Vidik.si" },
     { name: "description", content: "Welcome to Vidik!" },
+    // TODO: Add more meta tags for SEO
   ];
 }
 
@@ -119,16 +120,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     },
   ];
   return (
-    <div className="h-full">
-      <Header />
-      <main className="bg-primary mx-auto mt-4 h-full w-full max-w-[1200px] flex-1 p-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <ArticleBig {...dummyMain} />
-          {dummy.map((article) => (
-            <Article key={article.id} {...article} />
-          ))}
-        </div>
-      </main>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <ArticleBig {...dummyMain} />
+      {dummy.map((article) => (
+        <Article key={article.id} {...article} />
+      ))}
     </div>
   );
 }
