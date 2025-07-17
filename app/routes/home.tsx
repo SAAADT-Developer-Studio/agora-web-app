@@ -2,13 +2,21 @@ import { Article } from "~/components/article";
 import type { Route } from "./+types/home";
 import { Header } from "~/components/header";
 import ArticleBig from "~/components/article-big";
+import { VidikBanner, VidikBannerType } from "~/components/vidik-banner";
+import Divider from "~/components/ui/divider";
+import HighlightedPeople, {
+  type HighlightedPeopleProps,
+} from "~/components/highlighted-people";
+import HeroArticles from "~/components/hero-articles";
+import CategorySection from "~/components/category-section";
+import Footer from "~/components/footer";
 
 export type Image = {
   src: string;
   alt: string;
 };
 
-export type Article = {
+export type ArticleType = {
   id: string;
   title: string;
   image: Image;
@@ -17,6 +25,7 @@ export type Article = {
   rightPercent: number;
   centerPercent: number;
   url: string;
+  showTags?: boolean;
 };
 
 export function meta({}: Route.MetaArgs) {
@@ -31,7 +40,7 @@ export function loader({ context }: Route.LoaderArgs) {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const dummyMain: Article = {
+  const dummyMain: ArticleType = {
     id: "1",
     title:
       "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
@@ -46,7 +55,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     url: "/article-1",
   };
 
-  const dummy: Article[] = [
+  const dummy: ArticleType[] = [
     {
       id: "1",
       title:
@@ -60,6 +69,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       rightPercent: 33,
       centerPercent: 34,
       url: "/article-1",
+      showTags: true,
     },
     {
       id: "2",
@@ -74,6 +84,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       rightPercent: 80,
       centerPercent: 5,
       url: "/article-2",
+      showTags: true,
     },
     {
       id: "3",
@@ -88,6 +99,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       rightPercent: 10,
       centerPercent: 90,
       url: "/article-3",
+      showTags: true,
     },
     {
       id: "4",
@@ -102,6 +114,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       rightPercent: 5,
       centerPercent: 5,
       url: "/article-1",
+      showTags: true,
     },
     {
       id: "5",
@@ -116,19 +129,219 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       rightPercent: 50,
       centerPercent: 0,
       url: "/article-2",
+      showTags: true,
+    },
+    {
+      id: "6",
+      title:
+        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
+      image: {
+        src: "https://placehold.co/600x400",
+        alt: "Placeholder Image 2",
+      },
+      tags: ["sport", "gaming"],
+      leftPercent: 50,
+      rightPercent: 50,
+      centerPercent: 0,
+      url: "/article-2",
+      showTags: true,
+    },
+    {
+      id: "7",
+      title:
+        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
+      image: {
+        src: "https://placehold.co/600x400",
+        alt: "Placeholder Image 2",
+      },
+      tags: ["sport", "gaming"],
+      leftPercent: 50,
+      rightPercent: 50,
+      centerPercent: 0,
+      url: "/article-2",
+      showTags: true,
+    },
+    {
+      id: "8",
+      title:
+        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
+      image: {
+        src: "https://placehold.co/600x400",
+        alt: "Placeholder Image 2",
+      },
+      tags: ["sport", "gaming"],
+      leftPercent: 50,
+      rightPercent: 50,
+      centerPercent: 0,
+      url: "/article-2",
+      showTags: true,
+    },
+    {
+      id: "9",
+      title:
+        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
+      image: {
+        src: "https://placehold.co/600x400",
+        alt: "Placeholder Image 2",
+      },
+      tags: ["sport", "gaming"],
+      leftPercent: 50,
+      rightPercent: 50,
+      centerPercent: 0,
+      url: "/article-2",
+      showTags: true,
     },
   ];
+
+  const categoryArticles: ArticleType[] = [
+    {
+      id: "6",
+      title:
+        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
+      image: {
+        src: "https://placehold.co/600x400",
+        alt: "Placeholder Image 2",
+      },
+      tags: ["sport", "gaming"],
+      leftPercent: 50,
+      rightPercent: 50,
+      centerPercent: 0,
+      url: "/article-2",
+    },
+    {
+      id: "7",
+      title:
+        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
+      image: {
+        src: "https://placehold.co/600x400",
+        alt: "Placeholder Image 2",
+      },
+      tags: ["sport", "gaming"],
+      leftPercent: 50,
+      rightPercent: 50,
+      centerPercent: 0,
+      url: "/article-2",
+    },
+    {
+      id: "8",
+      title:
+        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
+      image: {
+        src: "https://placehold.co/600x400",
+        alt: "Placeholder Image 2",
+      },
+      tags: ["sport", "gaming"],
+      leftPercent: 50,
+      rightPercent: 50,
+      centerPercent: 0,
+      url: "/article-2",
+    },
+    {
+      id: "9",
+      title:
+        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
+      image: {
+        src: "https://placehold.co/600x400",
+        alt: "Placeholder Image 2",
+      },
+      tags: ["sport", "gaming"],
+      leftPercent: 50,
+      rightPercent: 50,
+      centerPercent: 0,
+      url: "/article-2",
+    },
+  ];
+
+  const dummyPeople: HighlightedPeopleProps["people"] = [
+    {
+      name: "Donald Trump",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+    {
+      name: "Donald Trump",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+    {
+      name: "Donald Trump",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+    {
+      name: "Donald Trump",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+    {
+      name: "Donald Trump",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+    {
+      name: "Donald Trump",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+  ];
+
   return (
     <div className="h-full">
       <Header />
-      <main className="bg-primary mx-auto mt-4 h-full w-full max-w-[1200px] flex-1 p-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <ArticleBig {...dummyMain} />
-          {dummy.map((article) => (
-            <Article key={article.id} {...article} />
-          ))}
+      <main className="bg-primary mx-auto mt-4 h-full w-full max-w-[1200px] flex-1 py-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <HeroArticles articles={dummy} />
+          <VidikBanner type={VidikBannerType.POLITICS} />
+          <CategorySection
+            articles={categoryArticles}
+            people={dummyPeople}
+            dividerText="POLITIKA"
+          />
+          <CategorySection
+            articles={categoryArticles}
+            people={dummyPeople}
+            dividerText="GOSPODARSTVO"
+            reverse
+          />
+          <VidikBanner type={VidikBannerType.SWIPE} />
+          <CategorySection
+            articles={categoryArticles}
+            people={dummyPeople}
+            dividerText="KRIMINAL"
+          />
+          <CategorySection
+            articles={categoryArticles}
+            people={dummyPeople}
+            dividerText="ŠPORT"
+            reverse
+          />
+          <VidikBanner type={VidikBannerType.DONATE} />
+          <CategorySection
+            articles={categoryArticles}
+            people={dummyPeople}
+            dividerText="KULTURA"
+          />
+          <CategorySection
+            articles={categoryArticles}
+            people={dummyPeople}
+            dividerText="ZDRAVJE"
+            reverse
+          />
+          <VidikBanner type={VidikBannerType.CONTACT} />
+          <CategorySection
+            articles={categoryArticles}
+            people={dummyPeople}
+            dividerText="OKOLJE"
+          />
+          <CategorySection
+            articles={categoryArticles}
+            people={dummyPeople}
+            dividerText="LOKALNO"
+            reverse
+          />
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
