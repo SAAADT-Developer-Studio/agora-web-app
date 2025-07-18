@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Grip } from "lucide-react";
 import logo from "~/assets/logo.svg";
+import logoLight from "~/assets/logo-light.svg";
 import { ThemeSwitch } from "~/components/theme-switch";
 import Coffee from "~/assets/black-button.png";
 import { Dropdown } from "./ui/dropdown";
@@ -24,7 +25,8 @@ export function Header() {
   return (
     <header className="bg-primary">
       <div className="flex h-[58px] items-center justify-between px-4 py-8">
-        <img src={logo} alt="logo" className="h-6 w-20" />
+        <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
+        <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
         <div className="flex items-center gap-3">
           <img src={Coffee} alt="coffee" className="h-8" />
           <ThemeSwitch />

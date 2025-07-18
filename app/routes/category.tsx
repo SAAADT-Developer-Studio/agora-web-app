@@ -21,7 +21,7 @@ export default function CategoryPage({}: Route.ComponentProps) {
 export function meta({ params }: Route.MetaArgs): Route.MetaDescriptors {
   return [
     {
-      title: `${params.category.toUpperCase()} | Vidik.si`,
+      title: `${params.category.toUpperCase()} | Vidik`,
       name: "description",
       content: "Explore various categories of articles.",
     },
