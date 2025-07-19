@@ -30,7 +30,7 @@ export function meta({ params }: Route.MetaArgs): Route.MetaDescriptors {
     "https://media.gettyimages.com/id/165088089/photo/the-word-news-under-a-magnifying-glass-among-stacks-of-paper.jpg?s=612x612&w=gi&k=20&c=o6Ni4rERiNG88MYs7ZSK-riEPOdftUTAgIjW9zGSodU=";
   return [
     {
-      title: `${title} | Vidik.si`,
+      title: `${title} | Vidik`,
       name: "description",
       content: summary,
     },
