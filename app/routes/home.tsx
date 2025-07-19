@@ -1,15 +1,11 @@
 import type { Route } from "./+types/home";
 
-import { Article } from "~/components/article";
-import ArticleBig from "~/components/article-big";
 import { VidikBanner, VidikBannerType } from "~/components/vidik-banner";
-import Divider from "~/components/ui/divider";
 import HighlightedPeople, {
   type HighlightedPeopleProps,
 } from "~/components/highlighted-people";
 import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
-import Footer from "~/components/footer";
 
 export type Image = {
   src: string;
@@ -30,7 +26,7 @@ export type ArticleType = {
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Vidik.si" },
+    { title: "Vidik" },
     { name: "description", content: "Welcome to Vidik!" },
     // TODO: Add more meta tags for SEO
   ];

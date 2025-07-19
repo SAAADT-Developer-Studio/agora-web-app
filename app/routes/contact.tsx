@@ -18,7 +18,7 @@ export default function ContactPage({}: Route.ComponentProps) {
 export function meta({ params }: Route.MetaArgs): Route.MetaDescriptors {
   return [
     {
-      title: "Contact | Vidik.si",
+      title: "Contact | Vidik",
       name: "description",
       content: "Explore various categories of articles.",
     },
