@@ -4,7 +4,7 @@ export default function Tag({
 }: Readonly<{ text: string; big?: boolean }>) {
   return (
     <div
-      className={`bg-primary text-salmon p-xs flex items-center justify-center rounded-md px-2 py-1 uppercase opacity-70`}
+      className={`p-xs text-primary bg-electricblue flex items-center justify-center rounded-md px-2 py-1 uppercase`}
     >
       {text}
     </div>

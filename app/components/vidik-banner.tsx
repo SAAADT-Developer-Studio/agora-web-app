@@ -34,7 +34,7 @@ const VidikBannerRecord: Record<VidikBannerType, BannerProps> = {
     coffee: true,
   },
   [VidikBannerType.POLITICS]: {
-    title: "Se počutiš izgubljeno ali neveš veliko o politiki?",
+    title: "Se počutiš izgubljeno v svetu politike?",
     description:
       "Brez skrbi! Samo zate smo pripravili predstavitev, kjer te poučimo o politiki in kaj vsaka stran predstavlja.",
     buttonText: "Pojdi",

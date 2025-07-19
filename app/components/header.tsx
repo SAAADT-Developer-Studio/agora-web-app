@@ -23,7 +23,7 @@ const CATEGORIES: { name: string; path: string }[] = [
 export function Header() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="bg-primary">
+    <header className="bg-background">
       <div className="flex h-[58px] items-center justify-between px-4 py-8">
         <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
         <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
@@ -36,16 +36,16 @@ export function Header() {
           <Dropdown open={open} onClose={() => setOpen(false)} />
         </div>
       </div>
-      <div className="bg-secondary flex justify-center px-6 py-4">
-        <div className="flex w-[1200px] gap-8">
+      <div className="bg-foreground flex justify-center">
+        <div className="flex w-[1200px]">
           {CATEGORIES.map((category) => {
             return (
               <NavLink
                 to={category.path}
                 className={({ isActive, isPending }) =>
                   twMerge(
-                    "p-sm-regular hover:text-white",
-                    isActive && "text-white",
+                    "p-sm-regular px-4 py-4 transition-colors hover:bg-white/5",
+                    isActive && "bg-white/5 text-white",
                     isPending && "animate-pulse",
                   )
                 }
