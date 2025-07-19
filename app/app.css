@@ -4,25 +4,26 @@
 @custom-variant hover (&:hover);
 @custom-variant dark (&:is(.dark *));
 
-:root {
+@theme {
   --font-sans: "Source Sans Pro", "Inter", system-ui, sans-serif;
-  --background: #f8f9fa;
-  --foreground: #eaeaea;
-  --primary: #1e1e1e;
-  --rightblue: #3555ff;
-  --leftred: #fa243c;
-  --deepblue: #0019b7;
-  --centerwhite: #ffffff;
-  --darkdeepblue: #3754ee;
-  --darkleftred: #a61b2d;
-  --darkrightblue: #1e3a8a;
-  --salmon: #ff6b6b;
+  --color-background: #f8f9fa;
+  --color-foreground: #eaeaea;
+  --color-primary: #1e1e1e;
+  --color-rightblue: #3555ff;
+  --color-leftred: #fa243c;
+  --color-deepblue: #0019b7;
+  --color-centerwhite: #ffffff;
+  --color-darkdeepblue: #3754ee;
+  --color-darkleftred: #a61b2d;
+  --color-darkrightblue: #1e3a8a;
+  --color-salmon: #ff6b6b;
+  --color-electricblue: #155dfc;
 }
 
 .dark {
-  --background: #1e1e1e;
-  --foreground: #3f3f3f;
-  --primary: #d9d9d9;
+  --color-background: #1e1e1e;
+  --color-foreground: #3f3f3f;
+  --color-primary: #d9d9d9;
 }
 
 html,
@@ -31,185 +32,68 @@ body {
   display: flex;
   flex-direction: column;
   margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-primary);
 }
 
-@layer base {
-  h1 {
-    font-size: 40px;
-    font-weight: 900;
-  }
-  h2 {
-    font-size: 30px;
-    font-weight: 700;
-  }
-  h3 {
-    font-size: 20px;
-    font-weight: 600;
-  }
-  .p-xl-light {
-    font-size: 30px;
-    font-weight: 200;
-  }
-  .p-lg-light {
-    font-size: 25px;
-    font-weight: 200;
-  }
-  .p-md-light {
-    font-size: 20px;
-    font-weight: 200;
-  }
-  .p-sm-light {
-    font-size: 15px;
-    font-weight: 200;
-  }
-  .p-xs-light {
-    font-size: 10px;
-    font-weight: 200;
-  }
-  .p-xl-regular {
-    font-size: 30px;
-    font-weight: 400;
-  }
-  .p-lg-regular {
-    font-size: 25px;
-    font-weight: 400;
-  }
-  .p-md-regular {
-    font-size: 20px;
-    font-weight: 400;
-  }
-  .p-sm-regular {
-    font-size: 15px;
-    font-weight: 400;
-  }
-  .p-xs-regular {
-    font-size: 10px;
-    font-weight: 400;
-  }
-  .p-xl {
-    font-size: 30px;
-    font-weight: 600;
-  }
-  .p-lg {
-    font-size: 25px;
-    font-weight: 600;
-  }
-  .p-md {
-    font-size: 20px;
-    font-weight: 600;
-  }
-  .p-sm {
-    font-size: 15px;
-    font-weight: 600;
-  }
-  .p-xs {
-    font-size: 10px;
-    font-weight: 600;
-  }
+@utility p-xl-light {
+  font-size: 30px;
+  font-weight: 200;
 }
-
-@layer base {
-  body {
-    background: var(--background);
-    color: var(--primary);
-  }
-  .bg-primary {
-    background: var(--background);
-  }
-  .bg-primary80 {
-    background: var(--background);
-    opacity: 80%;
-  }
-  .bg-secondary {
-    background: var(--foreground);
-  }
-  .bg-leftred {
-    background: var(--leftred);
-  }
-  .bg-rightblue {
-    background: var(--rightblue);
-  }
-  .bg-darkleftred {
-    background: var(--darkleftred);
-  }
-  .bg-darkrightblue {
-    background: var(--darkrightblue);
-  }
-  .bg-centerwhite {
-    background: var(--centerwhite);
-  }
-  .bg-deepblue {
-    background: var(--deepblue);
-  }
-  .bg-salmon {
-    background: var(--salmon);
-  }
-  .text-primary {
-    color: var(--primary);
-  }
-  .text-deepblue {
-    color: var(--deepblue);
-  }
-  .text-background {
-    color: var(--background);
-  }
-  .text-salmon {
-    color: var(--salmon);
-  }
-  .text-foreground {
-    color: var(--foreground);
-  }
-  .ring-ring {
-    --tw-ring-color: var(--rightblue);
-  }
-  .border-ring {
-    border-color: var(--rightblue);
-  }
-  .bg-input {
-    background-color: var(--foreground);
-  }
-  .bg-primary-text {
-    background-color: var(--primary);
-  }
+@utility p-lg-light {
+  font-size: 25px;
+  font-weight: 200;
 }
-
-@layer base {
-  .border-blue {
-    border: 1px solid var(--darkdeepblue);
-  }
-  .border-primary {
-    border: 1px solid var(--primary);
-  }
-  .fill-primary {
-    fill: var(--primary);
-  }
-  .fill-secondary {
-    fill: var(--foreground);
-  }
-  .stroke-background {
-    stroke: var(--background);
-  }
-  .stroke-primary {
-    stroke: var(--primary);
-  }
-  .stroke-secondary {
-    stroke: var(--foreground);
-  }
+@utility p-md-light {
+  font-size: 20px;
+  font-weight: 200;
 }
-
-@layer base {
-  .bg-gradient-leftred {
-    background-image: linear-gradient(
-      to right,
-      var(--darkleftred),
-      var(--leftred)
-    );
-  }
-  .bg-gradient-rightblue {
-    background-image: linear-gradient(
-      to right,
-      var(--rightblue),
-      var(--darkrightblue)
-    );
-  }
+@utility p-sm-light {
+  font-size: 15px;
+  font-weight: 200;
+}
+@utility p-xs-light {
+  font-size: 10px;
+  font-weight: 200;
+}
+@utility p-xl-regular {
+  font-size: 30px;
+  font-weight: 400;
+}
+@utility p-lg-regular {
+  font-size: 25px;
+  font-weight: 400;
+}
+@utility p-md-regular {
+  font-size: 20px;
+  font-weight: 400;
+}
+@utility p-sm-regular {
+  font-size: 15px;
+  font-weight: 400;
+}
+@utility p-xs-regular {
+  font-size: 10px;
+  font-weight: 400;
+}
+@utility p-xl {
+  font-size: 30px;
+  font-weight: 600;
+}
+@utility p-lg {
+  font-size: 25px;
+  font-weight: 600;
+}
+@utility p-md {
+  font-size: 20px;
+  font-weight: 600;
+}
+@utility p-sm {
+  font-size: 15px;
+  font-weight: 600;
+}
+@utility p-xs {
+  font-size: 10px;
+  font-weight: 600;
 }
