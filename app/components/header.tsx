@@ -4,9 +4,9 @@ import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
 import { ThemeSwitch } from "~/components/theme-switch";
 import Coffee from "~/assets/black-button.png";
-import { Dropdown } from "./ui/dropdown";
-import { Link, NavLink } from "react-router";
+import { NavLink } from "react-router";
 import { twMerge } from "tailwind-merge";
+import { Dropdown } from "./dropdown";
 
 const CATEGORIES: { name: string; path: string }[] = [
   { name: "AKTUALNO", path: "/" },
@@ -31,9 +31,8 @@ export function Header() {
           <img src={Coffee} alt="coffee" className="h-8" />
           <ThemeSwitch />
           <button onClick={() => setOpen((prev) => !prev)}>
-            <Grip size={28} />
+            <Dropdown />
           </button>
-          <Dropdown open={open} onClose={() => setOpen(false)} />
         </div>
       </div>
       <div className="bg-foreground flex justify-center">
