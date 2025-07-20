@@ -22,12 +22,12 @@ export function Article(props: Readonly<ArticleProps>) {
 
   return (
     <article
-      className="flex h-[240px] w-full flex-col gap-4 rounded-lg bg-cover bg-center transition-transform duration-300 hover:scale-[1.02]"
+      className="border-vidikdarkgray flex h-[240px] w-full flex-col gap-4 rounded-lg border-[0.5px] bg-cover bg-center transition-transform duration-300 hover:scale-[1.02] dark:border-0"
       style={{
         backgroundImage: `url(${image.src})`,
       }}
     >
-      <div className="flex h-full w-full flex-col items-center justify-between rounded-lg bg-[linear-gradient(to_top,_rgba(0,0,0,0.8)_0%,_rgba(0,0,0,0.6)_37%,_rgba(0,0,0,0)_100%)] text-2xl font-bold text-white">
+      <div className="text-primary flex h-full w-full flex-col items-center justify-between rounded-lg [background-image:linear-gradient(to_top,rgba(255,255,255,0.8)_0%,rgba(255,255,255,0.6)_37%,rgba(255,255,255,0)_100%)] text-2xl font-bold dark:[background-image:linear-gradient(to_top,rgba(0,0,0,0.8)_0%,rgba(0,0,0,0.6)_37%,rgba(0,0,0,0)_100%)]">
         <div className="flex h-8 w-[96%] items-center justify-between">
           {showTags && <Tag text={tags[0]} />}
         </div>
