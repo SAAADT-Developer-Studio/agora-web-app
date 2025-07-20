@@ -18,6 +18,10 @@
   --color-darkrightblue: #1e3a8a;
   --color-salmon: #ff6b6b;
   --color-electricblue: #155dfc;
+  --color-vidikwhite: #f8f9fa;
+  --color-vidikblack: #1e1e1e;
+  --color-vidikdarkgray: #3f3f3f;
+  --color-vidiklightgray: #eaeaea;
 }
 
 .dark {
