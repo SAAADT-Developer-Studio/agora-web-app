@@ -13,19 +13,31 @@ export default function Footer() {
               topics that matter.
             </p>
             <div className="flex space-x-4 pt-2">
-              <Link to="#" className="transition-colors hover:text-white">
+              <Link
+                to="#"
+                className="text-primary/70 hover:text-primary transition-colors"
+              >
                 <Facebook size={20} />
                 <span className="sr-only">Facebook</span>
               </Link>
-              <Link to="#" className="transition-colors hover:text-white">
+              <Link
+                to="#"
+                className="text-primary/70 hover:text-primary transition-colors"
+              >
                 <Instagram size={20} />
                 <span className="sr-only">Instagram</span>
               </Link>
-              <Link to="#" className="transition-colors hover:text-white">
+              <Link
+                to="#"
+                className="text-primary/70 hover:text-primary transition-colors"
+              >
                 <Twitter size={20} />
                 <span className="sr-only">Twitter</span>
               </Link>
-              <Link to="#" className="transition-colors hover:text-white">
+              <Link
+                to="#"
+                className="text-primary/70 hover:text-primary transition-colors"
+              >
                 <Mail size={20} />
                 <span className="sr-only">Email</span>
               </Link>
@@ -38,17 +50,26 @@ export default function Footer() {
             </h3>
             <ul className="text-primary space-y-2 text-sm">
               <li>
-                <Link to="#" className="transition-colors hover:text-white">
+                <Link
+                  to="#"
+                  className="text-primary/70 hover:text-primary transition-colors"
+                >
                   Uvod v Politiko
                 </Link>
               </li>
               <li>
-                <Link to="#" className="transition-colors hover:text-white">
+                <Link
+                  to="#"
+                  className="text-primary/70 hover:text-primary transition-colors"
+                >
                   Swiper
                 </Link>
               </li>
               <li>
-                <Link to="#" className="transition-colors hover:text-white">
+                <Link
+                  to="#"
+                  className="text-primary/70 hover:text-primary transition-colors"
+                >
                   Doniraj
                 </Link>
               </li>
@@ -60,17 +81,26 @@ export default function Footer() {
             </h3>
             <ul className="text-primary space-y-2 text-sm">
               <li>
-                <Link to="#" className="transition-colors hover:text-white">
+                <Link
+                  to="#"
+                  className="text-primary/70 hover:text-primary transition-colors"
+                >
                   Kontakt
                 </Link>
               </li>
               <li>
-                <Link to="#" className="transition-colors hover:text-white">
+                <Link
+                  to="#"
+                  className="text-primary/70 hover:text-primary transition-colors"
+                >
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link to="#" className="transition-colors hover:text-white">
+                <Link
+                  to="#"
+                  className="text-primary/70 hover:text-primary transition-colors"
+                >
                   Terms of Service
                 </Link>
               </li>
