@@ -43,8 +43,7 @@ export function Header() {
                 to={category.path}
                 className={({ isActive, isPending }) =>
                   twMerge(
-                    "p-sm-regular px-4 py-4 transition-colors hover:bg-white/5",
-                    isActive && "bg-white/5 text-white",
+                    "p-sm-regular py-4 pr-8 transition-colors hover:text-white/40",
                     isPending && "animate-pulse",
                   )
                 }
