@@ -4,8 +4,9 @@ import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
 import { ThemeSwitch } from "~/components/theme-switch";
 import Coffee from "~/assets/black-button.png";
-import { NavLink } from "react-router";
+import { Link, NavLink } from "react-router";
 import { twMerge } from "tailwind-merge";
+import { formatSlovenianDateTime } from "~/lib/date";
 import { Dropdown } from "./dropdown";
 
 const CATEGORIES: { name: string; path: string }[] = [
@@ -25,9 +26,14 @@ export function Header() {
   return (
     <header className="bg-background w-[100svw]">
       <div className="flex h-[58px] items-center justify-between px-8 py-8">
-        <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
-        <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
+        <Link to="/">
+          <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
+          <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
+        </Link>
         <div className="flex items-center gap-3">
+          <span className="mr-3 text-xs">
+            {formatSlovenianDateTime(new Date())}
+          </span>
           <img src={Coffee} alt="coffee" className="h-8" />
           <ThemeSwitch />
           <button onClick={() => setOpen((prev) => !prev)}>
