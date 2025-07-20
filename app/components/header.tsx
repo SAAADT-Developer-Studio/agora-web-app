@@ -4,9 +4,9 @@ import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
 import { ThemeSwitch } from "~/components/theme-switch";
 import Coffee from "~/assets/black-button.png";
-import { Dropdown } from "./ui/dropdown";
-import { Link, NavLink } from "react-router";
+import { NavLink } from "react-router";
 import { twMerge } from "tailwind-merge";
+import { Dropdown } from "./dropdown";
 
 const CATEGORIES: { name: string; path: string }[] = [
   { name: "AKTUALNO", path: "/" },
@@ -23,20 +23,19 @@ const CATEGORIES: { name: string; path: string }[] = [
 export function Header() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="bg-background">
-      <div className="flex h-[58px] items-center justify-between px-4 py-8">
+    <header className="bg-background w-[100svw]">
+      <div className="flex h-[58px] items-center justify-between px-8 py-8">
         <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
         <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
         <div className="flex items-center gap-3">
           <img src={Coffee} alt="coffee" className="h-8" />
           <ThemeSwitch />
           <button onClick={() => setOpen((prev) => !prev)}>
-            <Grip size={28} />
+            <Dropdown />
           </button>
-          <Dropdown open={open} onClose={() => setOpen(false)} />
         </div>
       </div>
-      <div className="bg-foreground flex justify-center">
+      <div className="bg-foreground flex w-full justify-center">
         <div className="flex w-[1200px]">
           {CATEGORIES.map((category) => {
             return (
@@ -44,9 +43,9 @@ export function Header() {
                 to={category.path}
                 className={({ isActive, isPending }) =>
                   twMerge(
-                    "p-sm-regular px-4 py-4 transition-colors hover:bg-white/5",
-                    isActive && "bg-white/5 text-white",
+                    "p-sm text-primary/70 hover:text-primary py-4 pr-8 transition-colors",
                     isPending && "animate-pulse",
+                    isActive && "text-primary",
                   )
                 }
                 key={category.path}

@@ -9,8 +9,8 @@
   --color-background: #f8f9fa;
   --color-foreground: #eaeaea;
   --color-primary: #1e1e1e;
-  --color-rightblue: #3555ff;
-  --color-leftred: #fa243c;
+  --color-rightblue: #4f72ff;
+  --color-leftred: #ff4b4b;
   --color-deepblue: #0019b7;
   --color-centerwhite: #ffffff;
   --color-darkdeepblue: #3754ee;
@@ -18,6 +18,10 @@
   --color-darkrightblue: #1e3a8a;
   --color-salmon: #ff6b6b;
   --color-electricblue: #155dfc;
+  --color-vidikwhite: #f8f9fa;
+  --color-vidikblack: #1e1e1e;
+  --color-vidikdarkgray: #3f3f3f;
+  --color-vidiklightgray: #eaeaea;
 }
 
 .dark {
@@ -35,6 +39,7 @@ body {
   font-family: var(--font-sans);
   background-color: var(--color-background);
   color: var(--color-primary);
+  overflow-x: hidden;
 }
 
 @utility p-xl-light {

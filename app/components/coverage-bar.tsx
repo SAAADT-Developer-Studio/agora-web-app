@@ -10,7 +10,7 @@ export default function CoverageBar({
   rightPercent,
 }: Readonly<CoverageBarProps>) {
   return (
-    <div className="flex h-1 w-full items-center justify-between rounded-lg bg-gray-200">
+    <div className="border-vidikdarkgray flex h-1 w-full items-center justify-between rounded-lg border-[0.5px] bg-gray-200 dark:border-0">
       <div
         className="bg-leftred h-full rounded-l-lg"
         style={{ width: `${leftPercent}%` }}
