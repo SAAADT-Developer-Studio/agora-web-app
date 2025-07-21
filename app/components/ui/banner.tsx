@@ -40,7 +40,7 @@ export function LogoComponent({
 
 export default function Banner(props: Readonly<BannerProps>) {
   return (
-    <div className="bg-foreground border-vidikdarkgray/20 flex h-[170px] flex-col items-end justify-between rounded-lg border-1 p-4 sm:col-span-full dark:border-0">
+    <div className="bg-foreground border-vidikdarkgray/10 flex h-[170px] flex-col items-end justify-between rounded-lg border-1 p-4 sm:col-span-full dark:border-0">
       <div className="flex w-full flex-col">
         <div className="flex w-full items-start justify-between">
           <p className="p-lg">{props.title}</p>

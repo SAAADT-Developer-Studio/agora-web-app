@@ -95,8 +95,8 @@ body {
   font-weight: 600;
 }
 @utility p-sm {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
 }
 @utility p-xs {
   font-size: 10px;

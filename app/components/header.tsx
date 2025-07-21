@@ -25,7 +25,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
   return (
     <header className="bg-background w-[100svw]">
-      <div className="flex h-[58px] items-center justify-between px-8 py-8">
+      <div className="flex h-[58px] items-center justify-between pr-8 pl-6">
         <Link to="/">
           <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
           <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
@@ -49,9 +49,9 @@ export function Header() {
                 to={category.path}
                 className={({ isActive, isPending }) =>
                   twMerge(
-                    "p-sm text-primary/70 hover:text-primary py-4 pr-8 transition-colors",
+                    "p-sm text-primary/70 hover:text-primary px-4 py-3 transition-colors",
                     isPending && "animate-pulse",
-                    isActive && "text-primary",
+                    isActive && "text-primary border-b",
                   )
                 }
                 key={category.path}
