@@ -1,9 +1,7 @@
 import type { Route } from "./+types/home";
 
 import { VidikBanner, VidikBannerType } from "~/components/vidik-banner";
-import HighlightedPeople, {
-  type HighlightedPeopleProps,
-} from "~/components/highlighted-people";
+import { type HighlightedPeopleProps } from "~/components/highlighted-people";
 import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
 
@@ -252,31 +250,37 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const dummyPeople: HighlightedPeopleProps["people"] = [
     {
       name: "Donald Trump",
+      description: "Former President of the United States",
       image:
         "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
     },
     {
       name: "Donald Trump",
+      description: "Former President of the United States",
       image:
         "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
     },
     {
       name: "Donald Trump",
+      description: "Former President of the United States",
       image:
         "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
     },
     {
       name: "Donald Trump",
+      description: "Former President of the United States",
       image:
         "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
     },
     {
       name: "Donald Trump",
+      description: "Former President of the United States",
       image:
         "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
     },
     {
       name: "Donald Trump",
+      description: "Former President of the United States",
       image:
         "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
     },
