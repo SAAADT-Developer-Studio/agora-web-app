@@ -8,18 +8,7 @@ import { Link, NavLink } from "react-router";
 import { twMerge } from "tailwind-merge";
 import { formatSlovenianDateTime } from "~/lib/date";
 import { Dropdown } from "./dropdown";
-
-const CATEGORIES: { name: string; path: string }[] = [
-  { name: "AKTUALNO", path: "/" },
-  { name: "POLITIKA", path: "/politika" },
-  { name: "GOSPODARSTVO", path: "/gospodarstvo" },
-  { name: "KRIMINAL", path: "/kriminal" },
-  { name: "ŠPORT", path: "/sport" },
-  { name: "KULTURA", path: "/kultura" },
-  { name: "ZDRAVJE", path: "/zdravje" },
-  { name: "OKOLJE", path: "/okolje" },
-  { name: "LOKALNO", path: "/lokalno" },
-];
+import { config } from "~/config";
 
 export function Header() {
   const [open, setOpen] = useState(false);
@@ -43,7 +32,7 @@ export function Header() {
       </div>
       <div className="bg-foreground flex w-full justify-center">
         <div className="flex w-[1200px]">
-          {CATEGORIES.map((category) => {
+          {config.categories.map((category) => {
             return (
               <NavLink
                 to={category.path}
