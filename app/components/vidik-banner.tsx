@@ -39,7 +39,9 @@ const VidikBannerRecord: Record<VidikBannerType, BannerProps> = {
     description:
       "Doniraj in pomagaj pri rasti in izboljšavi te spletne strani.",
     button: (
-      <img src={BuyCoffee} alt="Buy Coffee" className="w-30 drop-shadow-lg" />
+      <button className="w-30 drop-shadow-lg">
+        <img src={BuyCoffee} alt="Buy Coffee" />
+      </button>
     ),
     iconComponent: Coffee,
   },
