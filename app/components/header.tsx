@@ -8,24 +8,13 @@ import { Link, NavLink } from "react-router";
 import { twMerge } from "tailwind-merge";
 import { formatSlovenianDateTime } from "~/lib/date";
 import { Dropdown } from "./dropdown";
-
-const CATEGORIES: { name: string; path: string }[] = [
-  { name: "AKTUALNO", path: "/" },
-  { name: "POLITIKA", path: "/politika" },
-  { name: "GOSPODARSTVO", path: "/gospodarstvo" },
-  { name: "KRIMINAL", path: "/kriminal" },
-  { name: "ŠPORT", path: "/sport" },
-  { name: "KULTURA", path: "/kultura" },
-  { name: "ZDRAVJE", path: "/zdravje" },
-  { name: "OKOLJE", path: "/okolje" },
-  { name: "LOKALNO", path: "/lokalno" },
-];
+import { config } from "~/config";
 
 export function Header() {
   const [open, setOpen] = useState(false);
   return (
     <header className="bg-background w-[100svw]">
-      <div className="flex h-[58px] items-center justify-between px-8 py-8">
+      <div className="flex h-[62px] items-center justify-between pr-8 pl-6">
         <Link to="/">
           <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
           <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
@@ -43,15 +32,15 @@ export function Header() {
       </div>
       <div className="bg-foreground flex w-full justify-center">
         <div className="flex w-[1200px]">
-          {CATEGORIES.map((category) => {
+          {config.categories.map((category) => {
             return (
               <NavLink
                 to={category.path}
                 className={({ isActive, isPending }) =>
                   twMerge(
-                    "p-sm text-primary/70 hover:text-primary py-4 pr-8 transition-colors",
+                    "text-primary/70 hover:text-primary px-4 py-3.5 text-sm font-medium transition-colors",
                     isPending && "animate-pulse",
-                    isActive && "text-primary",
+                    isActive && "text-primary border-primary border-b",
                   )
                 }
                 key={category.path}
