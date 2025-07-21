@@ -10,6 +10,7 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { ErrorComponent } from "~/components/error-component";
+import { Suspense } from "react";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -78,7 +79,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    // This suspense is here so that in case of hydration errors, react does not rerender the head (it only rerenders from the closest Suspense boundary down)
+    <Suspense>
+      <Outlet />
+    </Suspense>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
