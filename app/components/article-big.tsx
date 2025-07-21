@@ -10,12 +10,12 @@ export default function ArticleBig(props: Readonly<ArticleProps>) {
 
   return (
     <article
-      className="border-vidikdarkgray border-px flex h-[500px] w-full cursor-pointer flex-col gap-4 rounded-lg bg-cover bg-center transition-transform duration-300 hover:scale-[1.02] sm:col-span-2 sm:row-span-2 dark:border-0"
+      className="border-vidikdarkgray border-px flex h-[500px] w-full cursor-pointer flex-col gap-4 rounded-md bg-cover bg-center transition-transform duration-300 hover:scale-[1.01] sm:col-span-2 sm:row-span-2 dark:border-0"
       style={{
         backgroundImage: `url(${stock})`,
       }}
     >
-      <div className="text-vidikwhite flex h-full w-full flex-col items-center justify-between rounded-lg [background-image:linear-gradient(to_top,rgba(0,0,0,0.6)_0%,rgba(0,0,0,0.5)_15%,rgba(0,0,0,0)_50%)] text-3xl font-bold">
+      <div className="text-vidikwhite flex h-full w-full flex-col items-center justify-between rounded-md [background-image:linear-gradient(to_top,rgba(0,0,0,0.6)_0%,rgba(0,0,0,0.5)_15%,rgba(0,0,0,0)_50%)] text-3xl font-bold">
         <div className="flex h-10 w-[98%] items-center justify-between">
           <div className="flex gap-2">
             {tags.map((tag) => (
