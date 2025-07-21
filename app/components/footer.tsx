@@ -67,7 +67,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  to="#"
+                  to="/donate"
                   className="text-primary/70 hover:text-primary transition-colors"
                 >
                   Doniraj
@@ -82,7 +82,7 @@ export default function Footer() {
             <ul className="text-primary space-y-2 text-sm">
               <li>
                 <Link
-                  to="#"
+                  to="/contact"
                   className="text-primary/70 hover:text-primary transition-colors"
                 >
                   Kontakt
