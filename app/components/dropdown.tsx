@@ -1,5 +1,6 @@
 import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu";
 import { Grip, Mail, GalleryHorizontalEnd, Book } from "lucide-react";
+import { Link } from "react-router";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,17 +22,32 @@ export function Dropdown() {
         sideOffset={15}
       >
         <DropdownMenuGroup>
-          <DropdownMenuItem className="hover:bg-foreground cursor-pointer">
-            <GalleryHorizontalEnd />
-            Swiper
+          <DropdownMenuItem
+            asChild
+            className="hover:bg-foreground cursor-pointer"
+          >
+            <Link to="/todo">
+              <GalleryHorizontalEnd />
+              Swiper
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem className="hover:bg-foreground cursor-pointer">
-            <Book />
-            Politika
+          <DropdownMenuItem
+            asChild
+            className="hover:bg-foreground cursor-pointer"
+          >
+            <Link to="/todo">
+              <Book />
+              Politika
+            </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem className="hover:bg-foreground cursor-pointer">
-            <Mail />
-            Kontakt
+          <DropdownMenuItem
+            asChild
+            className="hover:bg-foreground cursor-pointer"
+          >
+            <Link to="/contact">
+              <Mail />
+              Kontakt
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
