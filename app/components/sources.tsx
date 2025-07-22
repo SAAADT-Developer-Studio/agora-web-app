@@ -13,7 +13,7 @@ export function Sources({
 }: Readonly<SourcesProps>) {
   const sourcesUrlsList = sourcesUrls || [Delo, Rtv, Siol];
   return (
-    <div className="flex flex-col items-start justify-start">
+    <div className="isolate flex flex-col items-start justify-start">
       <p className="p-sm">{numberOfSources} virov</p>
       <div className="flex h-8 items-start justify-start py-2">
         {sourcesUrlsList.map((url, index) => {
