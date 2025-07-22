@@ -23,9 +23,29 @@ export type ArticleType = {
 };
 
 export function meta({}: Route.MetaArgs) {
+  const title = "Vidik";
+  // gpt wrote this, thats why it sucks
+  const description =
+    "Odkrijte novice in razkrijte njihovo politično obarvanost na enem mestu";
+  const image = "todo";
   return [
-    { title: "Vidik" },
-    { name: "description", content: "Welcome to Vidik!" },
+    { title },
+    { name: "description", content: description },
+    {
+      name: "keywords",
+      content:
+        "vidik, novice, slovenija, aktualno, politika, gospodarstvo, šport, kriminal, kultura, zdravje, okolje, lokalno, news, slovenian news, slovenia news",
+    },
+    { name: "og:title", content: title },
+    { name: "og:description", content: description },
+    { name: "og:image", content: image },
+    { name: "og:url", content: "https://vidik.si" },
+    { name: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: description },
+    { name: "twitter:image", content: image },
+    { name: "og:locale", content: "sl-SI" },
     // TODO: Add more meta tags for SEO
   ];
 }
