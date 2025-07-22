@@ -11,7 +11,7 @@ import {
 
 export function Dropdown() {
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Grip size={28} className="cursor-pointer" />
       </DropdownMenuTrigger>
