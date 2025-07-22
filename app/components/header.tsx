@@ -13,7 +13,7 @@ import { config } from "~/config";
 export function Header() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="bg-background w-[100svw]">
+    <header className="bg-background sticky top-0 z-10">
       <div className="flex h-[62px] items-center justify-between pr-8 pl-6">
         <Link to="/">
           <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
@@ -30,7 +30,7 @@ export function Header() {
           </button>
         </div>
       </div>
-      <div className="bg-foreground flex w-full justify-center">
+      <nav className="bg-foreground flex w-full justify-center shadow-lg">
         <div className="flex w-[1200px]">
           {config.categories.map((category) => {
             return (
@@ -50,7 +50,7 @@ export function Header() {
             );
           })}
         </div>
-      </div>
+      </nav>
     </header>
   );
 }
