@@ -10,7 +10,7 @@ export default function VotingBanner() {
   };
 
   return (
-    <div className="bg-secondary col-span-full flex h-[200px] flex-col items-center justify-center rounded-lg">
+    <div className="bg-secondary col-span-full flex h-[200px] flex-col items-center justify-center rounded-md">
       <p className="p-xl">Glasuj! Kam spadajo te novice</p>
       <div className="relative w-[90%]">
         <div className="relative h-6 w-full overflow-hidden rounded-full">

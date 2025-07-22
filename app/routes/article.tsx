@@ -1,5 +1,6 @@
 import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/article";
+import { getSeoMetas } from "~/lib/seo";
 
 export function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
@@ -25,52 +26,16 @@ export default function ArticlePage({}: Route.ComponentProps) {
 
 export function meta({ params }: Route.MetaArgs): Route.MetaDescriptors {
   const title = "TODO";
-  const summary = "Article summary goes here.";
   const imageUrl =
     "https://media.gettyimages.com/id/165088089/photo/the-word-news-under-a-magnifying-glass-among-stacks-of-paper.jpg?s=612x612&w=gi&k=20&c=o6Ni4rERiNG88MYs7ZSK-riEPOdftUTAgIjW9zGSodU=";
-  return [
-    {
-      title: `${title} | Vidik`,
-      name: "description",
-      content: summary,
-    },
-    {
-      name: "og:title",
-      content: title,
-    },
-    {
-      name: "og:description",
-      content: summary,
-    },
-    {
-      name: "og:type",
-      content: "article",
-    },
-    {
-      name: "og:image",
-      content: imageUrl,
-    },
-    {
-      name: "og:url",
-      content: `https://vidik.si/article/${params.articleId}`,
-    },
-    {
-      name: "twitter:title",
-      content: title,
-    },
-    {
-      name: "twitter:description",
-      content: summary,
-    },
-    {
-      name: "twitter:card",
-      content: "summary_large_image",
-    },
-    {
-      name: "twitter:image",
-      content: imageUrl,
-    },
-  ];
+  return getSeoMetas({
+    title: "todo",
+    description: "Article summary goes here.",
+    image: imageUrl,
+    url: `https://vidik.si/article/${params.articleId}`,
+    // keywords: "vidik, article, news, slovenia",
+    ogType: "article",
+  });
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

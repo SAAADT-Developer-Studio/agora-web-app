@@ -30,7 +30,7 @@ export function Header() {
           </button>
         </div>
       </div>
-      <nav className="bg-foreground flex w-full justify-center shadow-lg">
+      <nav className="bg-foreground border-primary/10 flex w-full justify-center border-b">
         <div className="flex w-[1200px]">
           {config.categories.map((category) => {
             return (
