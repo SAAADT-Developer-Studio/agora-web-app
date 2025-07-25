@@ -1,7 +1,7 @@
 import type { Route } from "./+types/home";
 
 import { VidikBanner, VidikBannerType } from "~/components/vidik-banner";
-import { type HighlightedPeopleProps } from "~/components/highlighted-people";
+import { type SectionCardProps } from "~/components/section-card";
 import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
 import { getSeoMetas } from "~/lib/seo";
@@ -254,7 +254,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     },
   ];
 
-  const dummyPeople: HighlightedPeopleProps["people"] = [
+  const dummyPeople: SectionCardProps["items"] = [
     {
       name: "Donald Trump",
       description: "Former President of the United States",
@@ -293,56 +293,111 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     },
   ];
 
+  const dummyEvent: SectionCardProps["items"] = [
+    {
+      name: "9/11",
+      description: "Here comes the airplane",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+    {
+      name: "9/11",
+      description: "Here comes the airplane",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+    {
+      name: "9/11",
+      description: "Here comes the airplane",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+    {
+      name: "9/11",
+      description: "Here comes the airplane",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+    {
+      name: "9/11",
+      description: "Here comes the airplane",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+    {
+      name: "9/11",
+      description: "Here comes the airplane",
+      image:
+        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       <HeroArticles articles={dummy} />
       <VidikBanner type={VidikBannerType.POLITICS} />
       <CategorySection
         articles={categoryArticles}
-        people={dummyPeople}
+        items={dummyPeople}
         dividerText="POLITIKA"
+        sideSectionHeading="Izpostavljene Osebe"
       />
       <CategorySection
         articles={categoryArticles}
-        people={dummyPeople}
+        items={dummyPeople}
         dividerText="GOSPODARSTVO"
         reverse
+        sideSectionHeading="Izpostavljene Osebe"
+      />
+      <CategorySection
+        articles={categoryArticles}
+        items={dummyPeople}
+        dividerText="ŠPORT"
+        reverse
+        sideSectionHeading="Izpostavljene Osebe"
+      />
+      <CategorySection
+        articles={categoryArticles}
+        items={dummyPeople}
+        dividerText="TEHNOLOGIJA & ZNANOST"
+        reverse
+        sideSectionHeading="Izpostavljene Osebe"
       />
       <VidikBanner type={VidikBannerType.SWIPE} />
       <CategorySection
         articles={categoryArticles}
-        people={dummyPeople}
+        items={dummyPeople}
         dividerText="KRIMINAL"
+        sideSectionHeading="Izpostavljene Osebe"
       />
-      <CategorySection
-        articles={categoryArticles}
-        people={dummyPeople}
-        dividerText="ŠPORT"
-        reverse
-      />
+
       <VidikBanner type={VidikBannerType.DONATE} />
       <CategorySection
         articles={categoryArticles}
-        people={dummyPeople}
+        items={dummyPeople}
         dividerText="KULTURA"
+        sideSectionHeading="Izpostavljene Osebe"
       />
       <CategorySection
         articles={categoryArticles}
-        people={dummyPeople}
+        items={dummyPeople}
         dividerText="ZDRAVJE"
         reverse
+        sideSectionHeading="Izpostavljene Osebe"
       />
       <VidikBanner type={VidikBannerType.CONTACT} />
       <CategorySection
         articles={categoryArticles}
-        people={dummyPeople}
+        items={dummyPeople}
         dividerText="OKOLJE"
+        sideSectionHeading="Izpostavljene Osebe"
       />
       <CategorySection
         articles={categoryArticles}
-        people={dummyPeople}
+        items={dummyPeople}
         dividerText="LOKALNO"
         reverse
+        sideSectionHeading="Izpostavljene Osebe"
       />
     </div>
   );

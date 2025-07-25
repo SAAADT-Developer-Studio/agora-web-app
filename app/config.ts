@@ -13,5 +13,6 @@ export const config = {
     { name: "ZDRAVJE", path: "/zdravje" },
     { name: "OKOLJE", path: "/okolje" },
     { name: "LOKALNO", path: "/lokalno" },
+    { name: "TEHNOLOGIJA & ZNANOST", path: "/tehnologija-znanost" },
   ],
 } satisfies AppConfig;
