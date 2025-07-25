@@ -1,5 +1,6 @@
 type AppConfig = {
   categories: { name: string; path: string }[];
+  imagesUrl: string;
 };
 
 export const config = {
@@ -15,4 +16,5 @@ export const config = {
     { name: "LOKALNO", path: "/lokalno" },
     { name: "TEHNOLOGIJA & ZNANOST", path: "/tehnologija-znanost" },
   ],
+  imagesUrl: "https://images.vidik.si",
 } satisfies AppConfig;

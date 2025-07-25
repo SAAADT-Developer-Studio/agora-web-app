@@ -10,7 +10,7 @@ import { config } from "~/config";
 
 export function Header() {
   return (
-    <header className="bg-background sticky top-0 z-10">
+    <header className="bg-secondary sticky top-0 z-10">
       <div className="flex h-[62px] items-center justify-between pr-8 pl-6">
         <Link to="/">
           <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />

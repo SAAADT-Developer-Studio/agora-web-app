@@ -31,7 +31,7 @@ const VidikBannerRecord: Record<VidikBannerType, BannerProps> = {
     title: "Glasuj na kateri strani so novice!",
     description:
       "Igra v kateri povlečeš levo, desno ali gor, da glasuješ kam spadajo najbolj popularne novice.",
-    button: <CTA buttonText="Pojdi" />,
+    button: <CTA buttonText="Začni" />,
     iconComponent: GalleryHorizontalEnd,
   },
   [VidikBannerType.DONATE]: {
@@ -49,7 +49,7 @@ const VidikBannerRecord: Record<VidikBannerType, BannerProps> = {
     title: "Se počutiš izgubljeno v svetu politike?",
     description:
       "Brez skrbi! Samo zate smo pripravili predstavitev, kjer te poučimo o politiki in kaj vsaka stran predstavlja.",
-    button: <CTA buttonText="Pojdi" />,
+    button: <CTA buttonText="Preberi" />,
     iconComponent: Book,
   },
 };

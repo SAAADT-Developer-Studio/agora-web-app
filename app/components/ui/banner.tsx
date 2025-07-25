@@ -7,8 +7,8 @@ export type BannerProps = {
 
 export default function Banner(props: Readonly<BannerProps>) {
   return (
-    <div className="bg-foreground border-vidikdarkgray/10 flex items-end justify-between rounded-md border-1 p-4 sm:col-span-full dark:border-0">
-      <div className="flex h-full w-full flex-col">
+    <div className="bg-foreground border-vidikdarkgray/10 flex items-end justify-between rounded-md border-1 p-6 sm:col-span-full dark:border-0">
+      <div className="flex h-full w-full flex-col gap-2">
         <div className="flex w-full items-start justify-between">
           <p className="p-lg">{props.title}</p>
         </div>

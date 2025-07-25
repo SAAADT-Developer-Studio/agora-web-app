@@ -20,7 +20,7 @@ export default function CoverageBar({
         style={{ width: `${centerPercent}%` }}
       />
       <div
-        className="bg-rightblue h-full rounded-r-lg"
+        className="bg-electricblue h-full rounded-r-lg"
         style={{ width: `${rightPercent}%` }}
       />
     </div>

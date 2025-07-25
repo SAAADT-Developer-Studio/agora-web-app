@@ -17,7 +17,7 @@ export function Dropdown() {
         <Grip size={28} className="cursor-pointer" />
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        className="bg-background color-primary border-primary/50 border-1"
+        className="bg-background color-primary border-primary/10 translate-x-[10px] border-1"
         align="end"
         sideOffset={15}
       >

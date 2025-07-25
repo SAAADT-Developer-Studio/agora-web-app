@@ -6,28 +6,33 @@
 
 @theme {
   --font-sans: "Source Sans Pro", "Inter", system-ui, sans-serif;
-  --color-background: #f8f9fa;
-  --color-foreground: #eaeaea;
-  --color-primary: #1e1e1e;
-  --color-rightblue: #4f72ff;
-  --color-leftred: #ff4b4b;
-  --color-deepblue: #0019b7;
-  --color-centerwhite: #ffffff;
-  --color-darkdeepblue: #3754ee;
-  --color-darkleftred: #a61b2d;
-  --color-darkrightblue: #1e3a8a;
-  --color-salmon: #ff6b6b;
-  --color-electricblue: #155dfc;
-  --color-vidikwhite: #f8f9fa;
-  --color-vidikblack: #1e1e1e;
-  --color-vidikdarkgray: #3f3f3f;
-  --color-vidiklightgray: #eaeaea;
+  --color-background: hsl(0, 0%, 96%);
+  --color-foreground: hsl(0, 0%, 92%);
+  --color-primary: hsl(0, 0%, 12%);
+  --color-secondary: hsl(196 41% 80%);
+  --color-rightblue: hsl(227, 100%, 65%);
+  --color-leftred: hsl(0, 100%, 64%);
+  --color-deepblue: hsl(238, 100%, 36%);
+  --color-centerwhite: hsl(0, 0%, 100%);
+  --color-darkdeepblue: hsl(227, 95%, 58%);
+  --color-darkleftred: hsl(349, 70%, 38%);
+  --color-darkrightblue: hsl(220, 65%, 33%);
+  --color-salmon: hsl(0, 100%, 70%);
+  --color-electricblue: hsl(196, 97%, 47%);
+  --color-electricblue-light: hsl(197, 97%, 44%);
+  --color-vidikwhite: hsl(210, 17%, 98%);
+  --color-vidikblack: hsl(0, 0%, 12%);
+  --color-vidikdarkgray: hsl(0, 0%, 25%);
+  --color-vidiklightgray: hsl(0, 0%, 92%);
 }
 
 .dark {
-  --color-background: #1e1e1e;
-  --color-foreground: #3f3f3f;
-  --color-primary: #d9d9d9;
+  --color-background: hsl(0, 0%, 16%);
+  --color-secondary: hsl(0, 0%, 12%);
+  --color-foreground: hsl(0, 0%, 25%);
+  --color-primary: hsl(0, 0%, 85%);
+  --color-electricblue: hsl(225, 97%, 54%);
+  --color-electricblue-light: hsl(225, 96%, 58%);
 }
 
 html,

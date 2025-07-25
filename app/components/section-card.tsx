@@ -17,7 +17,7 @@ export default function SectionCard({
 }: Readonly<SectionCardProps>) {
   return (
     <div className="bg-foreground border-vidikdarkgray/10 col-span-1 row-span-2 flex flex-col rounded-md border-1 dark:border-0">
-      <div className="flex w-full items-center justify-start gap-2 p-4">
+      <div className="flex w-full items-center justify-start gap-2 p-5">
         <PersonStanding className="h-6 w-6" />
         <p className="font-bold uppercase">{heading}</p>
       </div>
