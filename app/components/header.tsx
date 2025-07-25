@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { Grip } from "lucide-react";
 import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
 import { ThemeSwitch } from "~/components/theme-switch";
@@ -11,7 +9,6 @@ import { Dropdown } from "./dropdown";
 import { config } from "~/config";
 
 export function Header() {
-  const [open, setOpen] = useState(false);
   return (
     <header className="bg-background sticky top-0 z-10">
       <div className="flex h-[62px] items-center justify-between pr-8 pl-6">
@@ -25,9 +22,7 @@ export function Header() {
           </span>
           <img src={Coffee} alt="coffee" className="h-8" />
           <ThemeSwitch />
-          <button onClick={() => setOpen((prev) => !prev)}>
-            <Dropdown />
-          </button>
+          <Dropdown />
         </div>
       </div>
       <nav className="bg-foreground border-primary/10 flex w-full justify-center border-b">
