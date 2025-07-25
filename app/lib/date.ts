@@ -1,14 +1,13 @@
 export function formatSlovenianDateTime(date: Date) {
-  const options = {
+  const formatter = new Intl.DateTimeFormat("sl-SI", {
+    timeZone: "Europe/Ljubljana",
     day: "numeric",
     month: "long",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23", // Use 24-hour format
-  } as const;
-
-  const formatter = new Intl.DateTimeFormat("sl-SI", options);
+  });
   const parts = formatter.formatToParts(date);
 
   // Extract day, month, year

@@ -9,7 +9,7 @@ export default function RootLayout({}: Route.ComponentProps) {
     <>
       <Header />
 
-      <main className="bg-background mx-auto mt-4 h-full w-full max-w-[1200px] flex-1 py-4">
+      <main className="mx-auto mt-4 h-full w-full max-w-[1200px] flex-1 py-4">
         <Outlet />
       </main>
 

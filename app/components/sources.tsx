@@ -1,27 +1,22 @@
-import Delo from "~/assets/delo.png";
-import Rtv from "~/assets/rtv.png";
-import Siol from "~/assets/siol.png";
+import { config } from "~/config";
 
 export type SourcesProps = {
-  sourcesUrls?: string[];
+  sources?: string[];
   numberOfSources: number;
 };
 
-export function Sources({
-  sourcesUrls,
-  numberOfSources,
-}: Readonly<SourcesProps>) {
-  const sourcesUrlsList = sourcesUrls || [Delo, Rtv, Siol];
+export function Sources({ sources, numberOfSources }: Readonly<SourcesProps>) {
+  const sourcesKeys = sources || ["delo", "rtv", "siol"];
   return (
     <div className="isolate flex flex-col items-start justify-start">
       <p className="p-sm">{numberOfSources} virov</p>
       <div className="flex h-8 items-start justify-start py-2">
-        {sourcesUrlsList.map((url, index) => {
+        {sourcesKeys.map((key, index) => {
           const overlap = index * -12;
           return (
             <img
               key={"source" + index}
-              src={url}
+              src={`${config.imagesUrl}/providers/${key}.webp`}
               alt={`Source ${index}`}
               className="h-6 w-6 rounded-full"
               style={{
