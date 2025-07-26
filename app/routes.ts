@@ -10,6 +10,7 @@ export default [
     index("./routes/home.tsx"),
     route("contact", "./routes/contact.tsx"),
     route("donate", "./routes/donate.tsx"),
+    route("providers", "./routes/providers.tsx"),
     route("article/:articleId", "./routes/article.tsx"),
     route(":category", "./routes/category.tsx"),
   ]),
