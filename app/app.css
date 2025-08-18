@@ -19,7 +19,7 @@
   --color-darkrightblue: hsl(220, 65%, 33%);
   --color-salmon: hsl(0, 100%, 70%);
   --color-electricblue: hsl(196, 97%, 47%);
-  --color-electricblue-light: hsl(197, 97%, 44%);
+  --color-electricblue-light: hsl(197, 97%, 44%); // TODO: use oklch to make this relative https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/oklch#using_relative_colors_with_oklch
   --color-vidikwhite: hsl(210, 17%, 98%);
   --color-vidikblack: hsl(0, 0%, 12%);
   --color-vidikdarkgray: hsl(0, 0%, 25%);
