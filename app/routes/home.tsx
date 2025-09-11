@@ -6,9 +6,10 @@ import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
 import { getSeoMetas } from "~/lib/seo";
 import { getDb } from "~/lib/db";
-import { cluster } from "~/drizzle/schema";
+import { article, cluster } from "~/drizzle/schema";
 import { categoryArticles } from "~/mocks/categoryArticles";
 import { dummyPeople } from "~/mocks/people";
+import { desc, sql } from "drizzle-orm";
 
 export type Image = {
   src: string;
@@ -44,16 +45,22 @@ export function meta({}: Route.MetaArgs) {
 export async function loader({ context }: Route.LoaderArgs) {
   console.log("Loading clusters...");
   const db = await getDb();
-  const clusters = await db.query.cluster.findMany({
-    limit: 10,
-    with: { articles: { columns: { imageUrls: true } } },
-  });
+  const clusters = await db
+    .select({
+      id: cluster.id,
+      title: cluster.title,
+      articleCount: sql<number>`COUNT(${article.id})`,
+      imageUrls: article.imageUrls,
+    })
+    .from(cluster)
+    .leftJoin(article, sql`${cluster.id} = ${article.clusterId}`)
+    .groupBy(cluster.id, cluster.title, article.imageUrls)
+    .orderBy(desc(sql`COUNT(${article.id})`))
+    .limit(10);
   console.log({ clusters });
 
   const articles = clusters.map((c) => {
-    const imgSrc =
-      c.articles.find((a) => a.imageUrls !== undefined)?.imageUrls?.[0] ??
-      "https://placehold.co/600x400";
+    const imgSrc = c.imageUrls?.[0] ?? "https://placehold.co/600x400";
     return {
       id: c.id.toString(),
       title: c.title,
