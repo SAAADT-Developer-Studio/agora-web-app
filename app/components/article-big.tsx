@@ -8,11 +8,13 @@ export default function ArticleBig(props: Readonly<ArticleProps>) {
   const { image, title, tags, leftPercent, centerPercent, rightPercent } =
     props;
 
+  const imageUrl = `https://wsrv.nl/?url=${image.src}&w=600&h=400`;
+
   return (
     <article
       className="border-vidikdarkgray border-px flex h-[500px] w-full cursor-pointer flex-col gap-4 rounded-md bg-cover bg-center transition-transform duration-300 hover:scale-[1.01] sm:col-span-2 sm:row-span-2 dark:border-0"
       style={{
-        backgroundImage: `url(${stock})`,
+        backgroundImage: `url(${imageUrl})`,
       }}
     >
       <link rel="preload" as="image" fetchPriority="high" href={image.src} />

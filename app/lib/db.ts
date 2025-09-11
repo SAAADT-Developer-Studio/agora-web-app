@@ -1,5 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { env } from "cloudflare:workers";
+import * as schema from "~/drizzle/schema";
+import * as relations from "~/drizzle/relations";
 
 import { parse } from "pg-connection-string";
 import { Client } from "pg";
@@ -31,7 +33,7 @@ export async function getDb() {
     await client.connect();
     console.log("Connected to the database successfully!");
 
-    return drizzle(client);
+    return drizzle(client, { schema: { ...schema, ...relations } });
   } catch (err) {
     console.error("Database connection error:", err);
     throw err;
