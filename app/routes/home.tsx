@@ -5,6 +5,8 @@ import { type SectionCardProps } from "~/components/section-card";
 import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
 import { getSeoMetas } from "~/lib/seo";
+import { getDb } from "~/lib/db";
+import { cluster } from "~/drizzle/schema";
 
 export type Image = {
   src: string;
@@ -37,11 +39,18 @@ export function meta({}: Route.MetaArgs) {
   });
 }
 
-export function loader({ context }: Route.LoaderArgs) {
-  return { message: context.cloudflare.env.VALUE_FROM_CLOUDFLARE };
+export async function loader({ context }: Route.LoaderArgs) {
+  console.log("Loading clusters...");
+  const db = await getDb();
+  const clusters = await db.select().from(cluster);
+  console.log({ clusters });
+  // .limit(10);
+
+  return { clusters };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
+  console.log("loaderData", loaderData.clusters);
   const dummyMain: ArticleType = {
     id: "1",
     title:
