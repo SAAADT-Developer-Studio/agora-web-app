@@ -12,7 +12,8 @@ import { categoryArticles } from "~/mocks/categoryArticles";
 import { dummyPeople } from "~/mocks/people";
 import { desc, eq, inArray, sql } from "drizzle-orm";
 import fallbackArticleImage from "~/assets/fallback.png";
-import { fetchSloveniaGDP } from "~/lib/utils";
+import type { PeopleCardProps } from "~/components/people-card";
+import { fetchSloveniaGDP, fetchInflationMonthlyYoY_SI } from "~/lib/utils";
 
 export type Image = {
   src: string;
@@ -61,6 +62,8 @@ export async function loader({ context }: Route.LoaderArgs) {
     .groupBy(cluster.id)
     .orderBy(desc(articleCount))
     .limit(10);
+  const gdpSeries = await fetchSloveniaGDP();
+  const inflationSeries = await fetchInflationMonthlyYoY_SI();
 
   const topClusters = await db.query.cluster.findMany({
     where: inArray(
@@ -101,14 +104,12 @@ export async function loader({ context }: Route.LoaderArgs) {
     };
   });
 
-  const gdpSeries = await fetchSloveniaGDP();
-
-  return { articles, gdpSeries };
+  return { articles, gdpSeries, inflationSeries };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   console.log("loaderData", loaderData.articles);
-  const { articles } = loaderData;
+  const { articles, gdpSeries, inflationSeries } = loaderData;
 
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -128,7 +129,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         reverse
         sideSectionHeading="Izpostavljene Osebe"
         sideSectionType={SectionCardType.Economy}
-        gdpSeries={loaderData.gdpSeries}
+        gdpSeries={gdpSeries}
+        inflationSeries={inflationSeries}
       />
       <CategorySection
         articles={categoryArticles}

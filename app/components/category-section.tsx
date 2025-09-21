@@ -5,6 +5,7 @@ import Divider from "./ui/divider";
 import EconomyCard, {
   type EconomyCardProps,
   type GDPSeries,
+  type InflationSeries,
 } from "./economy-card";
 
 export type CategorySectionProps = {
@@ -15,6 +16,7 @@ export type CategorySectionProps = {
   sideSectionHeading?: string;
   sideSectionType?: SectionCardType;
   gdpSeries?: EconomyCardProps["gdpSeries"];
+  inflationSeries?: EconomyCardProps["inflationSeries"];
 };
 
 export enum SectionCardType {
@@ -27,6 +29,7 @@ type SideSectionProps = {
   items?: PeopleCardProps["items"];
   heading?: string;
   gdpSeries?: GDPSeries[];
+  inflationSeries?: InflationSeries[];
 };
 
 const SideSection = ({
@@ -34,12 +37,15 @@ const SideSection = ({
   items,
   heading,
   gdpSeries,
+  inflationSeries,
 }: SideSectionProps) => {
   if (!sideSectionType) return null;
 
   switch (sideSectionType) {
     case SectionCardType.Economy:
-      return gdpSeries ? <EconomyCard gdpSeries={gdpSeries} /> : null;
+      return gdpSeries && inflationSeries ? (
+        <EconomyCard gdpSeries={gdpSeries} inflationSeries={inflationSeries} />
+      ) : null;
     case SectionCardType.People:
       return items && heading ? (
         <PeopleCard items={items} heading={heading} />
@@ -58,6 +64,7 @@ export default function CategorySection(props: Readonly<CategorySectionProps>) {
     reverse,
     sideSectionHeading,
     sideSectionType,
+    inflationSeries,
   } = props;
 
   return (
@@ -70,6 +77,7 @@ export default function CategorySection(props: Readonly<CategorySectionProps>) {
             items={items}
             heading={sideSectionHeading}
             gdpSeries={gdpSeries}
+            inflationSeries={inflationSeries}
           />
           {articles.slice(0, 2).map((article) => (
             <Article key={article.id} {...article} />
@@ -85,6 +93,7 @@ export default function CategorySection(props: Readonly<CategorySectionProps>) {
             items={items}
             heading={sideSectionHeading}
             gdpSeries={gdpSeries}
+            inflationSeries={inflationSeries}
           />
         </>
       )}
