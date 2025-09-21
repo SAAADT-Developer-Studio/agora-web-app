@@ -1,7 +1,6 @@
 import type { Route } from "./+types/home";
 
 import { VidikBanner, VidikBannerType } from "~/components/vidik-banner";
-import { type SectionCardProps } from "~/components/section-card";
 import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
 import { getSeoMetas } from "~/lib/seo";
@@ -10,6 +9,7 @@ import { article, cluster } from "~/drizzle/schema";
 import { categoryArticles } from "~/mocks/categoryArticles";
 import { dummyPeople } from "~/mocks/people";
 import { desc, eq, inArray, sql } from "drizzle-orm";
+import fallbackArticleImage from "~/assets/fallback.png";
 
 export type Image = {
   src: string;
@@ -26,6 +26,7 @@ export type ArticleType = {
   centerPercent: number;
   url: string;
   showTags?: boolean;
+  numberOfArticles: number;
 };
 
 export function meta({}: Route.MetaArgs) {
@@ -49,14 +50,16 @@ export async function loader({ context }: Route.LoaderArgs) {
 
   const topClusterIds = await db
     .select({
-      // Select all columns from the clusters table
       id: cluster.id,
+      article_count: articleCount,
     })
     .from(cluster)
     .leftJoin(article, eq(cluster.id, article.clusterId))
     .groupBy(cluster.id)
     .orderBy(desc(articleCount))
     .limit(10);
+
+  console.log("Top cluster IDs:", topClusterIds);
 
   const topClusters = await db.query.cluster.findMany({
     where: inArray(
@@ -69,11 +72,17 @@ export async function loader({ context }: Route.LoaderArgs) {
       },
     },
   });
+  topClusters.sort((a, b) => {
+    const aCount = topClusterIds.find((c) => c.id === a.id)?.article_count ?? 0;
+    const bCount = topClusterIds.find((c) => c.id === b.id)?.article_count ?? 0;
+    return bCount - aCount;
+  });
 
-  const articles = topClusters.map((c) => {
+  const articles: ArticleType[] = topClusters.map((c) => {
+    console.log("Cluster:", c);
     const imgSrc =
-      c.articles.find((a) => a.imageUrls !== undefined)?.imageUrls?.[0] ??
-      "https://placehold.co/600x400";
+      c.articles.find((a) => a.imageUrls && a.imageUrls.length > 0)
+        ?.imageUrls?.[0] ?? fallbackArticleImage;
     return {
       id: c.id.toString(),
       title: c.title,
@@ -87,6 +96,7 @@ export async function loader({ context }: Route.LoaderArgs) {
       centerPercent: 34,
       url: "/article-1",
       showTags: true,
+      numberOfArticles: c.articles.length,
     };
   });
 

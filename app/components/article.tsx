@@ -1,3 +1,4 @@
+import type { ArticleType } from "~/routes/home";
 import CoverageBar from "./coverage-bar";
 import Tag from "./ui/tag";
 
@@ -6,19 +7,8 @@ export type Image = {
   alt: string;
 };
 
-export type ArticleProps = {
-  title: string;
-  image: Image;
-  tags: string[];
-  leftPercent: number;
-  rightPercent: number;
-  centerPercent: number;
-  url: string;
-  showTags?: boolean;
-};
-
-export function Article(props: Readonly<ArticleProps>) {
-  const { image, title, tags, showTags } = props;
+export function Article(props: Readonly<ArticleType>) {
+  const { image, title, tags, showTags, numberOfArticles } = props;
 
   return (
     <article

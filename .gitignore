@@ -14,3 +14,5 @@
 
 .env
 .env.local
+
+init/prod_dump.dump

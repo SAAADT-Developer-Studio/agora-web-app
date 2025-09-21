@@ -1,12 +1,20 @@
 import Tag from "./ui/tag";
-import type { ArticleProps } from "./article";
 import CoverageBarBig from "./coverage-bar big";
 import { Sources } from "./sources";
-import stock from "~/assets/stock.jpg";
+import type { ArticleType } from "~/routes/home";
 
-export default function ArticleBig(props: Readonly<ArticleProps>) {
-  const { image, title, tags, leftPercent, centerPercent, rightPercent } =
-    props;
+export default function ArticleBig(props: Readonly<ArticleType>) {
+  const {
+    image,
+    title,
+    tags,
+    leftPercent,
+    centerPercent,
+    rightPercent,
+    numberOfArticles,
+  } = props;
+
+  props;
 
   const imageUrl = `https://wsrv.nl/?url=${image.src}&w=600&h=400`;
 
@@ -29,7 +37,8 @@ export default function ArticleBig(props: Readonly<ArticleProps>) {
         <div className="flex w-[96%] flex-col items-start justify-center py-2">
           <div className="flex w-full items-center justify-between">
             <p className="p-lg w-[80%] py-6">{title}</p>
-            <Sources numberOfSources={16} />
+            {/* TODO: rename */}
+            <Sources numberOfArticles={numberOfArticles} />
           </div>
 
           <CoverageBarBig

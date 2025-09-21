@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: vidik_postgres
+    environment:
+      POSTGRES_DB: vidik
+      POSTGRES_USER: vidik_user
+      POSTGRES_PASSWORD: vidik_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
