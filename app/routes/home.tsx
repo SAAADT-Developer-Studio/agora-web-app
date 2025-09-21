@@ -2,7 +2,9 @@ import type { Route } from "./+types/home";
 
 import { VidikBanner, VidikBannerType } from "~/components/vidik-banner";
 import HeroArticles from "~/components/hero-articles";
-import CategorySection from "~/components/category-section";
+import CategorySection, {
+  SectionCardType,
+} from "~/components/category-section";
 import { getSeoMetas } from "~/lib/seo";
 import { getDb } from "~/lib/db";
 import { article, cluster } from "~/drizzle/schema";
@@ -10,6 +12,8 @@ import { categoryArticles } from "~/mocks/categoryArticles";
 import { dummyPeople } from "~/mocks/people";
 import { desc, eq, inArray, sql } from "drizzle-orm";
 import fallbackArticleImage from "~/assets/fallback.png";
+import type { PeopleCardProps } from "~/components/people-card";
+import { fetchSloveniaGDP } from "~/lib/utils";
 
 export type Image = {
   src: string;
@@ -100,7 +104,9 @@ export async function loader({ context }: Route.LoaderArgs) {
     };
   });
 
-  return { articles };
+  const gdpSeries = await fetchSloveniaGDP();
+
+  return { articles, gdpSeries };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
@@ -116,6 +122,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         items={dummyPeople}
         dividerText="POLITIKA"
         sideSectionHeading="Izpostavljene Osebe"
+        sideSectionType={SectionCardType.People}
       />
       <CategorySection
         articles={categoryArticles}
@@ -123,13 +130,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         dividerText="GOSPODARSTVO"
         reverse
         sideSectionHeading="Izpostavljene Osebe"
+        sideSectionType={SectionCardType.Economy}
+        gdpSeries={loaderData.gdpSeries}
       />
       <CategorySection
         articles={categoryArticles}
         items={dummyPeople}
         dividerText="ŠPORT"
-        reverse
         sideSectionHeading="Izpostavljene Osebe"
+        sideSectionType={SectionCardType.People}
       />
       <CategorySection
         articles={categoryArticles}
@@ -137,6 +146,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         dividerText="TEHNOLOGIJA & ZNANOST"
         reverse
         sideSectionHeading="Izpostavljene Osebe"
+        sideSectionType={SectionCardType.People}
       />
       <VidikBanner type={VidikBannerType.SWIPE} />
       <CategorySection
@@ -144,6 +154,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         items={dummyPeople}
         dividerText="KRIMINAL"
         sideSectionHeading="Izpostavljene Osebe"
+        sideSectionType={SectionCardType.People}
       />
 
       <VidikBanner type={VidikBannerType.DONATE} />
@@ -152,6 +163,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         items={dummyPeople}
         dividerText="KULTURA"
         sideSectionHeading="Izpostavljene Osebe"
+        sideSectionType={SectionCardType.People}
       />
       <CategorySection
         articles={categoryArticles}
@@ -159,6 +171,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         dividerText="ZDRAVJE"
         reverse
         sideSectionHeading="Izpostavljene Osebe"
+        sideSectionType={SectionCardType.People}
       />
       <VidikBanner type={VidikBannerType.CONTACT} />
       <CategorySection
@@ -166,6 +179,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         items={dummyPeople}
         dividerText="OKOLJE"
         sideSectionHeading="Izpostavljene Osebe"
+        sideSectionType={SectionCardType.People}
       />
       <CategorySection
         articles={categoryArticles}
@@ -173,6 +187,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         dividerText="LOKALNO"
         reverse
         sideSectionHeading="Izpostavljene Osebe"
+        sideSectionType={SectionCardType.People}
       />
     </div>
   );

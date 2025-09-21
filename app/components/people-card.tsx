@@ -6,15 +6,15 @@ type Item = {
   description: string;
 };
 
-export type SectionCardProps = {
+export type PeopleCardProps = {
   heading: string;
   items: Item[];
 };
 
-export default function SectionCard({
+export default function PeopleCard({
   items,
   heading,
-}: Readonly<SectionCardProps>) {
+}: Readonly<PeopleCardProps>) {
   return (
     <div className="bg-foreground border-vidikdarkgray/10 col-span-1 row-span-2 flex flex-col rounded-md border-1 dark:border-0">
       <div className="flex w-full items-center justify-start gap-2 p-5">
