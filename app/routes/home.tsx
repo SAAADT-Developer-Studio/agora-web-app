@@ -12,7 +12,6 @@ import { categoryArticles } from "~/mocks/categoryArticles";
 import { dummyPeople } from "~/mocks/people";
 import { desc, eq, inArray, sql } from "drizzle-orm";
 import fallbackArticleImage from "~/assets/fallback.png";
-import type { PeopleCardProps } from "~/components/people-card";
 import { fetchSloveniaGDP } from "~/lib/utils";
 
 export type Image = {
@@ -62,8 +61,6 @@ export async function loader({ context }: Route.LoaderArgs) {
     .groupBy(cluster.id)
     .orderBy(desc(articleCount))
     .limit(10);
-
-  console.log("Top cluster IDs:", topClusterIds);
 
   const topClusters = await db.query.cluster.findMany({
     where: inArray(

@@ -31,8 +31,6 @@ export async function getDb() {
 
   try {
     await client.connect();
-    console.log("Connected to the database successfully!");
-
     return drizzle(client, { schema: { ...schema, ...relations } });
   } catch (err) {
     console.error("Database connection error:", err);
