@@ -6,7 +6,12 @@ import CategorySection, {
   SectionCardType,
 } from "~/components/category-section";
 import { getSeoMetas } from "~/lib/seo";
-import type { PeopleCardProps } from "~/components/people-card";
+import { getDb } from "~/lib/db";
+import { article, cluster } from "~/drizzle/schema";
+import { categoryArticles } from "~/mocks/categoryArticles";
+import { dummyPeople } from "~/mocks/people";
+import { desc, eq, inArray, sql } from "drizzle-orm";
+import fallbackArticleImage from "~/assets/fallback.png";
 import { fetchSloveniaGDP } from "~/lib/utils";
 
 export type Image = {
@@ -24,6 +29,7 @@ export type ArticleType = {
   centerPercent: number;
   url: string;
   showTags?: boolean;
+  numberOfArticles: number;
 };
 
 export function meta({}: Route.MetaArgs) {
@@ -41,35 +47,48 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const message = context.cloudflare.env.VALUE_FROM_CLOUDFLARE;
-  const gdpSeries = await fetchSloveniaGDP();
+  console.log("Loading clusters...");
+  const db = await getDb();
+  const articleCount = sql<number>`count(${article.id})`.as("article_count");
 
-  return { message, gdpSeries };
-}
+  const topClusterIds = await db
+    .select({
+      id: cluster.id,
+      article_count: articleCount,
+    })
+    .from(cluster)
+    .leftJoin(article, eq(cluster.id, article.clusterId))
+    .groupBy(cluster.id)
+    .orderBy(desc(articleCount))
+    .limit(10);
 
-export default function Home({ loaderData }: Route.ComponentProps) {
-  const dummyMain: ArticleType = {
-    id: "1",
-    title:
-      "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-    image: {
-      src: "https://placehold.co/600x400",
-      alt: "Placeholder Image 1",
+  const topClusters = await db.query.cluster.findMany({
+    where: inArray(
+      cluster.id,
+      topClusterIds.map((c) => c.id),
+    ),
+    with: {
+      articles: {
+        columns: { imageUrls: true },
+      },
     },
-    tags: ["sport", "gaming"],
-    leftPercent: 33,
-    rightPercent: 33,
-    centerPercent: 34,
-    url: "/article-1",
-  };
+  });
+  topClusters.sort((a, b) => {
+    const aCount = topClusterIds.find((c) => c.id === a.id)?.article_count ?? 0;
+    const bCount = topClusterIds.find((c) => c.id === b.id)?.article_count ?? 0;
+    return bCount - aCount;
+  });
 
-  const dummy: ArticleType[] = [
-    {
-      id: "1",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
+  const articles: ArticleType[] = topClusters.map((c) => {
+    console.log("Cluster:", c);
+    const imgSrc =
+      c.articles.find((a) => a.imageUrls && a.imageUrls.length > 0)
+        ?.imageUrls?.[0] ?? fallbackArticleImage;
+    return {
+      id: c.id.toString(),
+      title: c.title,
       image: {
-        src: "https://placehold.co/600x400",
+        src: imgSrc,
         alt: "Placeholder Image 1",
       },
       tags: ["sport", "gaming"],
@@ -78,269 +97,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       centerPercent: 34,
       url: "/article-1",
       showTags: true,
-    },
-    {
-      id: "2",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 2",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 15,
-      rightPercent: 80,
-      centerPercent: 5,
-      url: "/article-2",
-      showTags: true,
-    },
-    {
-      id: "3",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 3",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 0,
-      rightPercent: 10,
-      centerPercent: 90,
-      url: "/article-3",
-      showTags: true,
-    },
-    {
-      id: "4",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 1",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 90,
-      rightPercent: 5,
-      centerPercent: 5,
-      url: "/article-1",
-      showTags: true,
-    },
-    {
-      id: "5",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 2",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 50,
-      rightPercent: 50,
-      centerPercent: 0,
-      url: "/article-2",
-      showTags: true,
-    },
-    {
-      id: "6",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 2",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 50,
-      rightPercent: 50,
-      centerPercent: 0,
-      url: "/article-2",
-      showTags: true,
-    },
-    {
-      id: "7",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 2",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 50,
-      rightPercent: 50,
-      centerPercent: 0,
-      url: "/article-2",
-      showTags: true,
-    },
-    {
-      id: "8",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 2",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 50,
-      rightPercent: 50,
-      centerPercent: 0,
-      url: "/article-2",
-      showTags: true,
-    },
-    {
-      id: "9",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 2",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 50,
-      rightPercent: 50,
-      centerPercent: 0,
-      url: "/article-2",
-      showTags: true,
-    },
-  ];
+      numberOfArticles: c.articles.length,
+    };
+  });
 
-  const categoryArticles: ArticleType[] = [
-    {
-      id: "6",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 2",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 50,
-      rightPercent: 50,
-      centerPercent: 0,
-      url: "/article-2",
-    },
-    {
-      id: "7",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 2",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 50,
-      rightPercent: 50,
-      centerPercent: 0,
-      url: "/article-2",
-    },
-    {
-      id: "8",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 2",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 50,
-      rightPercent: 50,
-      centerPercent: 0,
-      url: "/article-2",
-    },
-    {
-      id: "9",
-      title:
-        "Redbull je slab zate ampak za to ker si vstala primorska si v novo življenje",
-      image: {
-        src: "https://placehold.co/600x400",
-        alt: "Placeholder Image 2",
-      },
-      tags: ["sport", "gaming"],
-      leftPercent: 50,
-      rightPercent: 50,
-      centerPercent: 0,
-      url: "/article-2",
-    },
-  ];
+  const gdpSeries = await fetchSloveniaGDP();
 
-  const dummyPeople: PeopleCardProps["items"] = [
-    {
-      name: "Donald Trump",
-      description: "Former President of the United States",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-    {
-      name: "Donald Trump",
-      description: "Former President of the United States",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-    {
-      name: "Donald Trump",
-      description: "Former President of the United States",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-    {
-      name: "Donald Trump",
-      description: "Former President of the United States",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-    {
-      name: "Donald Trump",
-      description: "Former President of the United States",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-    {
-      name: "Donald Trump",
-      description: "Former President of the United States",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-  ];
+  return { articles, gdpSeries };
+}
 
-  const dummyEvent: PeopleCardProps["items"] = [
-    {
-      name: "9/11",
-      description: "Here comes the airplane",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-    {
-      name: "9/11",
-      description: "Here comes the airplane",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-    {
-      name: "9/11",
-      description: "Here comes the airplane",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-    {
-      name: "9/11",
-      description: "Here comes the airplane",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-    {
-      name: "9/11",
-      description: "Here comes the airplane",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-    {
-      name: "9/11",
-      description: "Here comes the airplane",
-      image:
-        "https://upload.wikimedia.org/wikipedia/commons/5/56/Donald_Trump_official_portrait.jpg",
-    },
-  ];
+export default function Home({ loaderData }: Route.ComponentProps) {
+  console.log("loaderData", loaderData.articles);
+  const { articles } = loaderData;
 
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      <HeroArticles articles={dummy} />
+      <HeroArticles articles={articles} />
       <VidikBanner type={VidikBannerType.POLITICS} />
       <CategorySection
         articles={categoryArticles}
