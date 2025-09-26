@@ -1,12 +1,7 @@
-import type { ArticleType } from "~/routes/home";
+import type { ArticleType } from "~/lib/services/ranking";
 import CoverageBar from "./coverage-bar";
 import Tag from "./ui/tag";
 import { Link } from "react-router";
-
-export type Image = {
-  src: string;
-  alt: string;
-};
 
 export function Article({
   id,
@@ -17,8 +12,9 @@ export function Article({
   leftPercent,
   centerPercent,
   rightPercent,
-}: Readonly<ArticleType>) {
-  const imageUrl = `https://wsrv.nl/?url=${image.src}&w=380&h=240`;
+}: ArticleType) {
+  // const imageUrl = `https://wsrv.nl/?url=${image.src}&w=380&h=240`;
+  const imageUrl = image.src;
   return (
     <Link to={`/article/${id}`} className="contents w-full">
       <article
