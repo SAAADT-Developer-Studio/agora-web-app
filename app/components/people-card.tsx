@@ -1,6 +1,6 @@
 import { PersonStanding } from "lucide-react";
 
-type Item = {
+export type Item = {
   name: string;
   image: string;
   description: string;

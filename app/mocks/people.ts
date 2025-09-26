@@ -1,6 +1,6 @@
-import type { SectionCardProps } from "~/components/section-card";
+import type { Item } from "~/components/people-card";
 
-export const dummyPeople: SectionCardProps["items"] = [
+export const dummyPeople: Item[] = [
   {
     name: "Donald Trump",
     description: "Former President of the United States",

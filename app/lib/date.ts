@@ -11,13 +11,13 @@ export function formatSlovenianDateTime(date: Date) {
   const parts = formatter.formatToParts(date);
 
   // Extract day, month, year
-  const day = parts.find((p) => p.type === "day").value;
-  const month = parts.find((p) => p.type === "month").value;
-  const year = parts.find((p) => p.type === "year").value;
+  const day = parts.find((p) => p.type === "day")!.value;
+  const month = parts.find((p) => p.type === "month")!.value;
+  const year = parts.find((p) => p.type === "year")!.value;
 
   // Extract hour and minute
-  const hour = parts.find((p) => p.type === "hour").value;
-  const minute = parts.find((p) => p.type === "minute").value;
+  const hour = parts.find((p) => p.type === "hour")!.value;
+  const minute = parts.find((p) => p.type === "minute")!.value;
 
   return `${day}. ${month} ${year} | ${hour}.${minute}`;
 }
