@@ -10,11 +10,17 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
-export function Dropdown() {
+export function Dropdown({
+  items,
+  trigger,
+}: {
+  items: { label: string; to: string; icon?: React.ReactNode }[];
+  trigger?: React.ReactNode;
+}) {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Grip size={28} className="cursor-pointer" />
+        {trigger ?? <Grip size={28} className="cursor-pointer" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent
         className="bg-background color-primary border-primary/10 translate-x-[10px] border-1"
@@ -22,33 +28,18 @@ export function Dropdown() {
         sideOffset={15}
       >
         <DropdownMenuGroup>
-          <DropdownMenuItem
-            asChild
-            className="hover:bg-foreground cursor-pointer"
-          >
-            <Link to="/todo">
-              <GalleryHorizontalEnd />
-              Swiper
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            asChild
-            className="hover:bg-foreground cursor-pointer"
-          >
-            <Link to="/todo">
-              <Book />
-              Politika
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            asChild
-            className="hover:bg-foreground cursor-pointer"
-          >
-            <Link to="/contact">
-              <Mail />
-              Kontakt
-            </Link>
-          </DropdownMenuItem>
+          {items.map((item) => (
+            <DropdownMenuItem
+              asChild
+              className="hover:bg-foreground cursor-pointer"
+              key={item.to}
+            >
+              <Link to={item.to}>
+                {item.icon ?? ""}
+                {item.label}
+              </Link>
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

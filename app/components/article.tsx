@@ -18,7 +18,7 @@ export function Article({
   centerPercent,
   rightPercent,
 }: Readonly<ArticleType>) {
-  const imageUrl = `https://wsrv.nl/?url=${image.src}&w=380&h=240`;
+  const imageUrl = `${image.src}`;
   return (
     <Link to={`/article/${id}`} className="contents w-full">
       <article

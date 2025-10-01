@@ -14,7 +14,7 @@ export default function ArticleBig({
   rightPercent,
   numberOfArticles,
 }: Readonly<ArticleType>) {
-  const imageUrl = `https://wsrv.nl/?url=${image.src}&w=700&h=450`;
+  const imageUrl = `${image.src}`;
 
   return (
     <Link to={`/article/${id}`} className="contents w-full">

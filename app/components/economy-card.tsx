@@ -79,12 +79,15 @@ export default function EconomyCard({
       <div className="grid grid-cols-1 grid-rows-2 pt-0">
         <Card className="gap-0 border-none py-0 shadow-none">
           <CardHeader className="!p-0">
-            <div className="px-6 pt-2">
+            <div className="ml-0 px-6 pt-2 md:ml-[10%] lg:ml-0">
               <CardTitle>Bruto domači proizvod (BDP)</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="px-5">
-            <ChartContainer config={gdpConfig} className="w-full">
+          <CardContent className="flex justify-center px-5">
+            <ChartContainer
+              config={gdpConfig}
+              className="w-full md:w-[80%] lg:w-full"
+            >
               <BarChart accessibilityLayer data={gdpData} barCategoryGap={1}>
                 <CartesianGrid vertical={false} stroke="#5a5a5a" />
                 <XAxis
@@ -119,7 +122,7 @@ export default function EconomyCard({
         </Card>
         <Card className="gap-0 border-none py-0 shadow-none">
           <CardHeader className="!p-0">
-            <div className="px-6 pt-2">
+            <div className="ml-0 px-6 pt-2 md:ml-[10%] lg:ml-0">
               <CardTitle>
                 Inflacija (
                 <a
@@ -132,8 +135,11 @@ export default function EconomyCard({
               </CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="px-5">
-            <ChartContainer config={inflationConfig} className="w-full">
+          <CardContent className="flex justify-center px-5">
+            <ChartContainer
+              config={inflationConfig}
+              className="w-full md:w-[80%] lg:w-full"
+            >
               <ResponsiveContainer width="100%" height={260}>
                 <AreaChart data={inflationData}>
                   <defs>
