@@ -1,8 +1,8 @@
 import Tag from "./ui/tag";
 import CoverageBarBig from "./coverage-bar big";
 import { Sources } from "./sources";
-import type { ArticleType } from "~/routes/home";
 import { Link } from "react-router";
+import type { ArticleType } from "~/lib/services/ranking";
 
 export default function ArticleBig({
   id,
@@ -13,8 +13,8 @@ export default function ArticleBig({
   centerPercent,
   rightPercent,
   numberOfArticles,
-}: Readonly<ArticleType>) {
-  const imageUrl = `${image.src}`;
+}: ArticleType) {
+  const imageUrl = image.src;
 
   return (
     <Link to={`/article/${id}`} className="contents w-full">

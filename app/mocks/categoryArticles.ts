@@ -1,4 +1,4 @@
-import type { ArticleType } from "~/routes/home";
+import type { ArticleType } from "~/lib/services/ranking";
 
 export const categoryArticles: ArticleType[] = [
   {
@@ -13,7 +13,7 @@ export const categoryArticles: ArticleType[] = [
     leftPercent: 50,
     rightPercent: 50,
     centerPercent: 0,
-    url: "/article-2",
+    numberOfArticles: 1,
   },
   {
     id: "7",
@@ -27,7 +27,7 @@ export const categoryArticles: ArticleType[] = [
     leftPercent: 50,
     rightPercent: 50,
     centerPercent: 0,
-    url: "/article-2",
+    numberOfArticles: 1,
   },
   {
     id: "8",
@@ -41,7 +41,7 @@ export const categoryArticles: ArticleType[] = [
     leftPercent: 50,
     rightPercent: 50,
     centerPercent: 0,
-    url: "/article-2",
+    numberOfArticles: 1,
   },
   {
     id: "9",
@@ -55,6 +55,6 @@ export const categoryArticles: ArticleType[] = [
     leftPercent: 50,
     rightPercent: 50,
     centerPercent: 0,
-    url: "/article-2",
+    numberOfArticles: 1,
   },
 ];

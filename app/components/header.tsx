@@ -6,7 +6,6 @@ import { Link, NavLink } from "react-router";
 import { twMerge } from "tailwind-merge";
 import { formatSlovenianDateTime } from "~/lib/date";
 import { config } from "~/config";
-import { Dropdown } from "./dropdown"; // (left as-is in case you use it elsewhere)
 import { Menu, X } from "lucide-react";
 
 const SIDEPANEL_WIDTH = 280; // px
@@ -36,7 +35,7 @@ export function Header() {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <div className="bg-primary h-10 w-[1px] xl:hidden" />
+          <div className="bg-primary h-10 w-[1px] opacity-30 xl:hidden" />
           <Link to="/">
             <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
             <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />

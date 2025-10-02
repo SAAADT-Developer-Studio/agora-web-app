@@ -1,29 +1,13 @@
-import { useEffect, useState } from "react";
 import { Article } from "./article";
 import ArticleBig from "./article-big";
-import { type ArticleType } from "~/routes/home";
+import { useMediaQuery } from "~/hooks/use-media-query";
+import type { ArticleType } from "~/lib/services/ranking";
 
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    const listener = () => setMatches(media.matches);
-    listener();
-    media.addEventListener("change", listener);
-    return () => media.removeEventListener("change", listener);
-  }, [query]);
-
-  return matches;
-}
-
-export default function HeroArticles(
-  props: Readonly<{
-    articles: ArticleType[];
-  }>,
-) {
-  const { articles } = props;
-
+export default function HeroArticles({
+  articles,
+}: {
+  articles: ArticleType[];
+}) {
   const isLarge = useMediaQuery("(min-width: 64rem)");
   const sliceEnd = isLarge ? 6 : 5;
 
