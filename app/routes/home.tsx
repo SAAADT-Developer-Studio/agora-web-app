@@ -43,7 +43,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const reverseAll = useMediaQuery("(min-width: 64rem)");
 
   return (
-    <div className="grid grid-cols-1 gap-6 px-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 px-3 sm:grid-cols-2 md:gap-6 md:px-6 lg:grid-cols-3">
       <HeroArticles articles={articles} />
 
       <CategorySection
