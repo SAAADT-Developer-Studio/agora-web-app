@@ -59,3 +59,13 @@ Use the shadcn cli to add a component to the repo in the **/app/components/ui** 
 ```bash
 pnpm dlx shadcn@latest add [component_name]
 ```
+
+## Database setup
+
+The source of the database schema is in the scraper repository, and the schema in this repo should be kept read only.
+Sync the production database schema with /app/drizzle/schema.ts with this command:
+
+```bash
+# pull database schema
+pnpx drizzle-kit pull
+```

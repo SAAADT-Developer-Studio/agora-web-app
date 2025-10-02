@@ -10,7 +10,7 @@ import {
   fetchInflationMonthlyYoY_SI,
   fetchSloveniaGDP,
 } from "~/lib/services/external";
-import { getHomeArticles } from "~/lib/services/ranking";
+import { getCategoryArticles, getHomeArticles } from "~/lib/services/ranking";
 import { PeopleCard } from "~/components/people-card";
 import { EconomyCard } from "~/components/economy-card";
 
@@ -29,11 +29,19 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const articles = await getHomeArticles();
+  const [home, politika, gospodarstvo] = await Promise.all([
+    getHomeArticles({ count: 6 }),
+    getCategoryArticles({ count: 4, category: "politika" }),
+    getCategoryArticles({ count: 4, category: "gospodarstvo" }),
+  ]);
   const gdpSeries = fetchSloveniaGDP();
   const inflationSeries = fetchInflationMonthlyYoY_SI();
 
-  return { articles, gdpSeries, inflationSeries };
+  return {
+    articles: { home, politika, gospodarstvo },
+    gdpSeries,
+    inflationSeries,
+  };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
@@ -41,17 +49,17 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      <HeroArticles articles={articles} />
+      <HeroArticles articles={articles.home} />
       <VidikBanner type={VidikBannerType.POLITICS} />
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.politika}
         dividerText="POLITIKA"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
       />
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.gospodarstvo}
         dividerText="GOSPODARSTVO"
         reverse
         sideSection={
