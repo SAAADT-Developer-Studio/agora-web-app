@@ -13,19 +13,19 @@ export default function CoverageBarBig({
     <div className="flex w-full flex-col items-center justify-center">
       <div className="flex w-full items-center justify-between pb-1.5">
         <div
-          className="p-sm flex h-full items-center justify-start"
+          className="p-sm hidden h-full items-center justify-start md:flex"
           style={{ width: `${leftPercent}%` }}
         >
           LEVA: {leftPercent}%
         </div>
         <div
-          className="p-sm flex h-full items-center justify-start"
+          className="p-sm hidden h-full items-center justify-start md:flex"
           style={{ width: `${centerPercent}%` }}
         >
           CENTER: {centerPercent}%
         </div>
         <div
-          className="p-sm flex h-full items-center justify-start"
+          className="p-sm hidden h-full items-center justify-start md:flex"
           style={{ width: `${rightPercent}%` }}
         >
           DESNA: {rightPercent}%

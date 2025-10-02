@@ -24,14 +24,14 @@ export function Header() {
 
   return (
     <header className="bg-secondary sticky top-0 z-30">
-      <div className="flex h-[62px] items-center justify-between pr-8 pl-6">
+      <div className="flex h-[62px] items-center justify-between pr-4 pl-6 sm:pr-8">
         <div className="flex items-center justify-between gap-4">
           <button
             type="button"
             aria-label="Open menu"
             aria-expanded={open}
             onClick={() => setOpen(true)}
-            className="hover:bg-primary/10 focus:ring-primary/40 inline-flex items-center justify-center rounded-xl p-2 focus:ring-2 focus:outline-none xl:hidden"
+            className="hover:bg-primary/10 focus:ring-primary/40 inline-flex items-center justify-center rounded-xl p-1 focus:ring-2 focus:outline-none sm:p-2 xl:hidden"
           >
             <Menu className="h-6 w-6" />
           </button>
