@@ -10,13 +10,12 @@ export default function Divider({
         <span
           className={cn(
             "text-primary bg-background absolute",
-            reverse ? "right-1/3" : "left-1/3",
+            reverse ? "right-1/2 lg:right-1/3" : "left-1/2 lg:left-1/3",
             reverse ? "translate-x-[50%]" : "-translate-x-[50%]",
             "-translate-y-[50%] p-2 text-lg uppercase",
             "cursor-pointer",
             "border-draw",
             "rounded-lg",
-            "hover:border-primary transition-transform duration-300 hover:scale-[1.05] hover:border-1",
           )}
         >
           {text}

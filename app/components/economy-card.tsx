@@ -64,11 +64,11 @@ export function EconomyCard({
       <div className="grid grid-cols-1 grid-rows-2 pt-0">
         <Card className="gap-0 border-none py-0 shadow-none">
           <CardHeader className="!p-0">
-            <div className="px-6 pt-2">
+            <div className="ml-0 px-6 pt-2 md:ml-[10%] lg:ml-0">
               <CardTitle>Bruto domači proizvod (BDP)</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="px-5">
+          <CardContent className="flex justify-center px-5">
             <React.Suspense fallback={<div>Loading...</div>}>
               <Await resolve={gdpSeries}>
                 {(gdpData) => (
@@ -122,7 +122,7 @@ export function EconomyCard({
 
 function GDPChart({ gdpData }: { gdpData: { year: string; gdp: number }[] }) {
   return (
-    <ChartContainer config={gdpConfig} className="w-full">
+    <ChartContainer config={gdpConfig} className="w-full md:w-[80%] lg:w-full">
       <BarChart accessibilityLayer data={gdpData} barCategoryGap={1}>
         <CartesianGrid vertical={false} stroke="#5a5a5a" />
         <XAxis
