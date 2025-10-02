@@ -5,10 +5,10 @@ export default function Footer() {
   return (
     <footer className="bg-foreground text-primary mt-20 flex items-center justify-center">
       <div className="w-[1200px] px-4 py-12">
-        <div className="flex justify-between">
+        <div className="flex flex-col-reverse items-center justify-around gap-8 md:flex-row md:justify-between md:gap-0">
           <div>
             <h3 className="pb-2 text-lg font-semibold tracking-wide">Vidik</h3>
-            <p className="text-primary w-2/3 pb-2 text-sm">
+            <p className="text-primary w-full pb-2 text-sm md:w-2/3">
               Providing insightful perspectives and thoughtful analysis on
               topics that matter.
             </p>
@@ -44,7 +44,7 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="w-1/3">
+          <div className="w-full md:w-1/3">
             <h3 className="pb-2 text-lg font-semibold tracking-wide">
               Quick Links
             </h3>
@@ -75,7 +75,7 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-          <div className="w-1/3">
+          <div className="w-full md:w-1/3">
             <h3 className="pb-2 text-lg font-semibold tracking-wide">
               Kontakt & Podpora
             </h3>

@@ -13,6 +13,7 @@ import {
 import { getHomeArticles } from "~/lib/services/ranking";
 import { PeopleCard } from "~/components/people-card";
 import { EconomyCard } from "~/components/economy-card";
+import { useMediaQuery } from "~/hooks/use-media-query";
 
 export function meta({}: Route.MetaArgs) {
   return getSeoMetas({
@@ -39,35 +40,42 @@ export async function loader({ context }: Route.LoaderArgs) {
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { articles, gdpSeries, inflationSeries } = loaderData;
 
+  const reverseAll = useMediaQuery("(min-width: 64rem)");
+
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 px-6 sm:grid-cols-2 lg:grid-cols-3">
       <HeroArticles articles={articles} />
-      <VidikBanner type={VidikBannerType.POLITICS} />
+
       <CategorySection
         articles={categoryArticles}
         dividerText="POLITIKA"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
+        reverse={!reverseAll}
       />
+
       <CategorySection
         articles={categoryArticles}
         dividerText="GOSPODARSTVO"
-        reverse
         sideSection={
           <EconomyCard
             gdpSeries={gdpSeries}
             inflationSeries={inflationSeries}
           />
         }
+        reverse
       />
+
       <CategorySection
         articles={categoryArticles}
         dividerText="ŠPORT"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
+        reverse={!reverseAll}
       />
+
       <CategorySection
         articles={categoryArticles}
         dividerText="TEHNOLOGIJA & ZNANOST"
@@ -76,46 +84,50 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
       />
-      <VidikBanner type={VidikBannerType.SWIPE} />
+
       <CategorySection
         articles={categoryArticles}
         dividerText="KRIMINAL"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
+        reverse={!reverseAll}
       />
 
-      <VidikBanner type={VidikBannerType.DONATE} />
       <CategorySection
         articles={categoryArticles}
         dividerText="KULTURA"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
+        reverse
       />
+
       <CategorySection
         articles={categoryArticles}
         dividerText="ZDRAVJE"
-        reverse
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
+        reverse={!reverseAll}
       />
-      <VidikBanner type={VidikBannerType.CONTACT} />
+
       <CategorySection
         articles={categoryArticles}
         dividerText="OKOLJE"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
+        reverse
       />
+
       <CategorySection
         articles={categoryArticles}
         dividerText="LOKALNO"
-        reverse
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
+        reverse={!reverseAll}
       />
     </div>
   );
