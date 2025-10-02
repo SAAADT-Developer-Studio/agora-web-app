@@ -24,10 +24,10 @@ export function Article({
         }}
       >
         <div className="text-vidikwhite flex h-full w-full flex-col items-center justify-between rounded-md [background-image:linear-gradient(to_top,rgba(0,0,0,0.8)_0%,rgba(0,0,0,0.6)_37%,rgba(0,0,0,0)_100%)] text-2xl font-bold">
-          <div className="flex h-8 w-[96%] items-center justify-between">
+          <div className="flex h-8 w-full items-center justify-between p-2">
             {showTags && <Tag text={tags[0]} />}
           </div>
-          <div className="flex w-[96%] flex-col items-start justify-center py-2">
+          <div className="flex w-full flex-col items-start justify-center p-2">
             <p className="p-sm py-2">{title}</p>
             <CoverageBar
               leftPercent={leftPercent}
