@@ -25,7 +25,7 @@ export default function ArticleBig({
         }}
       >
         <link rel="preload" as="image" fetchPriority="high" href={image.src} />
-        <div className="text-vidikwhite flex h-full w-full flex-col items-center justify-between rounded-md [background-image:linear-gradient(to_top,rgba(0,0,0,0.6)_0%,rgba(0,0,0,0.5)_15%,rgba(0,0,0,0)_50%)] text-3xl font-bold">
+        <div className="text-vidikwhite flex h-full w-full flex-col items-center justify-between rounded-md [background-image:linear-gradient(to_top,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.55)_15%,rgba(0,0,0,0)_50%)] text-3xl font-bold">
           <div className="flex h-10 w-[98%] items-center justify-between">
             <div className="flex gap-2">
               {tags.map((tag) => (
