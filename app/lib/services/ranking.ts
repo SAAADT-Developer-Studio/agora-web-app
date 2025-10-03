@@ -24,6 +24,9 @@ const articleCount = sql<number>`count(${article.id})`.as("article_count");
 const recencyScore = sql<number>`count(${article.id})`.as("recency_score");
 // const rankScore = sql<number>`avg(${article.rank})`.as("rank_score");
 
+const articleCountExpr = sql<number>`count(${article.id})`;
+const recencyScoreExpr = sql<number>`count(${article.id})`;
+
 export async function getHomeArticles({
   count,
 }: {
@@ -34,17 +37,14 @@ export async function getHomeArticles({
   const topClusterIds = await db
     .select({
       id: cluster.id,
-      article_count: articleCount,
+      article_count: articleCountExpr.as("article_count"),
+      recency_score: recencyScoreExpr.as("recency_score"),
     })
     .from(cluster)
     .leftJoin(article, eq(cluster.id, article.clusterId))
     .groupBy(cluster.id)
-    .orderBy(
-      desc(
-        // final_score = 0.4 * size_score + 0.3 * recency_score + 0.3 * rank_score
-        sql`${articleCount} * ${0.4} + ${recencyScore} * ${0.3}`, // + ${rankScore} * 0.3`,
-      ),
-    )
+    .orderBy(desc(sql`${articleCountExpr} * 0.4 + ${recencyScoreExpr} * 0.3`))
+
     .limit(count);
   return await common(db, topClusterIds);
 }
@@ -60,18 +60,15 @@ export async function getCategoryArticles({
   const topClusterIds = await db
     .select({
       id: cluster.id,
-      article_count: articleCount,
+      article_count: articleCountExpr.as("article_count"),
+      recency_score: recencyScoreExpr.as("recency_score"),
     })
     .from(cluster)
     .leftJoin(article, eq(cluster.id, article.clusterId))
     .where(sql`${category} = ANY(${article.categories})`)
     .groupBy(cluster.id)
-    .orderBy(
-      desc(
-        // final_score = 0.4 * size_score + 0.3 * recency_score + 0.3 * rank_score
-        sql`${articleCount} * ${0.4} + ${recencyScore} * ${0.3}`, // + ${rankScore} * 0.3`,
-      ),
-    )
+    .orderBy(desc(sql`${articleCountExpr} * 0.4 + ${recencyScoreExpr} * 0.3`))
+
     .limit(count);
   return await common(db, topClusterIds);
 }

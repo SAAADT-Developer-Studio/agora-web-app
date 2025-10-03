@@ -30,16 +30,45 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const [home, politika, gospodarstvo] = await Promise.all([
+  const [
+    home,
+    politika,
+    gospodarstvo,
+    sport,
+    tehnologijaZnanost,
+    kriminal,
+    kultura,
+    zdravje,
+    okolje,
+    lokalno,
+  ] = await Promise.all([
     getHomeArticles({ count: 6 }),
     getCategoryArticles({ count: 4, category: "politika" }),
     getCategoryArticles({ count: 4, category: "gospodarstvo" }),
+    getCategoryArticles({ count: 4, category: "sport" }),
+    getCategoryArticles({ count: 4, category: "tehnologija-znanost" }),
+    getCategoryArticles({ count: 4, category: "kriminal" }),
+    getCategoryArticles({ count: 4, category: "kultura" }),
+    getCategoryArticles({ count: 4, category: "zdravje" }),
+    getCategoryArticles({ count: 4, category: "okolje" }),
+    getCategoryArticles({ count: 4, category: "lokalno" }),
   ]);
   const gdpSeries = fetchSloveniaGDP();
   const inflationSeries = fetchInflationMonthlyYoY_SI();
 
   return {
-    articles: { home, politika, gospodarstvo },
+    articles: {
+      home,
+      politika,
+      gospodarstvo,
+      sport,
+      tehnologijaZnanost,
+      kriminal,
+      kultura,
+      zdravje,
+      okolje,
+      lokalno,
+    },
     gdpSeries,
     inflationSeries,
   };
@@ -76,7 +105,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.sport}
         dividerText="ŠPORT"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -85,7 +114,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.tehnologijaZnanost}
         dividerText="TEHNOLOGIJA & ZNANOST"
         reverse
         sideSection={
@@ -94,7 +123,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.kriminal}
         dividerText="KRIMINAL"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -103,7 +132,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.kultura}
         dividerText="KULTURA"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -112,7 +141,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.zdravje}
         dividerText="ZDRAVJE"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -121,7 +150,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.okolje}
         dividerText="OKOLJE"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -130,7 +159,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.lokalno}
         dividerText="LOKALNO"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
