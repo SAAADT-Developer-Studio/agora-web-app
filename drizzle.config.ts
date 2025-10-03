@@ -4,7 +4,7 @@ import { parse } from "pg-connection-string";
 
 const { database, host, port, password, user } = parse(process.env.DB_URL!);
 
-export default defineConfig({
+let config = defineConfig({
   out: "./app/drizzle",
   dialect: "postgresql",
   dbCredentials: {
@@ -20,3 +20,18 @@ export default defineConfig({
     },
   },
 });
+
+if (process.env.SEED) {
+  console.log("Seeding mode - using local database");
+  // define a push based schema, so that the pulled production schema can be applied to the local db
+  config = defineConfig({
+    dialect: "postgresql",
+    schema: "./app/drizzle/schema.ts",
+    out: "./app/drizzle",
+    dbCredentials: {
+      url: process.env.WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE!,
+    },
+  });
+}
+
+export default config;

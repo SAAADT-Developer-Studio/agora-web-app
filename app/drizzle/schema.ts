@@ -26,6 +26,7 @@ export const article = pgTable("article", {
 	summary: varchar(),
 	clusterId: integer("cluster_id"),
 	imageUrls: varchar("image_urls").array(),
+	categories: varchar().array(),
 }, (table) => [
 	foreignKey({
 			columns: [table.clusterId],
