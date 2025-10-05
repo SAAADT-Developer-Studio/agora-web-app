@@ -20,12 +20,17 @@ export type ArticleType = {
   numberOfArticles: number;
 };
 
-const articleCount = sql<number>`count(${article.id})`.as("article_count");
-const recencyScore = sql<number>`count(${article.id})`.as("recency_score");
-// const rankScore = sql<number>`avg(${article.rank})`.as("rank_score");
+// Decay constant: articles lose ~63% relevance every 12 hours
+// Formula: exp(-hours_since_publication / 12)
+const RECENCY_DECAY_HOURS = 12;
 
-const articleCountExpr = sql<number>`count(${article.id})`;
-const recencyScoreExpr = sql<number>`count(${article.id})`;
+const recencyScoreExpr = sql<number>`
+  avg(
+    exp(
+      -extract(epoch from (now() - ${article.publishedAt}::timestamptz)) / 3600 / ${RECENCY_DECAY_HOURS}
+    )
+  )
+`;
 
 export async function getHomeArticles({
   count,
@@ -34,19 +39,44 @@ export async function getHomeArticles({
 }): Promise<ArticleType[]> {
   const db = await getDb();
 
-  const topClusterIds = await db
-    .select({
-      id: cluster.id,
-      article_count: articleCountExpr.as("article_count"),
-      recency_score: recencyScoreExpr.as("recency_score"),
-    })
-    .from(cluster)
-    .leftJoin(article, eq(cluster.id, article.clusterId))
-    .groupBy(cluster.id)
-    .orderBy(desc(sql`${articleCountExpr} * 0.4 + ${recencyScoreExpr} * 0.3`))
+  const topClusterIds = await db.execute(sql`
+    WITH cluster_scores AS (
+      SELECT
+        ${cluster.id} as id,
+        count(${article.id}) as article_count,
+        ${recencyScoreExpr} as recency_score
+      FROM ${cluster}
+      INNER JOIN ${article} ON ${cluster.id} = ${article.clusterId}
+      GROUP BY ${cluster.id}
+      HAVING count(${article.id}) > 0
+    ),
+    normalized_scores AS (
+      SELECT
+        id,
+        article_count,
+        recency_score,
+        CASE
+          WHEN MAX(article_count) OVER () > 0
+          THEN article_count::float / MAX(article_count) OVER ()
+          ELSE 0
+        END as article_count_score
+      FROM cluster_scores
+    )
+    SELECT
+      id,
+      article_count,
+      article_count_score,
+      recency_score,
+      (article_count_score * 0.5 + recency_score * 0.3) as combined_score
+    FROM normalized_scores
+    ORDER BY combined_score DESC
+    LIMIT ${count}
+  `);
 
-    .limit(count);
-  return await common(db, topClusterIds);
+  return await common(
+    db,
+    topClusterIds.rows as { id: number; article_count: number }[],
+  );
 }
 
 export async function getCategoryArticles({
@@ -57,20 +87,47 @@ export async function getCategoryArticles({
   count: number;
 }): Promise<ArticleType[]> {
   const db = await getDb();
-  const topClusterIds = await db
-    .select({
-      id: cluster.id,
-      article_count: articleCountExpr.as("article_count"),
-      recency_score: recencyScoreExpr.as("recency_score"),
-    })
-    .from(cluster)
-    .leftJoin(article, eq(cluster.id, article.clusterId))
-    .where(sql`${category} = ANY(${article.categories})`)
-    .groupBy(cluster.id)
-    .orderBy(desc(sql`${articleCountExpr} * 0.4 + ${recencyScoreExpr} * 0.3`))
 
-    .limit(count);
-  return await common(db, topClusterIds);
+  // First, get the normalized scores using a subquery
+  const topClusterIds = await db.execute(sql`
+    WITH cluster_scores AS (
+      SELECT
+        ${cluster.id} as id,
+        count(${article.id}) as article_count,
+        ${recencyScoreExpr} as recency_score
+      FROM ${cluster}
+      INNER JOIN ${article} ON ${cluster.id} = ${article.clusterId}
+      WHERE ${category} = ANY(${article.categories})
+      GROUP BY ${cluster.id}
+      HAVING count(${article.id}) > 0
+    ),
+    normalized_scores AS (
+      SELECT
+        id,
+        article_count,
+        recency_score,
+        CASE
+          WHEN MAX(article_count) OVER () > 0
+          THEN article_count::float / MAX(article_count) OVER ()
+          ELSE 0
+        END as article_count_score
+      FROM cluster_scores
+    )
+    SELECT
+      id,
+      article_count,
+      article_count_score,
+      recency_score,
+      (article_count_score * 0.5 + recency_score * 0.3) as combined_score
+    FROM normalized_scores
+    ORDER BY combined_score DESC
+    LIMIT ${count}
+  `);
+
+  return await common(
+    db,
+    topClusterIds.rows as { id: number; article_count: number }[],
+  );
 }
 
 async function common(
