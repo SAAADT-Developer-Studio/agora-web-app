@@ -105,30 +105,39 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={articles.sport}
-        dividerText="ŠPORT"
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-        reverse={!reverseAll}
-      />
-
-      <CategorySection
-        articles={articles.tehnologijaZnanost}
-        dividerText="TEHNOLOGIJA & ZNANOST"
-        reverse
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-      />
-
-      <CategorySection
         articles={articles.kriminal}
         dividerText="KRIMINAL"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
         reverse={!reverseAll}
+      />
+
+      <CategorySection
+        articles={articles.lokalno}
+        dividerText="LOKALNO"
+        sideSection={
+          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
+        }
+        reverse={!reverseAll}
+      />
+
+      <CategorySection
+        articles={articles.sport}
+        dividerText="ŠPORT"
+        sideSection={
+          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
+        }
+        reverse
+      />
+
+      <CategorySection
+        articles={articles.tehnologijaZnanost}
+        dividerText="TEHNOLOGIJA & ZNANOST"
+        reverse={!reverseAll}
+        sideSection={
+          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
+        }
       />
 
       <CategorySection
@@ -156,15 +165,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
         reverse
-      />
-
-      <CategorySection
-        articles={articles.lokalno}
-        dividerText="LOKALNO"
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-        reverse={!reverseAll}
       />
     </div>
   );
