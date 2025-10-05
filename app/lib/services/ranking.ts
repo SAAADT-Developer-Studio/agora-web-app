@@ -21,12 +21,12 @@ export type ArticleType = {
 };
 
 const CATEGORY_PRIORITY = {
-  politika: 7,
+  politika: 6,
   gospodarstvo: 6,
   kriminal: 5,
-  lokalno: 4,
-  sport: 3,
-  "tehnologija-znanost": 3,
+  lokalno: 5,
+  "tehnologija-znanost": 4,
+  sport: 2,
   kultura: 2,
   zdravje: 1,
   okolje: 1,
@@ -102,7 +102,7 @@ export async function getHomeArticles({
       article_count_score,
       recency_score,
       category_score,
-      (article_count_score * 0.5 + recency_score * 0.3 + category_score * 0.3) as combined_score
+      (article_count_score * 0.4 + recency_score * 0.3 + category_score * 0.3) as combined_score
     FROM normalized_scores
     ORDER BY combined_score DESC
     LIMIT ${count}
