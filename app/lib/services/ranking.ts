@@ -20,6 +20,20 @@ export type ArticleType = {
   numberOfArticles: number;
 };
 
+const CATEGORY_PRIORITY = {
+  politika: 7,
+  gospodarstvo: 6,
+  kriminal: 5,
+  lokalno: 4,
+  sport: 3,
+  "tehnologija-znanost": 3,
+  kultura: 2,
+  zdravje: 1,
+  okolje: 1,
+} as const;
+
+const MAX_CATEGORY_PRIORITY = Math.max(...Object.values(CATEGORY_PRIORITY));
+
 // Decay constant: articles lose ~63% relevance every 12 hours
 // Formula: exp(-hours_since_publication / 12)
 const RECENCY_DECAY_HOURS = 12;
@@ -30,6 +44,24 @@ const recencyScoreExpr = sql<number>`
       -extract(epoch from (now() - ${article.publishedAt}::timestamptz)) / 3600 / ${RECENCY_DECAY_HOURS}
     )
   )
+`;
+
+// Category score: average priority of first category across articles, normalized by max priority
+const categoryScoreExpr = sql<number>`
+  avg(
+    CASE ${article.categories}[1]
+      WHEN 'politika' THEN ${CATEGORY_PRIORITY.politika}
+      WHEN 'gospodarstvo' THEN ${CATEGORY_PRIORITY.gospodarstvo}
+      WHEN 'kriminal' THEN ${CATEGORY_PRIORITY.kriminal}
+      WHEN 'lokalno' THEN ${CATEGORY_PRIORITY.lokalno}
+      WHEN 'sport' THEN ${CATEGORY_PRIORITY.sport}
+      WHEN 'tehnologija-znanost' THEN ${CATEGORY_PRIORITY["tehnologija-znanost"]}
+      WHEN 'kultura' THEN ${CATEGORY_PRIORITY.kultura}
+      WHEN 'zdravje' THEN ${CATEGORY_PRIORITY.zdravje}
+      WHEN 'okolje' THEN ${CATEGORY_PRIORITY.okolje}
+      ELSE 0
+    END
+  ) / ${MAX_CATEGORY_PRIORITY}
 `;
 
 export async function getHomeArticles({
@@ -44,7 +76,8 @@ export async function getHomeArticles({
       SELECT
         ${cluster.id} as id,
         count(${article.id}) as article_count,
-        ${recencyScoreExpr} as recency_score
+        ${recencyScoreExpr} as recency_score,
+        ${categoryScoreExpr} as category_score
       FROM ${cluster}
       INNER JOIN ${article} ON ${cluster.id} = ${article.clusterId}
       GROUP BY ${cluster.id}
@@ -55,6 +88,7 @@ export async function getHomeArticles({
         id,
         article_count,
         recency_score,
+        category_score,
         CASE
           WHEN MAX(article_count) OVER () > 0
           THEN article_count::float / MAX(article_count) OVER ()
@@ -67,7 +101,8 @@ export async function getHomeArticles({
       article_count,
       article_count_score,
       recency_score,
-      (article_count_score * 0.5 + recency_score * 0.3) as combined_score
+      category_score,
+      (article_count_score * 0.5 + recency_score * 0.3 + category_score * 0.3) as combined_score
     FROM normalized_scores
     ORDER BY combined_score DESC
     LIMIT ${count}
@@ -94,10 +129,11 @@ export async function getCategoryArticles({
       SELECT
         ${cluster.id} as id,
         count(${article.id}) as article_count,
-        ${recencyScoreExpr} as recency_score
+        ${recencyScoreExpr} as recency_score,
+        ${categoryScoreExpr} as category_score
       FROM ${cluster}
       INNER JOIN ${article} ON ${cluster.id} = ${article.clusterId}
-      WHERE ${category} = ANY(${article.categories})
+      WHERE ${category} = ${article.categories}[1]
       GROUP BY ${cluster.id}
       HAVING count(${article.id}) > 0
     ),
@@ -106,6 +142,7 @@ export async function getCategoryArticles({
         id,
         article_count,
         recency_score,
+        category_score,
         CASE
           WHEN MAX(article_count) OVER () > 0
           THEN article_count::float / MAX(article_count) OVER ()
@@ -118,7 +155,8 @@ export async function getCategoryArticles({
       article_count,
       article_count_score,
       recency_score,
-      (article_count_score * 0.5 + recency_score * 0.3) as combined_score
+      category_score,
+      (article_count_score * 0.5 + recency_score * 0.3 + category_score * 0.2) as combined_score
     FROM normalized_scores
     ORDER BY combined_score DESC
     LIMIT ${count}
@@ -169,7 +207,7 @@ async function common(
         src: imgSrc,
         alt: "Placeholder Image 1",
       },
-      tags: Array.from(tags),
+      tags: Array.from(tags).slice(0, 3), // this is majorly fucked, so fix it later
       leftPercent: 33,
       rightPercent: 33,
       centerPercent: 34,
