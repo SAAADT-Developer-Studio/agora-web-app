@@ -102,7 +102,7 @@ export async function getHomeArticles({
       article_count_score,
       recency_score,
       category_score,
-      (article_count_score * 0.4 + recency_score * 0.3 + category_score * 0.3) as combined_score
+      (article_count_score * 0.4 + recency_score * 0.2 + category_score * 0.3) as combined_score
     FROM normalized_scores
     ORDER BY combined_score DESC
     LIMIT ${count}
