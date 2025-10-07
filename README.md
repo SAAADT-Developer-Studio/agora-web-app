@@ -67,5 +67,5 @@ Sync the production database schema with /app/drizzle/schema.ts with this comman
 
 ```bash
 # pull database schema
-pnpx drizzle-kit pull
+npx drizzle-kit pull
 ```
