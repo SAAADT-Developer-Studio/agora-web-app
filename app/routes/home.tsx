@@ -10,7 +10,7 @@ import {
   fetchInflationMonthlyYoY_SI,
   fetchSloveniaGDP,
 } from "~/lib/services/external";
-import { getHomeArticles } from "~/lib/services/ranking";
+import { getCategoryArticles, getHomeArticles } from "~/lib/services/ranking";
 import { PeopleCard } from "~/components/people-card";
 import { EconomyCard } from "~/components/economy-card";
 import { useMediaQuery } from "~/hooks/use-media-query";
@@ -30,11 +30,48 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const articles = await getHomeArticles();
+  const [
+    home,
+    politika,
+    gospodarstvo,
+    sport,
+    tehnologijaZnanost,
+    kriminal,
+    kultura,
+    zdravje,
+    okolje,
+    lokalno,
+  ] = await Promise.all([
+    getHomeArticles({ count: 6 }),
+    getCategoryArticles({ count: 4, category: "politika" }),
+    getCategoryArticles({ count: 4, category: "gospodarstvo" }),
+    getCategoryArticles({ count: 4, category: "sport" }),
+    getCategoryArticles({ count: 4, category: "tehnologija-znanost" }),
+    getCategoryArticles({ count: 4, category: "kriminal" }),
+    getCategoryArticles({ count: 4, category: "kultura" }),
+    getCategoryArticles({ count: 4, category: "zdravje" }),
+    getCategoryArticles({ count: 4, category: "okolje" }),
+    getCategoryArticles({ count: 4, category: "lokalno" }),
+  ]);
   const gdpSeries = fetchSloveniaGDP();
   const inflationSeries = fetchInflationMonthlyYoY_SI();
 
-  return { articles, gdpSeries, inflationSeries };
+  return {
+    articles: {
+      home,
+      politika,
+      gospodarstvo,
+      sport,
+      tehnologijaZnanost,
+      kriminal,
+      kultura,
+      zdravje,
+      okolje,
+      lokalno,
+    },
+    gdpSeries,
+    inflationSeries,
+  };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
@@ -44,10 +81,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="grid grid-cols-1 gap-3 px-3 sm:grid-cols-2 md:gap-6 md:px-6 lg:grid-cols-3">
-      <HeroArticles articles={articles} />
+      <HeroArticles articles={articles.home} />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.politika}
         dividerText="POLITIKA"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -56,7 +93,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.gospodarstvo}
         dividerText="GOSPODARSTVO"
         sideSection={
           <EconomyCard
@@ -68,25 +105,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
-        dividerText="ŠPORT"
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-        reverse={!reverseAll}
-      />
-
-      <CategorySection
-        articles={categoryArticles}
-        dividerText="TEHNOLOGIJA & ZNANOST"
-        reverse
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-      />
-
-      <CategorySection
-        articles={categoryArticles}
+        articles={articles.kriminal}
         dividerText="KRIMINAL"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -95,7 +114,34 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.lokalno}
+        dividerText="LOKALNO"
+        sideSection={
+          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
+        }
+        reverse={!reverseAll}
+      />
+
+      <CategorySection
+        articles={articles.sport}
+        dividerText="ŠPORT"
+        sideSection={
+          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
+        }
+        reverse
+      />
+
+      <CategorySection
+        articles={articles.tehnologijaZnanost}
+        dividerText="TEHNOLOGIJA & ZNANOST"
+        reverse={!reverseAll}
+        sideSection={
+          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
+        }
+      />
+
+      <CategorySection
+        articles={articles.kultura}
         dividerText="KULTURA"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -104,7 +150,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.zdravje}
         dividerText="ZDRAVJE"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -113,21 +159,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={categoryArticles}
+        articles={articles.okolje}
         dividerText="OKOLJE"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
         reverse
-      />
-
-      <CategorySection
-        articles={categoryArticles}
-        dividerText="LOKALNO"
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-        reverse={!reverseAll}
       />
     </div>
   );
