@@ -14,4 +14,5 @@ export default [
     route("article/:articleId", "./routes/article.tsx"),
     route(":category", "./routes/category.tsx"),
   ]),
+  route("sitemap.xml", "./routes/sitemap.ts"),
 ] satisfies RouteConfig;
