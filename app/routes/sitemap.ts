@@ -12,33 +12,24 @@ export async function loader({ request }: Route.LoaderArgs) {
   const db = await getDb();
   const sitemap = new Sitemap();
 
-  // let lastArticleDate = articles.at(0)?.createdAt ?? new Date();
-  // let lastTutorialDate = tutorials.at(0)?.createdAt ?? new Date();
-  // let lastBookmarkDate = bookmarks.at(0)?.createdAt ?? new Date();
-
-  // let lastPostDate = new Date(
-  // 	Math.max(
-  // 		lastArticleDate.getTime(),
-  // 		lastTutorialDate.getTime(),
-  // 		lastBookmarkDate.getTime(),
-  // 	),
-  // );
-
+  // TODO: compute the dates properly
   sitemap.append(new URL(href("/"), url), new Date());
   for (const category of config.categories) {
     sitemap.append(new URL(category.path, url), new Date());
   }
+
+  const clusters = await db.query.cluster.findMany({ columns: { id: true } });
+  for (const cluster of clusters) {
+    sitemap.append(
+      new URL(
+        href("/article/:articleId", { articleId: cluster.id.toString() }),
+        url,
+      ),
+      new Date(),
+    );
+  }
+
   // sitemap.append(new URL(href("/articles"), url), lastArticleDate);
-  // sitemap.append(new URL(href("/tutorials"), url), lastTutorialDate);
-  // sitemap.append(new URL(href("/bookmarks"), url), lastBookmarkDate);
-
-  // for (let article of articles) {
-  // 	sitemap.append(new URL(article.pathname, url), article.createdAt);
-  // }
-
-  // for (let tutorial of tutorials) {
-  // 	sitemap.append(new URL(tutorial.pathname, url), tutorial.createdAt);
-  // }
 
   return xml(sitemap.toString());
 }
