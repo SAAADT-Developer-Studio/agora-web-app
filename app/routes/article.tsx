@@ -163,7 +163,10 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                 src={heroImage || "/placeholder.svg"}
                 alt={cluster.title}
                 className="h-auto w-full object-cover"
-                style={{ aspectRatio: "16/9" }}
+                style={{
+                  aspectRatio: "16/9",
+                  viewTransitionName: "article-image",
+                }}
               />
             </div>
           </figure>

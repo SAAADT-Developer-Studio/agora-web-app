@@ -17,11 +17,12 @@ export default function ArticleBig({
   const imageUrl = image.src;
 
   return (
-    <Link to={`/article/${id}`} className="contents w-full">
+    <Link to={`/article/${id}`} className="contents w-full" viewTransition>
       <article
         className="border-vidikdarkgray border-px flex h-[300px] w-full cursor-pointer flex-col gap-4 rounded-md bg-cover bg-center transition-transform duration-300 hover:scale-[1.01] sm:col-span-2 sm:row-span-2 md:h-[500px] dark:border-0"
         style={{
           backgroundImage: `url(${imageUrl})`,
+          viewTransitionName: "article-image",
         }}
       >
         <link rel="preload" as="image" fetchPriority="high" href={image.src} />
