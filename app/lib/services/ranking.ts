@@ -76,6 +76,7 @@ export async function getHomeArticles({
       SELECT
         ${cluster.id} as id,
         count(${article.id}) as article_count,
+        sum(${article.llmRank}) as sum_llm_rank,
         ${recencyScoreExpr} as recency_score,
         ${categoryScoreExpr} as category_score
       FROM ${cluster}
@@ -90,19 +91,19 @@ export async function getHomeArticles({
         recency_score,
         category_score,
         CASE
-          WHEN MAX(article_count) OVER () > 0
-          THEN article_count::float / MAX(article_count) OVER ()
+          WHEN MAX(sum_llm_rank) OVER () > 0
+          THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
           ELSE 0
-        END as article_count_score
+        END as cluster_llm_rank_score
       FROM cluster_scores
     )
     SELECT
       id,
       article_count,
-      article_count_score,
+      cluster_llm_rank_score,
       recency_score,
       category_score,
-      (article_count_score * 0.4 + recency_score * 0.2 + category_score * 0.3) as combined_score
+      (cluster_llm_rank_score * 0.4 + recency_score * 0.2 + category_score * 0.3) as combined_score
     FROM normalized_scores
     ORDER BY combined_score DESC
     LIMIT ${count}
@@ -129,6 +130,7 @@ export async function getCategoryArticles({
       SELECT
         ${cluster.id} as id,
         count(${article.id}) as article_count,
+        sum(${article.llmRank}) as sum_llm_rank,
         ${recencyScoreExpr} as recency_score,
         ${categoryScoreExpr} as category_score
       FROM ${cluster}
@@ -144,19 +146,19 @@ export async function getCategoryArticles({
         recency_score,
         category_score,
         CASE
-          WHEN MAX(article_count) OVER () > 0
-          THEN article_count::float / MAX(article_count) OVER ()
+          WHEN MAX(sum_llm_rank) OVER () > 0
+          THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
           ELSE 0
-        END as article_count_score
+        END as cluster_llm_rank_score
       FROM cluster_scores
     )
     SELECT
       id,
       article_count,
-      article_count_score,
+      cluster_llm_rank_score,
       recency_score,
       category_score,
-      (article_count_score * 0.5 + recency_score * 0.3 + category_score * 0.2) as combined_score
+      (cluster_llm_rank_score * 0.5 + recency_score * 0.3 + category_score * 0.2) as combined_score
     FROM normalized_scores
     ORDER BY combined_score DESC
     LIMIT ${count}
