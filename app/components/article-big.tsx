@@ -9,9 +9,7 @@ export default function ArticleBig({
   image,
   title,
   tags,
-  leftPercent,
-  centerPercent,
-  rightPercent,
+  biasDistribution,
   numberOfArticles,
   providerKeys,
 }: ArticleType) {
@@ -46,11 +44,7 @@ export default function ArticleBig({
               />
             </div>
 
-            <CoverageBarBig
-              leftPercent={leftPercent}
-              centerPercent={centerPercent}
-              rightPercent={rightPercent}
-            />
+            <CoverageBarBig {...biasDistribution} />
           </div>
         </div>
       </article>

@@ -13,9 +13,11 @@ export type ArticleType = {
   title: string;
   image: Image;
   tags: string[];
-  leftPercent: number;
-  rightPercent: number;
-  centerPercent: number;
+  biasDistribution: {
+    leftPercent: number;
+    centerPercent: number;
+    rightPercent: number;
+  };
   showTags?: boolean;
   numberOfArticles: number;
   providerKeys: string[];
@@ -198,14 +200,35 @@ async function common(
       c.articles.find((a) => a.imageUrls && a.imageUrls.length > 0)
         ?.imageUrls?.[0] ?? fallbackArticleImage;
 
-    const providerKeys = new Set(c.articles.map((a) => a.newsProvider.key));
-
     const tags = new Set(
       c.articles
         .map((a) => a.categories)
         .filter((c) => c !== null)
         .flat(),
     );
+
+    const totalCount = c.articles.filter(
+      (a) => a.newsProvider.biasRating !== null,
+    ).length;
+
+    const leftCount = c.articles.filter(
+      (a) =>
+        a.newsProvider.biasRating &&
+        ["left", "center-left"].includes(a.newsProvider.biasRating),
+    ).length;
+
+    const centerCount = c.articles.filter(
+      (a) => a.newsProvider.biasRating === "center",
+    ).length;
+
+    const rightCount = c.articles.filter(
+      (a) =>
+        a.newsProvider.biasRating &&
+        ["right", "center-right"].includes(a.newsProvider.biasRating),
+    ).length;
+
+    const providerKeys = new Set(c.articles.map((a) => a.newsProvider.key));
+
     return {
       id: c.id.toString(),
       title: c.title,
@@ -214,9 +237,14 @@ async function common(
         alt: "Placeholder Image 1",
       },
       tags: Array.from(tags).slice(0, 3), // this is majorly fucked, so fix it later
-      leftPercent: 33,
-      rightPercent: 33,
-      centerPercent: 34,
+      biasDistribution: {
+        leftPercent:
+          totalCount > 0 ? Math.round((leftCount / totalCount) * 100) : 0,
+        rightPercent:
+          totalCount > 0 ? Math.round((rightCount / totalCount) * 100) : 0,
+        centerPercent:
+          totalCount > 0 ? Math.round((centerCount / totalCount) * 100) : 0,
+      },
       showTags: true,
       numberOfArticles: c.articles.length,
       providerKeys: Array.from(providerKeys),

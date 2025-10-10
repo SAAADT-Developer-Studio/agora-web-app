@@ -4,7 +4,6 @@ import { VidikBanner, VidikBannerType } from "~/components/vidik-banner";
 import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
 import { getSeoMetas } from "~/lib/seo";
-import { categoryArticles } from "~/mocks/categoryArticles";
 import { dummyPeople } from "~/mocks/people";
 import {
   fetchInflationMonthlyYoY_SI,
