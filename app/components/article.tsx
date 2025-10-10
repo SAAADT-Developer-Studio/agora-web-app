@@ -41,6 +41,15 @@ export function Article({
             />
           </div>
         </div>
+        <div
+          className={cn(
+            "absolute top-1.5 right-1.5 flex scale-[0.99] items-center gap-1 rounded bg-black/50 px-1 text-sm text-white opacity-0 transition duration-300",
+            "group-hover:scale-[1] group-hover:opacity-100",
+          )}
+        >
+          <Newspaper className="size-3" />
+          {numberOfArticles}
+        </div>
       </article>
     </Link>
   );
