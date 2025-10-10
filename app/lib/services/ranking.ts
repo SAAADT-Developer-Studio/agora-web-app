@@ -18,6 +18,7 @@ export type ArticleType = {
   centerPercent: number;
   showTags?: boolean;
   numberOfArticles: number;
+  providerKeys: string[];
 };
 
 const CATEGORY_PRIORITY = {
@@ -182,6 +183,7 @@ async function common(
     with: {
       articles: {
         columns: { imageUrls: true, categories: true },
+        with: { newsProvider: true },
       },
     },
   });
@@ -195,6 +197,8 @@ async function common(
     const imgSrc =
       c.articles.find((a) => a.imageUrls && a.imageUrls.length > 0)
         ?.imageUrls?.[0] ?? fallbackArticleImage;
+
+    const providerKeys = new Set(c.articles.map((a) => a.newsProvider.key));
 
     const tags = new Set(
       c.articles
@@ -215,6 +219,7 @@ async function common(
       centerPercent: 34,
       showTags: true,
       numberOfArticles: c.articles.length,
+      providerKeys: Array.from(providerKeys),
     };
   });
 

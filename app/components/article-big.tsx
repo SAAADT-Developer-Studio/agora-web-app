@@ -13,6 +13,7 @@ export default function ArticleBig({
   centerPercent,
   rightPercent,
   numberOfArticles,
+  providerKeys,
 }: ArticleType) {
   const imageUrl = image.src;
 
@@ -39,8 +40,10 @@ export default function ArticleBig({
               <p className="md:p-lg w-full py-1 text-lg leading-5.5 md:w-[80%] md:py-6 md:leading-7">
                 {title}
               </p>
-              {/* TODO: rename */}
-              <Sources numberOfArticles={numberOfArticles} />
+              <Sources
+                numberOfArticles={numberOfArticles}
+                providerKeys={providerKeys}
+              />
             </div>
 
             <CoverageBarBig
