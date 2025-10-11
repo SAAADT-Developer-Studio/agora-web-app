@@ -32,7 +32,7 @@ export function headers(_: Route.HeadersArgs) {
   // TODO: compute maxage based on the last update, instead of having it hard coded to 10 minutes
   const maxAge = 10 * 60; // 10 minutes
   return {
-    "Cache-Control": `max-age=${maxAge}, stale-while-revalidate=${10 * 60}`,
+    "Cache-Control": `max-age=${maxAge}, s-maxage=${maxAge}, stale-while-revalidate=${10 * 60}`,
   };
 }
 
