@@ -32,29 +32,31 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
   );
 
+  const allCategories = cluster.articles.flatMap((a) => a.categories || []);
+  const uniqueCategories = Array.from(new Set(allCategories));
+
+  const heroImage =
+    cluster.articles.find((a) => a.imageUrls && a.imageUrls.length > 0)
+      ?.imageUrls?.[0] ?? fallbackArticleImage;
+
   return {
     cluster,
+    uniqueCategories,
+    heroImage,
   };
 }
 
 export default function ArticlePage({ loaderData }: Route.ComponentProps) {
-  const { cluster } = loaderData;
+  const { cluster, uniqueCategories, heroImage } = loaderData;
   console.log("Loaded cluster:", cluster);
 
   const dates = cluster.articles.map((a) => new Date(a.publishedAt));
   const oldestDate = new Date(Math.min(...dates.map((d) => d.getTime())));
   const newestDate = new Date(Math.max(...dates.map((d) => d.getTime())));
 
-  const allCategories = cluster.articles.flatMap((a) => a.categories || []);
-  const uniqueCategories = Array.from(new Set(allCategories));
-
   const uniqueProviders = Array.from(
     new Set(cluster.articles.map((a) => a.newsProviderKey)),
   );
-
-  const heroImage =
-    cluster.articles.find((a) => a.imageUrls && a.imageUrls.length > 0)
-      ?.imageUrls?.[0] ?? fallbackArticleImage;
 
   const biasDistribution = getBiasDistribution(cluster.articles);
   const providersMap = new Map(
@@ -72,7 +74,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
       <article className="mx-auto max-w-5xl px-4 py-4 md:px-6 md:py-6">
         <div className="text-muted-foreground mb-6 flex flex-wrap items-center gap-3 text-sm">
           <span className="font-mono tracking-wider">VIDIK</span>
-          {uniqueCategories.map((category) => (
+          {uniqueCategories.slice(0, 4).map((category) => (
             <>
               <span>•</span>
               <span className="capitalize">{category}</span>
@@ -86,7 +88,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
 
         <div className="mb-12 grid gap-6 md:grid-cols-3">
           <figure className="md:col-span-2">
-            <div className="bg-muted overflow-hidden rounded-lg">
+            <div className="bg-muted overflow-hidden rounded-lg border border-white/20">
               <img
                 src={heroImage ?? fallbackImage}
                 alt={cluster.title}
@@ -374,14 +376,15 @@ function ArticleBottomBanner({
 
 export function meta({ params, data }: Route.MetaArgs): Route.MetaDescriptors {
   const title = data.cluster.title;
-  const imageUrl =
-    "https://media.gettyimages.com/id/165088089/photo/the-word-news-under-a-magnifying-glass-among-stacks-of-paper.jpg?s=612x612&w=gi&k=20&c=o6Ni4rERiNG88MYs7ZSK-riEPOdftUTAgIjW9zGSodU=";
+  const imageUrl = data.heroImage;
+  const keywords = data.uniqueCategories.join(", ");
+
   return getSeoMetas({
     title,
-    description: "Article summary goes here.",
+    description: "Cluster summary goes here.",
     image: imageUrl,
     url: `https://vidik.si/article/${params.articleId}`,
-    // keywords: "vidik, article, news, slovenia",
+    keywords,
     ogType: "article",
   });
 }
