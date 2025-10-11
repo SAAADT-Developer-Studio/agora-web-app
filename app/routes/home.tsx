@@ -4,7 +4,6 @@ import { VidikBanner, VidikBannerType } from "~/components/vidik-banner";
 import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
 import { getSeoMetas } from "~/lib/seo";
-import { categoryArticles } from "~/mocks/categoryArticles";
 import { dummyPeople } from "~/mocks/people";
 import {
   fetchInflationMonthlyYoY_SI,
@@ -27,6 +26,14 @@ export function meta({}: Route.MetaArgs) {
       "vidik, novice, slovenija, aktualno, politika, gospodarstvo, šport, kriminal, kultura, zdravje, okolje, lokalno, news, slovenian news, slovenia news",
     ogType: "website",
   });
+}
+
+export function headers(_: Route.HeadersArgs) {
+  // TODO: compute maxage based on the last update, instead of having it hard coded to 10 minutes
+  const maxAge = 10 * 60; // 10 minutes
+  return {
+    "Cache-Control": `max-age=${maxAge}, stale-while-revalidate=${10 * 60}`,
+  };
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
@@ -78,6 +85,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const { articles, gdpSeries, inflationSeries } = loaderData;
 
   const reverseAll = useMediaQuery("(min-width: 64rem)");
+
+  console.log(articles);
 
   return (
     <div className="grid grid-cols-1 gap-3 px-3 sm:grid-cols-2 md:gap-6 md:px-6 lg:grid-cols-3">

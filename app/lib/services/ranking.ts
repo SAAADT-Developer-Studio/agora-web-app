@@ -1,11 +1,22 @@
 import { getDb } from "~/lib/db";
 import { article, cluster } from "~/drizzle/schema";
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import fallbackArticleImage from "~/assets/fallback.png";
+import { getBiasDistribution } from "~/utils/getBiasDistribution";
 
 export type Image = {
   src: string;
   alt: string;
+};
+
+export type BiasDistribution = {
+  leftPercent: number;
+  centerPercent: number;
+  rightPercent: number;
+  leftCount: number;
+  centerCount: number;
+  rightCount: number;
+  totalCount: number;
 };
 
 export type ArticleType = {
@@ -13,11 +24,10 @@ export type ArticleType = {
   title: string;
   image: Image;
   tags: string[];
-  leftPercent: number;
-  rightPercent: number;
-  centerPercent: number;
+  biasDistribution: BiasDistribution;
   showTags?: boolean;
   numberOfArticles: number;
+  providerKeys: string[];
 };
 
 const CATEGORY_PRIORITY = {
@@ -76,6 +86,7 @@ export async function getHomeArticles({
       SELECT
         ${cluster.id} as id,
         count(${article.id}) as article_count,
+        sum(${article.llmRank}) as sum_llm_rank,
         ${recencyScoreExpr} as recency_score,
         ${categoryScoreExpr} as category_score
       FROM ${cluster}
@@ -90,19 +101,19 @@ export async function getHomeArticles({
         recency_score,
         category_score,
         CASE
-          WHEN MAX(article_count) OVER () > 0
-          THEN article_count::float / MAX(article_count) OVER ()
+          WHEN MAX(sum_llm_rank) OVER () > 0
+          THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
           ELSE 0
-        END as article_count_score
+        END as cluster_llm_rank_score
       FROM cluster_scores
     )
     SELECT
       id,
       article_count,
-      article_count_score,
+      cluster_llm_rank_score,
       recency_score,
       category_score,
-      (article_count_score * 0.4 + recency_score * 0.2 + category_score * 0.3) as combined_score
+      (cluster_llm_rank_score * 0.4 + recency_score * 0.2 + category_score * 0.3) as combined_score
     FROM normalized_scores
     ORDER BY combined_score DESC
     LIMIT ${count}
@@ -129,6 +140,7 @@ export async function getCategoryArticles({
       SELECT
         ${cluster.id} as id,
         count(${article.id}) as article_count,
+        sum(${article.llmRank}) as sum_llm_rank,
         ${recencyScoreExpr} as recency_score,
         ${categoryScoreExpr} as category_score
       FROM ${cluster}
@@ -144,19 +156,19 @@ export async function getCategoryArticles({
         recency_score,
         category_score,
         CASE
-          WHEN MAX(article_count) OVER () > 0
-          THEN article_count::float / MAX(article_count) OVER ()
+          WHEN MAX(sum_llm_rank) OVER () > 0
+          THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
           ELSE 0
-        END as article_count_score
+        END as cluster_llm_rank_score
       FROM cluster_scores
     )
     SELECT
       id,
       article_count,
-      article_count_score,
+      cluster_llm_rank_score,
       recency_score,
       category_score,
-      (article_count_score * 0.5 + recency_score * 0.3 + category_score * 0.2) as combined_score
+      (cluster_llm_rank_score * 0.5 + recency_score * 0.3 + category_score * 0.2) as combined_score
     FROM normalized_scores
     ORDER BY combined_score DESC
     LIMIT ${count}
@@ -180,6 +192,7 @@ async function common(
     with: {
       articles: {
         columns: { imageUrls: true, categories: true },
+        with: { newsProvider: true },
       },
     },
   });
@@ -200,6 +213,11 @@ async function common(
         .filter((c) => c !== null)
         .flat(),
     );
+
+    const biasDistribution = getBiasDistribution(c.articles);
+
+    const providerKeys = new Set(c.articles.map((a) => a.newsProvider.key));
+
     return {
       id: c.id.toString(),
       title: c.title,
@@ -208,11 +226,10 @@ async function common(
         alt: "Placeholder Image 1",
       },
       tags: Array.from(tags).slice(0, 3), // this is majorly fucked, so fix it later
-      leftPercent: 33,
-      rightPercent: 33,
-      centerPercent: 34,
+      biasDistribution,
       showTags: true,
       numberOfArticles: c.articles.length,
+      providerKeys: Array.from(providerKeys),
     };
   });
 

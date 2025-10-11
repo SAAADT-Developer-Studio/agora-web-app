@@ -1,7 +1,7 @@
 import Tag from "./ui/tag";
 import CoverageBarBig from "./coverage-bar big";
 import { Sources } from "./sources";
-import { Link } from "react-router";
+import { href, Link } from "react-router";
 import type { ArticleType } from "~/lib/services/ranking";
 
 export default function ArticleBig({
@@ -9,19 +9,26 @@ export default function ArticleBig({
   image,
   title,
   tags,
-  leftPercent,
-  centerPercent,
-  rightPercent,
+  biasDistribution,
   numberOfArticles,
+  providerKeys,
 }: ArticleType) {
   const imageUrl = image.src;
 
   return (
-    <Link to={`/article/${id}`} className="contents w-full">
+    <Link
+      to={href("/:category/article/:articleId", {
+        category: tags[0].toLowerCase(),
+        articleId: id,
+      })}
+      className="contents w-full"
+      viewTransition
+    >
       <article
         className="border-vidikdarkgray border-px flex h-[300px] w-full cursor-pointer flex-col gap-4 rounded-md bg-cover bg-center transition-transform duration-300 hover:scale-[1.01] sm:col-span-2 sm:row-span-2 md:h-[500px] dark:border-0"
         style={{
           backgroundImage: `url(${imageUrl})`,
+          viewTransitionName: "article-image",
         }}
       >
         <link rel="preload" as="image" fetchPriority="high" href={image.src} />
@@ -38,15 +45,13 @@ export default function ArticleBig({
               <p className="md:p-lg w-full py-1 text-lg leading-5.5 md:w-[80%] md:py-6 md:leading-7">
                 {title}
               </p>
-              {/* TODO: rename */}
-              <Sources numberOfArticles={numberOfArticles} />
+              <Sources
+                numberOfArticles={numberOfArticles}
+                providerKeys={providerKeys}
+              />
             </div>
 
-            <CoverageBarBig
-              leftPercent={leftPercent}
-              centerPercent={centerPercent}
-              rightPercent={rightPercent}
-            />
+            <CoverageBarBig {...biasDistribution} />
           </div>
         </div>
       </article>
