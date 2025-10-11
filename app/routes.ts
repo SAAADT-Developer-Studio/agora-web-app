@@ -17,5 +17,6 @@ export default [
       index("./routes/category.tsx"),
       route("article/:articleId", "./routes/article.tsx"),
     ]),
+    ...prefix("api", [route("category/:category", "./routes/api/category.ts")]),
   ]),
 ] satisfies RouteConfig;

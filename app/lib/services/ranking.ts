@@ -180,6 +180,64 @@ export async function getCategoryArticles({
   );
 }
 
+export async function getCategoryArticlesWithOffset({
+  category,
+  count,
+  offset,
+}: {
+  category: string;
+  count: number;
+  offset: number;
+}): Promise<ArticleType[]> {
+  const db = await getDb();
+
+  // First, get the normalized scores using a subquery
+  const topClusterIds = await db.execute(sql`
+    WITH cluster_scores AS (
+      SELECT
+        ${cluster.id} as id,
+        count(${article.id}) as article_count,
+        sum(${article.llmRank}) as sum_llm_rank,
+        ${recencyScoreExpr} as recency_score,
+        ${categoryScoreExpr} as category_score
+      FROM ${cluster}
+      INNER JOIN ${article} ON ${cluster.id} = ${article.clusterId}
+      WHERE ${category} = ${article.categories}[1]
+      GROUP BY ${cluster.id}
+      HAVING count(${article.id}) > 0
+    ),
+    normalized_scores AS (
+      SELECT
+        id,
+        article_count,
+        recency_score,
+        category_score,
+        CASE
+          WHEN MAX(sum_llm_rank) OVER () > 0
+          THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
+          ELSE 0
+        END as cluster_llm_rank_score
+      FROM cluster_scores
+    )
+    SELECT
+      id,
+      article_count,
+      cluster_llm_rank_score,
+      recency_score,
+      category_score,
+      (cluster_llm_rank_score * 0.5 + recency_score * 0.3 + category_score * 0.2) as combined_score
+    FROM normalized_scores
+    ORDER BY combined_score DESC
+    LIMIT ${count}
+    OFFSET ${offset}
+  `);
+
+  return await common(
+    db,
+    topClusterIds.rows as { id: number; article_count: number }[],
+  );
+}
+
 async function common(
   db: Awaited<ReturnType<typeof getDb>>,
   clusterIds: { id: number; article_count: number }[],

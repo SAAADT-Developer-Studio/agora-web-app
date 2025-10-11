@@ -7,11 +7,12 @@ import { cluster as clusterSchema } from "~/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { config } from "~/config";
 import { Info, Newspaper, Calendar, SatelliteDish } from "lucide-react";
-import { resolvePlural } from "~/lib/utils";
+import { resolvePlural } from "~/utils/resolvePlurals";
 
 import fallbackImage from "~/assets/fallback.png";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
+import { isSameHour } from "~/utils/isSameHour";
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
@@ -307,12 +308,13 @@ function Timespan({
               {oldestDate.toLocaleTimeString("sl-SI", {
                 hour: "2-digit",
                 minute: "2-digit",
-              })}{" "}
-              –{" "}
-              {newestDate.toLocaleTimeString("sl-SI", {
-                hour: "2-digit",
-                minute: "2-digit",
               })}
+              {!isSameHour(oldestDate, newestDate) && " - "}
+              {!isSameHour(oldestDate, newestDate) &&
+                newestDate.toLocaleTimeString("sl-SI", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
             </span>
           </div>
         ) : (
@@ -358,7 +360,13 @@ function ArticleBottomBanner({
         </strong>{" "}
         iz{" "}
         <strong className="text-primary font-semibold">
-          {providerCount} različnih virov
+          {providerCount}{" "}
+          {resolvePlural({
+            count: providerCount,
+            singular: "vira",
+            dual: "različnih virov",
+            plural: "različnih virov",
+          })}
         </strong>
         . Nazadnje posodobljeno{" "}
         {newestDate.toLocaleDateString("sl-SI", {
