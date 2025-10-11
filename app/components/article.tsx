@@ -7,6 +7,7 @@ import { cn } from "~/lib/utils";
 
 export function Article({
   id,
+  slug,
   image,
   title,
   tags,
@@ -19,7 +20,7 @@ export function Article({
     <Link
       to={href("/:category/article/:articleId", {
         category: tags[0].toLowerCase(),
-        articleId: id,
+        articleId: slug ?? id,
       })}
       className="contents w-full"
     >

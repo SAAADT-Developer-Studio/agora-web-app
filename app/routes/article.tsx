@@ -17,8 +17,13 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
   const db = await getDb();
 
+  let condition = eq(clusterSchema.slug, articleId);
+  if (Number.isInteger(Number.parseInt(articleId))) {
+    condition = eq(clusterSchema.id, Number.parseInt(articleId));
+  }
+
   const cluster = await db.query.cluster.findFirst({
-    where: eq(clusterSchema.id, Number.parseInt(articleId)),
+    where: condition,
     with: {
       articles: { with: { newsProvider: true } },
     },

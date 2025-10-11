@@ -6,6 +6,7 @@ import type { ArticleType } from "~/lib/services/ranking";
 
 export default function ArticleBig({
   id,
+  slug,
   image,
   title,
   tags,
@@ -19,7 +20,7 @@ export default function ArticleBig({
     <Link
       to={href("/:category/article/:articleId", {
         category: tags[0].toLowerCase(),
-        articleId: id,
+        articleId: slug ?? id,
       })}
       className="contents w-full"
       viewTransition
