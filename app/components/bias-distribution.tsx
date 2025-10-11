@@ -66,7 +66,7 @@ export function BiasDistribution({
   console.log({ providersWithoutBias });
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-white/20 bg-[#4a4a4a] p-4 md:col-span-1">
+    <div className="flex flex-col overflow-hidden rounded-lg border border-white/20 bg-[#4a4a4a] p-4 md:col-span-1">
       <h2 className="font-bold tracking-wide text-gray-200 uppercase">
         Distribucija Pristranskosti
       </h2>

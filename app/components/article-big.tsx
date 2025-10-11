@@ -1,7 +1,7 @@
 import Tag from "./ui/tag";
 import CoverageBarBig from "./coverage-bar big";
 import { Sources } from "./sources";
-import { Link } from "react-router";
+import { href, Link } from "react-router";
 import type { ArticleType } from "~/lib/services/ranking";
 
 export default function ArticleBig({
@@ -16,7 +16,14 @@ export default function ArticleBig({
   const imageUrl = image.src;
 
   return (
-    <Link to={`/article/${id}`} className="contents w-full" viewTransition>
+    <Link
+      to={href("/:category/article/:articleId", {
+        category: tags[0].toLowerCase(),
+        articleId: id,
+      })}
+      className="contents w-full"
+      viewTransition
+    >
       <article
         className="border-vidikdarkgray border-px flex h-[300px] w-full cursor-pointer flex-col gap-4 rounded-md bg-cover bg-center transition-transform duration-300 hover:scale-[1.01] sm:col-span-2 sm:row-span-2 md:h-[500px] dark:border-0"
         style={{

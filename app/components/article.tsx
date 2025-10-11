@@ -1,7 +1,7 @@
 import type { ArticleType } from "~/lib/services/ranking";
 import CoverageBar from "./coverage-bar";
 import Tag from "./ui/tag";
-import { Link } from "react-router";
+import { href, Link } from "react-router";
 import { Newspaper } from "lucide-react";
 import { cn } from "~/lib/utils";
 
@@ -16,7 +16,13 @@ export function Article({
   // const imageUrl = `https://wsrv.nl/?url=${image.src}&w=380&h=240`;
   const imageUrl = image.src;
   return (
-    <Link to={`/article/${id}`} className="contents w-full">
+    <Link
+      to={href("/:category/article/:articleId", {
+        category: tags[0].toLowerCase(),
+        articleId: id,
+      })}
+      className="contents w-full"
+    >
       <article
         className="group border-vidikdarkgray/10 relative flex h-[240px] w-full cursor-pointer flex-col gap-4 rounded-md border-1 bg-cover bg-center transition-transform duration-300 hover:scale-[1.01] dark:border-0"
         style={{
