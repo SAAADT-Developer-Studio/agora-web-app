@@ -38,7 +38,7 @@ export function Article({
             </div>
           </div>
           <div className="flex w-full flex-col items-start justify-center p-2">
-            <p className="p-sm py-2">{title}</p>
+            <p className="p-sm my-2 line-clamp-2 overflow-clip">{title}</p>
             <CoverageBar {...biasDistribution} />
           </div>
         </div>
