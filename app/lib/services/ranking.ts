@@ -21,6 +21,7 @@ export type BiasDistribution = {
 
 export type ArticleType = {
   id: string;
+  slug?: string;
   title: string;
   image: Image;
   tags: string[];
@@ -278,6 +279,7 @@ async function common(
 
     return {
       id: c.id.toString(),
+      slug: c.slug ?? undefined,
       title: c.title,
       image: {
         src: imgSrc,

@@ -6,6 +6,7 @@ import type { ArticleType } from "~/lib/services/ranking";
 
 export default function ArticleBig({
   id,
+  slug,
   image,
   title,
   tags,
@@ -19,7 +20,7 @@ export default function ArticleBig({
     <Link
       to={href("/:category/article/:articleId", {
         category: tags[0].toLowerCase(),
-        articleId: id,
+        articleId: slug ?? id,
       })}
       className="contents w-full"
       viewTransition
@@ -42,7 +43,7 @@ export default function ArticleBig({
           </div>
           <div className="flex w-full flex-col items-start justify-center p-2">
             <div className="flex w-full items-center justify-between">
-              <p className="md:p-lg w-full py-1 text-lg leading-5.5 md:w-[80%] md:py-6 md:leading-7">
+              <p className="md:p-lg my-1 line-clamp-2 w-full overflow-clip text-lg leading-5.5 md:my-6 md:w-[80%] md:leading-7">
                 {title}
               </p>
               <Sources
