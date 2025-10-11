@@ -1,11 +1,22 @@
 import { getDb } from "~/lib/db";
 import { article, cluster } from "~/drizzle/schema";
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import fallbackArticleImage from "~/assets/fallback.png";
+import { getBiasDistribution } from "~/utils/getBiasDistribution";
 
 export type Image = {
   src: string;
   alt: string;
+};
+
+export type BiasDistribution = {
+  leftPercent: number;
+  centerPercent: number;
+  rightPercent: number;
+  leftCount: number;
+  centerCount: number;
+  rightCount: number;
+  totalCount: number;
 };
 
 export type ArticleType = {
@@ -13,11 +24,7 @@ export type ArticleType = {
   title: string;
   image: Image;
   tags: string[];
-  biasDistribution: {
-    leftPercent: number;
-    centerPercent: number;
-    rightPercent: number;
-  };
+  biasDistribution: BiasDistribution;
   showTags?: boolean;
   numberOfArticles: number;
   providerKeys: string[];
@@ -207,25 +214,7 @@ async function common(
         .flat(),
     );
 
-    const totalCount = c.articles.filter(
-      (a) => a.newsProvider.biasRating !== null,
-    ).length;
-
-    const leftCount = c.articles.filter(
-      (a) =>
-        a.newsProvider.biasRating &&
-        ["left", "center-left"].includes(a.newsProvider.biasRating),
-    ).length;
-
-    const centerCount = c.articles.filter(
-      (a) => a.newsProvider.biasRating === "center",
-    ).length;
-
-    const rightCount = c.articles.filter(
-      (a) =>
-        a.newsProvider.biasRating &&
-        ["right", "center-right"].includes(a.newsProvider.biasRating),
-    ).length;
+    const biasDistribution = getBiasDistribution(c.articles);
 
     const providerKeys = new Set(c.articles.map((a) => a.newsProvider.key));
 
@@ -237,14 +226,7 @@ async function common(
         alt: "Placeholder Image 1",
       },
       tags: Array.from(tags).slice(0, 3), // this is majorly fucked, so fix it later
-      biasDistribution: {
-        leftPercent:
-          totalCount > 0 ? Math.round((leftCount / totalCount) * 100) : 0,
-        rightPercent:
-          totalCount > 0 ? Math.round((rightCount / totalCount) * 100) : 0,
-        centerPercent:
-          totalCount > 0 ? Math.round((centerCount / totalCount) * 100) : 0,
-      },
+      biasDistribution,
       showTags: true,
       numberOfArticles: c.articles.length,
       providerKeys: Array.from(providerKeys),
