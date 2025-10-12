@@ -25,7 +25,20 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const cluster = await db.query.cluster.findFirst({
     where: condition,
     with: {
-      articles: { with: { newsProvider: true } },
+      articles: {
+        columns: {
+          id: true,
+          title: true,
+          url: true,
+          publishedAt: true,
+          summary: true,
+          categories: true,
+          newsProviderKey: true,
+          imageUrls: true,
+          author: true,
+        },
+        with: { newsProvider: true },
+      },
     },
   });
 
