@@ -1,5 +1,5 @@
 import { config } from "~/config";
-import { resolvePlural } from "~/utils/resolvePlurals";
+import { resolvePlural } from "~/utils/resolvePlural";
 
 export type SourcesProps = {
   numberOfArticles: number;

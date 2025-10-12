@@ -13,6 +13,8 @@ import { getCategoryArticles, getHomeArticles } from "~/lib/services/ranking";
 import { PeopleCard } from "~/components/people-card";
 import { EconomyCard } from "~/components/economy-card";
 import { useMediaQuery } from "~/hooks/use-media-query";
+import { getProviderStats } from "~/lib/services/providerStats";
+import { ProviderStatsCard } from "~/components/provider-stats-card";
 
 export function meta({}: Route.MetaArgs) {
   return getSeoMetas({
@@ -62,6 +64,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   ]);
   const gdpSeries = fetchSloveniaGDP();
   const inflationSeries = fetchInflationMonthlyYoY_SI();
+  const providerStats = getProviderStats({ count: 9 });
 
   return {
     articles: {
@@ -78,11 +81,12 @@ export async function loader({ context }: Route.LoaderArgs) {
     },
     gdpSeries,
     inflationSeries,
+    providerStats,
   };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { articles, gdpSeries, inflationSeries } = loaderData;
+  const { articles, gdpSeries, inflationSeries, providerStats } = loaderData;
 
   const reverseAll = useMediaQuery("(min-width: 64rem)");
 
@@ -96,7 +100,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         articles={articles.politika}
         dividerText="POLITIKA"
         sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
+          // <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
+          <ProviderStatsCard providerStatsPromise={providerStats} />
         }
         reverse={!reverseAll}
       />

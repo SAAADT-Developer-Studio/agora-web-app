@@ -7,7 +7,7 @@ import { cluster as clusterSchema } from "~/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { config } from "~/config";
 import { Info, Newspaper, Calendar, SatelliteDish } from "lucide-react";
-import { resolvePlural } from "~/utils/resolvePlurals";
+import { resolvePlural } from "~/utils/resolvePlural";
 
 import fallbackImage from "~/assets/fallback.png";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
