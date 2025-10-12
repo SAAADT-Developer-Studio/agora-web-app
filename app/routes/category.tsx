@@ -26,13 +26,14 @@ async function fetchCategoryData(
   });
 }
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, context }: Route.LoaderArgs) {
   const category = params.category;
   if (!categorySet.has(category)) {
     throw new Response("Category Not Found", { status: 404 });
   }
 
   const articles = await getCategoryArticlesWithOffset({
+    db: context.db,
     category,
     count: 21,
     offset: 0,

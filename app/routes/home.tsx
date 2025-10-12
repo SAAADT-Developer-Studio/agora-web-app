@@ -37,6 +37,8 @@ export function headers(_: Route.HeadersArgs) {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
+  const db = context.db;
+
   const [
     home,
     politika,
@@ -49,16 +51,16 @@ export async function loader({ context }: Route.LoaderArgs) {
     okolje,
     lokalno,
   ] = await Promise.all([
-    getHomeArticles({ count: 6 }),
-    getCategoryArticles({ count: 4, category: "politika" }),
-    getCategoryArticles({ count: 4, category: "gospodarstvo" }),
-    getCategoryArticles({ count: 4, category: "sport" }),
-    getCategoryArticles({ count: 4, category: "tehnologija-znanost" }),
-    getCategoryArticles({ count: 4, category: "kriminal" }),
-    getCategoryArticles({ count: 4, category: "kultura" }),
-    getCategoryArticles({ count: 4, category: "zdravje" }),
-    getCategoryArticles({ count: 4, category: "okolje" }),
-    getCategoryArticles({ count: 4, category: "lokalno" }),
+    getHomeArticles({ db, count: 6 }),
+    getCategoryArticles({ db, count: 4, category: "politika" }),
+    getCategoryArticles({ db, count: 4, category: "gospodarstvo" }),
+    getCategoryArticles({ db, count: 4, category: "sport" }),
+    getCategoryArticles({ db, count: 4, category: "tehnologija-znanost" }),
+    getCategoryArticles({ db, count: 4, category: "kriminal" }),
+    getCategoryArticles({ db, count: 4, category: "kultura" }),
+    getCategoryArticles({ db, count: 4, category: "zdravje" }),
+    getCategoryArticles({ db, count: 4, category: "okolje" }),
+    getCategoryArticles({ db, count: 4, category: "lokalno" }),
   ]);
   const gdpSeries = fetchSloveniaGDP();
   const inflationSeries = fetchInflationMonthlyYoY_SI();
