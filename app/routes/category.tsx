@@ -8,6 +8,7 @@ import type { ArticleType } from "~/lib/services/ranking";
 import { Article } from "~/components/article";
 import { getCategoryArticlesWithOffset } from "~/lib/services/ranking";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { Loader } from "lucide-react";
 // TODO: add a key property to the config.categories array?
 const categorySet = new Set(config.categories.map((c) => c.path.slice(1)));
 
@@ -88,14 +89,17 @@ export default function CategoryPage({
             )),
           )}
       </div>
-      {isFetchingNextPage && <p>Nalagam več člankov...</p>}
       {hasNextPage && (
         <button
           className="bg-primary hover:bg-primary/80 text-background mt-4 flex w-full cursor-pointer items-center justify-center rounded-md py-2"
           onClick={() => fetchNextPage()}
           disabled={isFetchingNextPage}
         >
-          Naloži več člankov
+          {isFetchingNextPage ? (
+            <Loader className="animate-spin" />
+          ) : (
+            "Naloži več člankov"
+          )}
         </button>
       )}
     </div>
