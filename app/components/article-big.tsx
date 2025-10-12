@@ -22,6 +22,7 @@ export default function ArticleBig({
         category: tags[0].toLowerCase(),
         articleId: slug ?? id,
       })}
+      prefetch="intent"
       className="contents w-full"
       viewTransition
     >

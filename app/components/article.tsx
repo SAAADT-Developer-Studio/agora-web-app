@@ -22,6 +22,7 @@ export function Article({
         category: tags[0].toLowerCase(),
         articleId: slug ?? id,
       })}
+      prefetch="intent"
       className="contents w-full"
     >
       <article

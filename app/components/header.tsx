@@ -36,7 +36,7 @@ export function Header() {
             <Menu className="h-6 w-6" />
           </button>
           <div className="bg-primary h-10 w-[1px] opacity-30 xl:hidden" />
-          <Link to="/">
+          <Link to="/" prefetch="intent">
             <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
             <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
           </Link>
@@ -55,6 +55,7 @@ export function Header() {
             <NavLink
               to={category.path}
               key={category.path}
+              prefetch="intent"
               className={({ isActive, isPending }) =>
                 twMerge(
                   "text-primary/70 hover:text-primary px-4 py-3.5 text-sm font-medium text-nowrap transition-colors",
