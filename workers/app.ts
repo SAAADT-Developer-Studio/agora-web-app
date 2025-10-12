@@ -16,8 +16,16 @@ const requestHandler = createRequestHandler(
 
 export default {
   async fetch(request, env, ctx) {
-    return requestHandler(request, {
-      cloudflare: { env, ctx },
-    });
+    const cache = await caches.open("custom:vidik-page-cache");
+    let response = await cache.match(request);
+
+    if (!response) {
+      response = await requestHandler(request, {
+        cloudflare: { env, ctx },
+      });
+      ctx.waitUntil(cache.put(request, response.clone()));
+    }
+
+    return response;
   },
 } satisfies ExportedHandler<Env>;

@@ -50,7 +50,7 @@ const MAX_CATEGORY_PRIORITY = Math.max(...Object.values(CATEGORY_PRIORITY));
 const RECENCY_DECAY_HOURS = 12;
 
 const recencyScoreExpr = sql<number>`
-  avg(
+  max(
     exp(
       -extract(epoch from (now() - ${article.publishedAt}::timestamptz)) / 3600 / ${RECENCY_DECAY_HOURS}
     )
