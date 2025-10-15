@@ -96,7 +96,6 @@ export async function loader({ context }: Route.LoaderArgs) {
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { articles, gdpSeries, inflationSeries, env } = loaderData;
-  console.log({ env });
 
   const reverseAll = useMediaQuery("(min-width: 64rem)");
 

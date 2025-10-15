@@ -35,6 +35,8 @@ export default async function handleRequest(
     await body.allReady;
   }
 
+  responseHeaders.set("X-App-Version", routerContext.manifest.version);
+
   responseHeaders.set("Content-Type", "text/html");
   return new Response(body, {
     headers: responseHeaders,
