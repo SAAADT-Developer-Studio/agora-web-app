@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
 import { ThemeSwitch } from "./theme-switch";
@@ -49,7 +49,7 @@ export function Header() {
         </div>
         <div className="flex items-center gap-3">
           <span className="mr-3 hidden text-xs md:block">
-            {formatSlovenianDateTime(new Date())}
+            <Suspense>{formatSlovenianDateTime(new Date())}</Suspense>
           </span>
           <ThemeSwitch />
         </div>
@@ -57,10 +57,10 @@ export function Header() {
 
       <nav className="bg-foreground border-primary/10 hidden w-full justify-center border-b xl:flex">
         <div className="flex overflow-hidden">
-          {config.categories.map((category) => (
+          {config.navigation.map((item) => (
             <NavLink
-              to={category.path}
-              key={category.path}
+              to={item.path}
+              key={item.path}
               prefetch="intent"
               className={({ isActive, isPending }) =>
                 twMerge(
@@ -70,7 +70,7 @@ export function Header() {
                 )
               }
             >
-              {category.name}
+              {item.name}
             </NavLink>
           ))}
         </div>
@@ -106,10 +106,10 @@ export function Header() {
         <div className="border-primary/10 border-b" />
 
         <nav className="p-2">
-          {config.categories.map((category) => (
+          {config.navigation.map((item) => (
             <NavLink
-              to={category.path}
-              key={category.path}
+              to={item.path}
+              key={item.path}
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
                 twMerge(
@@ -120,7 +120,7 @@ export function Header() {
                 )
               }
             >
-              {category.name}
+              {item.name}
             </NavLink>
           ))}
         </nav>

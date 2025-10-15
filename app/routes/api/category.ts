@@ -3,8 +3,9 @@ import { getCategoryArticlesWithOffset } from "~/lib/services/ranking";
 import type { Route } from "./+types/category";
 import { config } from "~/config";
 
+const categorySet = new Set<string>(config.categories.map((c) => c.key));
+
 export async function loader({ params, request, context }: Route.LoaderArgs) {
-  const categorySet = new Set(config.categories.map((c) => c.path.slice(1)));
   const category = params.category;
   const count = new URL(request.url).searchParams.get("count");
   const offset = new URL(request.url).searchParams.get("offset");
