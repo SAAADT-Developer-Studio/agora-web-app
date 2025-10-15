@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
 import { ThemeSwitch } from "./theme-switch";
-import { Link, NavLink } from "react-router";
+import { Link, NavLink, useNavigation } from "react-router";
 import { twMerge } from "tailwind-merge";
 import { formatSlovenianDateTime } from "~/lib/date";
 import { config } from "~/config";
 import { Menu, X } from "lucide-react";
+import { Spinner } from "~/components/ui/spinner";
 
 const SIDEPANEL_WIDTH = 280; // px
 
@@ -21,6 +22,9 @@ export function Header() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  const navigation = useNavigation();
+  const isNavigating = Boolean(navigation.location);
 
   return (
     <header className="bg-secondary sticky top-0 z-30">
@@ -40,6 +44,8 @@ export function Header() {
             <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
             <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
           </Link>
+
+          {isNavigating && <Spinner />}
         </div>
         <div className="flex items-center gap-3">
           <span className="mr-3 hidden text-xs md:block">
