@@ -54,8 +54,10 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const uniqueCategories = Array.from(new Set(allCategories));
 
   const heroImage =
-    cluster.articles.find((a) => a.imageUrls && a.imageUrls.length > 0)
-      ?.imageUrls?.[0] ?? fallbackArticleImage;
+    cluster.articles
+      .flatMap((a) => a.imageUrls ?? [])
+      // TODO: picking the image should be moved to a centralized place, and probably optimized
+      .filter((url) => !url.endsWith(".mp4"))[0] ?? fallbackArticleImage;
 
   return {
     cluster,
