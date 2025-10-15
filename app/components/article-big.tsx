@@ -3,6 +3,7 @@ import CoverageBarBig from "./coverage-bar big";
 import { Sources } from "./sources";
 import { href, Link } from "react-router";
 import type { ArticleType } from "~/lib/services/ranking";
+import { useMediaQuery } from "~/hooks/use-media-query";
 
 export default function ArticleBig({
   id,
@@ -16,14 +17,17 @@ export default function ArticleBig({
 }: ArticleType) {
   const imageUrl = image.src;
 
+  const isLarge = useMediaQuery("(min-width: 64rem)");
+
   return (
     <Link
       to={href("/:category/article/:articleId", {
         category: tags[0].toLowerCase(),
         articleId: slug ?? id,
       })}
+      prefetch="intent"
       className="contents w-full"
-      viewTransition
+      viewTransition={isLarge}
     >
       <article
         className="border-vidikdarkgray border-px flex h-[300px] w-full cursor-pointer flex-col gap-4 rounded-md bg-cover bg-center transition-transform duration-300 hover:scale-[1.01] sm:col-span-2 sm:row-span-2 md:h-[500px] dark:border-0"

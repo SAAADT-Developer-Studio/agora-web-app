@@ -13,6 +13,13 @@ import { getCategoryArticles, getHomeArticles } from "~/lib/services/ranking";
 import { PeopleCard } from "~/components/people-card";
 import { EconomyCard } from "~/components/economy-card";
 import { useMediaQuery } from "~/hooks/use-media-query";
+import { config, CategoryKey, type CategoryKeyValue } from "~/config";
+import type { ArticleType } from "~/lib/services/ranking";
+import type { Database } from "~/lib/db";
+import { resolvePromises } from "~/utils/resolvePromises";
+import { cached } from "~/lib/cached";
+import { getEnv } from "~/utils/getEnv";
+import { data } from "react-router";
 
 export function meta({}: Route.MetaArgs) {
   return getSeoMetas({
@@ -28,72 +35,76 @@ export function meta({}: Route.MetaArgs) {
   });
 }
 
-export function headers(_: Route.HeadersArgs) {
-  // TODO: compute maxage based on the last update, instead of having it hard coded to 10 minutes
-  const maxAge = 10 * 60; // 10 minutes
+export function headers({ loaderHeaders }: Route.HeadersArgs) {
   return {
-    "Cache-Control": `max-age=${maxAge}, s-maxage=${maxAge}, stale-while-revalidate=${10 * 60}`,
+    ...loaderHeaders,
   };
+}
+
+export async function fetchHomeArticlesData({ db }: { db: Database }) {
+  const promiseMap = {
+    home: getHomeArticles({ db, count: 6 }),
+  } as {
+    home: Promise<ArticleType[]>;
+  } & {
+    [K in CategoryKeyValue]: Promise<ArticleType[]>;
+  };
+
+  config.categories.forEach((category) => {
+    promiseMap[category.key] = getCategoryArticles({
+      db,
+      count: 4,
+      category: category.key,
+    });
+  });
+
+  return await resolvePromises(promiseMap);
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const [
-    home,
-    politika,
-    gospodarstvo,
-    sport,
-    tehnologijaZnanost,
-    kriminal,
-    kultura,
-    zdravje,
-    okolje,
-    lokalno,
-  ] = await Promise.all([
-    getHomeArticles({ count: 6 }),
-    getCategoryArticles({ count: 4, category: "politika" }),
-    getCategoryArticles({ count: 4, category: "gospodarstvo" }),
-    getCategoryArticles({ count: 4, category: "sport" }),
-    getCategoryArticles({ count: 4, category: "tehnologija-znanost" }),
-    getCategoryArticles({ count: 4, category: "kriminal" }),
-    getCategoryArticles({ count: 4, category: "kultura" }),
-    getCategoryArticles({ count: 4, category: "zdravje" }),
-    getCategoryArticles({ count: 4, category: "okolje" }),
-    getCategoryArticles({ count: 4, category: "lokalno" }),
-  ]);
+  const db = context.db;
+
+  const articles = await cached(
+    async () => await fetchHomeArticlesData({ db }),
+    {
+      key: "data:home",
+      expirationTtl: 10 * 60,
+      cloudflare: context.cloudflare,
+    },
+  );
+
   const gdpSeries = fetchSloveniaGDP();
   const inflationSeries = fetchInflationMonthlyYoY_SI();
 
-  return {
-    articles: {
-      home,
-      politika,
-      gospodarstvo,
-      sport,
-      tehnologijaZnanost,
-      kriminal,
-      kultura,
-      zdravje,
-      okolje,
-      lokalno,
+  // TODO: compute maxage based on the last update, instead of having it hard coded
+  const maxAge = 3 * 60;
+
+  return data(
+    {
+      articles,
+      gdpSeries,
+      inflationSeries,
+      env: getEnv(),
     },
-    gdpSeries,
-    inflationSeries,
-  };
+    {
+      headers: {
+        "Cache-Control": `max-age=${maxAge}, s-maxage=${maxAge}, stale-while-revalidate=${5 * 60}, stale-if-error=${3 * 60 * 60}`,
+      },
+    },
+  );
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { articles, gdpSeries, inflationSeries } = loaderData;
+  const { articles, gdpSeries, inflationSeries, env } = loaderData;
 
   const reverseAll = useMediaQuery("(min-width: 64rem)");
-
-  console.log(articles);
 
   return (
     <div className="grid grid-cols-1 gap-3 px-3 sm:grid-cols-2 md:gap-6 md:px-6 lg:grid-cols-3">
       <HeroArticles articles={articles.home} />
 
       <CategorySection
-        articles={articles.politika}
+        articles={articles[CategoryKey.politika]}
         dividerText="POLITIKA"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -102,7 +113,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={articles.gospodarstvo}
+        articles={articles[CategoryKey.gospodarstvo]}
         dividerText="GOSPODARSTVO"
         sideSection={
           <EconomyCard
@@ -114,7 +125,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={articles.kriminal}
+        articles={articles[CategoryKey.kriminal]}
         dividerText="KRIMINAL"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -123,7 +134,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={articles.lokalno}
+        articles={articles[CategoryKey.lokalno]}
         dividerText="LOKALNO"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -132,7 +143,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={articles.sport}
+        articles={articles[CategoryKey.sport]}
         dividerText="ŠPORT"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -141,7 +152,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={articles.tehnologijaZnanost}
+        articles={articles[CategoryKey.tehnologijaZnanost]}
         dividerText="TEHNOLOGIJA & ZNANOST"
         reverse={!reverseAll}
         sideSection={
@@ -150,7 +161,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={articles.kultura}
+        articles={articles[CategoryKey.kultura]}
         dividerText="KULTURA"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -159,7 +170,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={articles.zdravje}
+        articles={articles[CategoryKey.zdravje]}
         dividerText="ZDRAVJE"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -168,7 +179,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       />
 
       <CategorySection
-        articles={articles.okolje}
+        articles={articles[CategoryKey.okolje]}
         dividerText="OKOLJE"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />

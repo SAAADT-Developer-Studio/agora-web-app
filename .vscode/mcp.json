@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "cloudflare-mcp": {
+      "type": "http",
+      "url": "https://docs.mcp.cloudflare.com/mcp"
+    },
+    "react-router Docs": {
+      "type": "sse",
+      "url": "https://gitmcp.io/remix-run/react-router"
+    }
+  }
+}

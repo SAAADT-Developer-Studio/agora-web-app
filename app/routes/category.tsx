@@ -8,8 +8,8 @@ import type { ArticleType } from "~/lib/services/ranking";
 import { Article } from "~/components/article";
 import { getCategoryArticlesWithOffset } from "~/lib/services/ranking";
 import { useInfiniteQuery } from "@tanstack/react-query";
-// TODO: add a key property to the config.categories array?
-const categorySet = new Set(config.categories.map((c) => c.path.slice(1)));
+
+const categorySet = new Set<string>(config.categories.map((c) => c.key));
 
 async function fetchCategoryData(
   category: string,
@@ -26,13 +26,14 @@ async function fetchCategoryData(
   });
 }
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, context }: Route.LoaderArgs) {
   const category = params.category;
   if (!categorySet.has(category)) {
     throw new Response("Category Not Found", { status: 404 });
   }
 
   const articles = await getCategoryArticlesWithOffset({
+    db: context.db,
     category,
     count: 21,
     offset: 0,

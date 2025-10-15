@@ -2,7 +2,6 @@ import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/article";
 import { getSeoMetas } from "~/lib/seo";
 import fallbackArticleImage from "~/assets/fallback.png";
-import { getDb } from "~/lib/db";
 import { cluster as clusterSchema } from "~/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { config } from "~/config";
@@ -16,7 +15,7 @@ import { isSameHour } from "~/utils/isSameHour";
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
-  const db = await getDb();
+  const db = context.db;
 
   let condition = eq(clusterSchema.slug, articleId);
   if (Number.isInteger(Number.parseInt(articleId))) {
@@ -26,7 +25,20 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const cluster = await db.query.cluster.findFirst({
     where: condition,
     with: {
-      articles: { with: { newsProvider: true } },
+      articles: {
+        columns: {
+          id: true,
+          title: true,
+          url: true,
+          publishedAt: true,
+          summary: true,
+          categories: true,
+          newsProviderKey: true,
+          imageUrls: true,
+          author: true,
+        },
+        with: { newsProvider: true },
+      },
     },
   });
 
@@ -42,8 +54,10 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const uniqueCategories = Array.from(new Set(allCategories));
 
   const heroImage =
-    cluster.articles.find((a) => a.imageUrls && a.imageUrls.length > 0)
-      ?.imageUrls?.[0] ?? fallbackArticleImage;
+    cluster.articles
+      .flatMap((a) => a.imageUrls ?? [])
+      // TODO: picking the image should be moved to a centralized place, and probably optimized
+      .filter((url) => !url.endsWith(".mp4"))[0] ?? fallbackArticleImage;
 
   return {
     cluster,
@@ -54,7 +68,6 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
 export default function ArticlePage({ loaderData }: Route.ComponentProps) {
   const { cluster, uniqueCategories, heroImage } = loaderData;
-  console.log("Loaded cluster:", cluster);
 
   const dates = cluster.articles.map((a) => new Date(a.publishedAt));
   const oldestDate = new Date(Math.min(...dates.map((d) => d.getTime())));

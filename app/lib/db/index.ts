@@ -1,9 +1,11 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
 import { env } from "cloudflare:workers";
 import * as schema from "~/drizzle/schema";
 import * as relations from "~/drizzle/relations";
 
 import { Client } from "pg";
+
+export type Database = NodePgDatabase<typeof schema & typeof relations>;
 
 export async function getDb() {
   const client = new Client({

@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
 import { ThemeSwitch } from "./theme-switch";
-import { Link, NavLink } from "react-router";
+import { Link, NavLink, useNavigation } from "react-router";
 import { twMerge } from "tailwind-merge";
 import { formatSlovenianDateTime } from "~/lib/date";
 import { config } from "~/config";
 import { Menu, X } from "lucide-react";
+import { Spinner } from "~/components/ui/spinner";
 
 const SIDEPANEL_WIDTH = 280; // px
 
@@ -22,6 +23,9 @@ export function Header() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  const navigation = useNavigation();
+  const isNavigating = Boolean(navigation.location);
+
   return (
     <header className="bg-secondary sticky top-0 z-30">
       <div className="flex h-[62px] items-center justify-between pr-4 pl-6 sm:pr-8">
@@ -36,14 +40,16 @@ export function Header() {
             <Menu className="h-6 w-6" />
           </button>
           <div className="bg-primary h-10 w-[1px] opacity-30 xl:hidden" />
-          <Link to="/">
+          <Link to="/" prefetch="intent">
             <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
             <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
           </Link>
+
+          {isNavigating && <Spinner />}
         </div>
         <div className="flex items-center gap-3">
           <span className="mr-3 hidden text-xs md:block">
-            {formatSlovenianDateTime(new Date())}
+            <Suspense>{formatSlovenianDateTime(new Date())}</Suspense>
           </span>
           <ThemeSwitch />
         </div>
@@ -51,10 +57,11 @@ export function Header() {
 
       <nav className="bg-foreground border-primary/10 hidden w-full justify-center border-b xl:flex">
         <div className="flex overflow-hidden">
-          {config.categories.map((category) => (
+          {config.navigation.map((item) => (
             <NavLink
-              to={category.path}
-              key={category.path}
+              to={item.path}
+              key={item.path}
+              prefetch="intent"
               className={({ isActive, isPending }) =>
                 twMerge(
                   "text-primary/70 hover:text-primary px-4 py-3.5 text-sm font-medium text-nowrap transition-colors",
@@ -63,7 +70,7 @@ export function Header() {
                 )
               }
             >
-              {category.name}
+              {item.name}
             </NavLink>
           ))}
         </div>
@@ -99,10 +106,10 @@ export function Header() {
         <div className="border-primary/10 border-b" />
 
         <nav className="p-2">
-          {config.categories.map((category) => (
+          {config.navigation.map((item) => (
             <NavLink
-              to={category.path}
-              key={category.path}
+              to={item.path}
+              key={item.path}
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
                 twMerge(
@@ -113,7 +120,7 @@ export function Header() {
                 )
               }
             >
-              {category.name}
+              {item.name}
             </NavLink>
           ))}
         </nav>
