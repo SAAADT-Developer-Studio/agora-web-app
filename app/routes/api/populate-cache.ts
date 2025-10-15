@@ -2,7 +2,7 @@ import type { Route } from "./+types/populate-cache";
 import { fetchHomeArticlesData } from "~/routes/home";
 import { getEnv } from "~/utils/getEnv";
 
-type Meta = {
+export type CacheMeta = {
   lastUpdated: number;
 };
 
@@ -16,13 +16,15 @@ export async function action({ context }: Route.ActionArgs) {
 
   const articles = await fetchHomeArticlesData({ db });
 
+  // TODO: prepopulate cache for category pages
+
   const cacheKey = `${env}:data:home`;
 
   await cache.put(cacheKey, JSON.stringify(articles), {
     expirationTtl: 30 * 60,
   });
 
-  const nextMeta = { lastUpdated: Date.now() } satisfies Meta;
+  const nextMeta = { lastUpdated: Date.now() } satisfies CacheMeta;
 
   await cache.put(`${env}:meta`, JSON.stringify(nextMeta));
 

@@ -19,6 +19,7 @@ import type { Database } from "~/lib/db";
 import { resolvePromises } from "~/utils/resolvePromises";
 import { cached } from "~/lib/cached";
 import { getEnv } from "~/utils/getEnv";
+import { data } from "react-router";
 
 export function meta({}: Route.MetaArgs) {
   return getSeoMetas({
@@ -34,11 +35,9 @@ export function meta({}: Route.MetaArgs) {
   });
 }
 
-export function headers(_: Route.HeadersArgs) {
-  // TODO: compute maxage based on the last update, instead of having it hard coded to 10 minutes
-  const maxAge = 10 * 60; // 10 minutes
+export function headers({ loaderHeaders }: Route.HeadersArgs) {
   return {
-    "Cache-Control": `max-age=${maxAge}, s-maxage=${maxAge}, stale-while-revalidate=${10 * 60}, stale-if-error=${3 * 60 * 60}`,
+    ...loaderHeaders,
   };
 }
 
@@ -77,12 +76,22 @@ export async function loader({ context }: Route.LoaderArgs) {
   const gdpSeries = fetchSloveniaGDP();
   const inflationSeries = fetchInflationMonthlyYoY_SI();
 
-  return {
-    articles,
-    gdpSeries,
-    inflationSeries,
-    env: getEnv(),
-  };
+  // TODO: compute maxage based on the last update, instead of having it hard coded
+  const maxAge = 3 * 60;
+
+  return data(
+    {
+      articles,
+      gdpSeries,
+      inflationSeries,
+      env: getEnv(),
+    },
+    {
+      headers: {
+        "Cache-Control": `max-age=${maxAge}, s-maxage=${maxAge}, stale-while-revalidate=${5 * 60}, stale-if-error=${3 * 60 * 60}`,
+      },
+    },
+  );
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
