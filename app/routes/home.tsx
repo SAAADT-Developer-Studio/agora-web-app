@@ -19,7 +19,7 @@ import type { Database } from "~/lib/db";
 import { resolvePromises } from "~/utils/resolvePromises";
 import { getEnv } from "~/utils/getEnv";
 import { data } from "react-router";
-import { getMaxAge } from "~/utils/getMaxage";
+import { getMaxAge } from "~/utils/getMaxAge";
 
 export function meta({}: Route.MetaArgs) {
   return getSeoMetas({

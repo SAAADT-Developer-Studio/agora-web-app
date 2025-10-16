@@ -9,7 +9,7 @@ import { Article } from "~/components/article";
 import { getCategoryArticlesWithOffset } from "~/lib/services/ranking";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { Database } from "~/lib/db";
-import { getMaxAge } from "~/utils/getMaxage";
+import { getMaxAge } from "~/utils/getMaxAge";
 
 const categorySet = new Set<string>(config.categories.map((c) => c.key));
 
