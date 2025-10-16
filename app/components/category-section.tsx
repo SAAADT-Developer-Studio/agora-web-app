@@ -5,21 +5,18 @@ import type { ArticleType } from "~/lib/services/ranking";
 export default function CategorySection({
   articles,
   dividerText,
-  reverse,
   sideSection,
 }: {
   articles: ArticleType[];
   dividerText: string;
-  reverse?: boolean;
-  sideSection: React.ReactNode;
+  sideSection?: React.ReactNode;
 }) {
   return (
     <>
-      <Divider text={dividerText} reverse={reverse} />
-      {reverse ? (
+      <Divider text={dividerText} />
+      {!sideSection ? (
         <>
-          {sideSection}
-          {articles.slice(0, 2).map((article) => (
+          {articles.slice(0, 6).map((article) => (
             <Article key={article.id} {...article} />
           ))}
         </>
@@ -29,11 +26,11 @@ export default function CategorySection({
             <Article key={article.id} {...article} />
           ))}
           {sideSection}
+          {articles.slice(2, 4).map((article) => (
+            <Article key={article.id} {...article} />
+          ))}
         </>
       )}
-      {articles.slice(2, 4).map((article) => (
-        <Article key={article.id} {...article} />
-      ))}
     </>
   );
 }

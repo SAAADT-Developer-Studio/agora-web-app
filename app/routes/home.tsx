@@ -51,7 +51,7 @@ export async function fetchHomeArticlesData({ db }: { db: Database }) {
   config.categories.forEach((category) => {
     promiseMap[category.key] = getCategoryArticles({
       db,
-      count: 4,
+      count: 6,
       category: category.key,
     });
   });
@@ -105,7 +105,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
         }
-        reverse={!reverseAll}
       />
 
       <CategorySection
@@ -117,70 +116,41 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             inflationSeries={inflationSeries}
           />
         }
-        reverse
       />
 
       <CategorySection
         articles={articles[CategoryKey.kriminal]}
         dividerText="KRIMINAL"
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-        reverse={!reverseAll}
       />
 
       <CategorySection
         articles={articles[CategoryKey.lokalno]}
         dividerText="LOKALNO"
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-        reverse={!reverseAll}
       />
 
       <CategorySection
         articles={articles[CategoryKey.sport]}
         dividerText="ŠPORT"
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-        reverse
       />
 
       <CategorySection
         articles={articles[CategoryKey.tehnologijaZnanost]}
         dividerText="TEHNOLOGIJA & ZNANOST"
-        reverse={!reverseAll}
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
       />
 
       <CategorySection
         articles={articles[CategoryKey.kultura]}
         dividerText="KULTURA"
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-        reverse
       />
 
       <CategorySection
         articles={articles[CategoryKey.zdravje]}
         dividerText="ZDRAVJE"
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-        reverse={!reverseAll}
       />
 
       <CategorySection
         articles={articles[CategoryKey.okolje]}
         dividerText="OKOLJE"
-        sideSection={
-          <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-        }
-        reverse
       />
     </div>
   );

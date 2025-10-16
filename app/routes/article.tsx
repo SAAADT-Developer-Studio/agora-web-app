@@ -107,7 +107,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
 
         <div className="mb-12 grid gap-6 md:grid-cols-3">
           <figure className="md:col-span-2">
-            <div className="bg-muted overflow-hidden rounded-lg border border-white/20">
+            <div className="bg-muted border-primary/20 overflow-hidden rounded-lg border">
               <img
                 src={heroImage ?? fallbackImage}
                 alt={cluster.title}
@@ -152,7 +152,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   key={article.id}
-                  className="group hover:bg-muted/50 block border-b border-white/50 py-6 transition-colors last:border-b-0"
+                  className="group hover:bg-muted/50 border-primary block border-b py-6 transition-colors last:border-b-0"
                 >
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
@@ -246,7 +246,7 @@ function ArticleInfoBanner({
   newestDate: Date;
 }) {
   return (
-    <div className="bg-card mb-12 rounded-lg border border-white/20 p-6">
+    <div className="bg-card border-primary/20 mb-12 rounded-lg border p-6">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
           <Info className="text-accent mt-1 h-5 w-5 flex-shrink-0" />

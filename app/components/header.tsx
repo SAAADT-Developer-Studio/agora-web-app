@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useState } from "react";
 import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
+import logoWhite from "~/assets/logo-white.svg";
 import { ThemeSwitch } from "./theme-switch";
 import { Link, NavLink, useNavigation } from "react-router";
 import { twMerge } from "tailwind-merge";
@@ -37,18 +38,22 @@ export function Header() {
             onClick={() => setOpen(true)}
             className="hover:bg-primary/10 focus:ring-primary/40 inline-flex items-center justify-center rounded-xl p-1 focus:ring-2 focus:outline-none sm:p-2 xl:hidden"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-6 w-6" color="var(--color-vidikwhite)" />
           </button>
-          <div className="bg-primary h-10 w-[1px] opacity-30 xl:hidden" />
+          <div className="bg-vidikwhite h-10 w-[1px] opacity-30 xl:hidden" />
           <Link to="/" prefetch="intent">
             <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
-            <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
+            <img
+              src={logoWhite}
+              alt="logo"
+              className="block h-6 w-20 dark:hidden"
+            />
           </Link>
 
           {isNavigating && <Spinner />}
         </div>
         <div className="flex items-center gap-3">
-          <span className="mr-3 hidden text-xs md:block">
+          <span className="text-vidikwhite mr-3 hidden text-xs md:block">
             <Suspense>{formatSlovenianDateTime(new Date())}</Suspense>
           </span>
           <ThemeSwitch />
@@ -92,7 +97,11 @@ export function Header() {
             className="flex items-center gap-3"
           >
             <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
-            <img src={logoLight} alt="logo" className="h-6 w-20 dark:hidden" />
+            <img
+              src={logoLight}
+              alt="logo"
+              className="block h-6 w-20 dark:hidden"
+            />
           </Link>
           <button
             type="button"
