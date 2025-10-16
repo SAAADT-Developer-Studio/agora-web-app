@@ -1,3 +1,4 @@
+import { Newspaper } from "lucide-react";
 import { config } from "~/config";
 import { resolvePlural } from "~/utils/resolvePlurals";
 
@@ -12,17 +13,11 @@ export function Sources({
 }: Readonly<SourcesProps>) {
   const MAX_DISPLAYED_SOURCES = 4;
   return (
-    <div className="isolate flex flex-col items-start justify-start">
-      <p className="p-sm">
-        {numberOfArticles}{" "}
-        {resolvePlural({
-          count: numberOfArticles,
-          singular: "članek",
-          dual: "članka",
-          plural: "člankov",
-        })}
-      </p>
-      <div className="flex h-8 items-start justify-start py-2">
+    <div className="flex items-center justify-center gap-1">
+      <div
+        className="flex h-8 items-center justify-center"
+        style={{ transform: `translateX(${(providerKeys.length - 1) * 6}px)` }}
+      >
         {providerKeys.slice(0, MAX_DISPLAYED_SOURCES).map((key, index) => {
           const overlap = index * -12;
           return (
@@ -50,6 +45,10 @@ export function Sources({
             +
           </div>
         )}
+      </div>
+      <div className="text-md flex h-8 items-center gap-2 rounded bg-black/50 px-2 text-white">
+        <Newspaper className="size-5" />
+        {numberOfArticles}
       </div>
     </div>
   );

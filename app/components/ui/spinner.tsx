@@ -7,6 +7,7 @@ export function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
       role="status"
       aria-label="Loading"
       className={cn("size-4 animate-spin", className)}
+      color="white"
       {...props}
     />
   );

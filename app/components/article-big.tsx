@@ -44,16 +44,16 @@ export default function ArticleBig({
                 <Tag key={tag} text={tag} big />
               ))}
             </div>
+            <Sources
+              numberOfArticles={numberOfArticles}
+              providerKeys={providerKeys}
+            />
           </div>
           <div className="flex w-full flex-col items-start justify-center p-2">
             <div className="flex w-full items-center justify-between">
-              <p className="md:p-lg my-1 line-clamp-2 w-full overflow-clip text-lg leading-5.5 md:my-6 md:w-[80%] md:leading-7">
+              <p className="md:p-lg my-1 line-clamp-2 w-full overflow-clip text-lg leading-8 md:my-4">
                 {title}
               </p>
-              <Sources
-                numberOfArticles={numberOfArticles}
-                providerKeys={providerKeys}
-              />
             </div>
 
             <CoverageBarBig {...biasDistribution} />
