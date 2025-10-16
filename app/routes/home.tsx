@@ -17,9 +17,9 @@ import { config, CategoryKey, type CategoryKeyValue } from "~/config";
 import type { ArticleType } from "~/lib/services/ranking";
 import type { Database } from "~/lib/db";
 import { resolvePromises } from "~/utils/resolvePromises";
-import { cached } from "~/lib/cached";
 import { getEnv } from "~/utils/getEnv";
 import { data } from "react-router";
+import { getMaxAge } from "~/utils/getMaxage";
 
 export function meta({}: Route.MetaArgs) {
   return getSeoMetas({
@@ -36,9 +36,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export function headers({ loaderHeaders }: Route.HeadersArgs) {
-  return {
-    ...loaderHeaders,
-  };
+  return loaderHeaders;
 }
 
 export async function fetchHomeArticlesData({ db }: { db: Database }) {
@@ -62,22 +60,20 @@ export async function fetchHomeArticlesData({ db }: { db: Database }) {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const db = context.db;
+  const { db, kvCache } = context;
 
-  const articles = await cached(
+  const articles = await kvCache.cached(
     async () => await fetchHomeArticlesData({ db }),
     {
       key: "data:home",
       expirationTtl: 10 * 60,
-      cloudflare: context.cloudflare,
     },
   );
 
   const gdpSeries = fetchSloveniaGDP();
   const inflationSeries = fetchInflationMonthlyYoY_SI();
 
-  // TODO: compute maxage based on the last update, instead of having it hard coded
-  const maxAge = 3 * 60;
+  const maxAge = await getMaxAge(kvCache);
 
   return data(
     {

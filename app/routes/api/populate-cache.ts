@@ -1,6 +1,7 @@
+import { fetchCategoryArticlesData } from "~/routes/category";
 import type { Route } from "./+types/populate-cache";
 import { fetchHomeArticlesData } from "~/routes/home";
-import { getEnv } from "~/utils/getEnv";
+import { config } from "~/config";
 
 export type CacheMeta = {
   lastUpdated: number;
@@ -10,23 +11,41 @@ export type CacheMeta = {
 // TODO: protect this route with a secret token or something
 
 export async function action({ context }: Route.ActionArgs) {
-  const { cloudflare, db } = context;
-  const cache = cloudflare.env.VIDIK_CACHE;
-  const env = getEnv();
+  const { db, kvCache } = context;
+
+  console.log("Populating cache...");
 
   const articles = await fetchHomeArticlesData({ db });
 
-  // TODO: prepopulate cache for category pages
+  kvCache.putDeferred("data:home", articles, { expirationTtl: 30 * 60 });
 
-  const cacheKey = `${env}:data:home`;
+  const categoryResults = await Promise.allSettled(
+    config.categories.map((c) =>
+      fetchCategoryArticlesData({ db, category: c.key }),
+    ),
+  );
 
-  await cache.put(cacheKey, JSON.stringify(articles), {
-    expirationTtl: 30 * 60,
+  categoryResults.forEach((result, index) => {
+    if (result.status === "fulfilled") {
+      const category = config.categories[index].key;
+      kvCache.putDeferred(`data:category:${category}`, result.value, {
+        expirationTtl: 30 * 60,
+      });
+    } else {
+      console.error(
+        `Failed to fetch articles for category ${config.categories[index].key}: ${result.reason}`,
+      );
+    }
   });
 
   const nextMeta = { lastUpdated: Date.now() } satisfies CacheMeta;
 
-  await cache.put(`${env}:meta`, JSON.stringify(nextMeta));
+  await kvCache.put("meta", nextMeta);
+
+  console.log(
+    "Cache populated at ",
+    new Date(nextMeta.lastUpdated).toISOString(),
+  );
 
   return new Response("Success", { status: 200 });
 }

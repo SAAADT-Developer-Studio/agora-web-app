@@ -1,4 +1,5 @@
 import { createRequestHandler } from "react-router";
+import { KVCache } from "~/lib/kvCache";
 import { getDb, type Database } from "~/lib/db";
 
 declare module "react-router" {
@@ -8,6 +9,7 @@ declare module "react-router" {
       ctx: ExecutionContext;
     };
     db: Database;
+    kvCache: KVCache;
   }
 }
 
@@ -19,6 +21,8 @@ const requestHandler = createRequestHandler(
 export default {
   async fetch(request, env, ctx) {
     const cache = await caches.open("custom:vidik-page-cache");
+    const kvCache = new KVCache(env.VIDIK_CACHE, ctx);
+
     let response = await cache.match(request);
 
     if (!response) {
@@ -26,6 +30,7 @@ export default {
       response = await requestHandler(request, {
         cloudflare: { env, ctx },
         db,
+        kvCache,
       });
       ctx.waitUntil(cache.put(request, response.clone()));
     }
