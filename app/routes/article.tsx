@@ -99,7 +99,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="bg-background min-h-screen">
-      <article className="mx-auto max-w-5xl px-4 py-4 md:px-6 md:py-6">
+      <article className="mx-auto max-w-5xl px-1 py-4 md:py-6">
         <div className="text-muted-foreground mb-6 flex flex-wrap items-center gap-3 text-sm">
           <span className="font-mono tracking-wider">VIDIK</span>
           {uniqueCategories.slice(0, 4).map((category) => (
@@ -161,7 +161,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   key={article.id}
-                  className="group hover:bg-muted/50 border-primary block border-b py-6 transition-colors last:border-b-0"
+                  className="group hover:bg-muted/50 border-primary/30 block border-b py-6 transition-colors last:border-b-0"
                 >
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
@@ -177,7 +177,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                     <div className="min-w-0 flex-1">
                       <div className="text-muted-foreground mb-2 flex flex-wrap items-center gap-2 text-xs">
                         <span className="font-mono tracking-wider uppercase">
-                          {article.newsProviderKey}
+                          {article.newsProvider.name}
                         </span>
                         <span>•</span>
                         <time dateTime={article.publishedAt}>
