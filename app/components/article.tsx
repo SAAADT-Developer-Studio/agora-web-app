@@ -33,27 +33,33 @@ export function Article({
       >
         <div className="text-vidikwhite flex h-full w-full flex-col items-center justify-between rounded-md [background-image:linear-gradient(to_top,rgba(0,0,0,0.8)_0%,rgba(0,0,0,0.6)_37%,rgba(0,0,0,0)_100%)] text-2xl font-bold">
           <div className="flex h-8 w-full items-center justify-between p-2">
-            <div className="flex gap-2">
+            <div className="flex max-h-[21px] flex-wrap gap-2 overflow-hidden">
               {tags.map((tag) => (
                 <Tag key={tag} text={tag} big />
               ))}
             </div>
+            <ArticleCount count={numberOfArticles} />
           </div>
           <div className="flex w-full flex-col items-start justify-center p-2">
             <p className="p-sm my-2 line-clamp-2 overflow-clip">{title}</p>
             <CoverageBar {...biasDistribution} />
           </div>
         </div>
-        <div
-          className={cn(
-            "absolute top-1.5 right-1.5 flex scale-[0.99] items-center gap-1 rounded bg-black/50 px-1 text-sm text-white opacity-0 transition duration-300",
-            "group-hover:scale-[1] group-hover:opacity-100",
-          )}
-        >
-          <Newspaper className="size-3" />
-          {numberOfArticles}
-        </div>
       </article>
     </Link>
+  );
+}
+
+function ArticleCount({ count }: { count: number }) {
+  return (
+    <div
+      className={cn(
+        "flex scale-[0.99] items-center gap-1 rounded bg-black/50 px-1 text-sm text-white opacity-0 transition duration-300",
+        "group-hover:scale-[1] group-hover:opacity-100",
+      )}
+    >
+      <Newspaper className="size-3" />
+      {count}
+    </div>
   );
 }

@@ -100,13 +100,13 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
   return (
     <div className="bg-background min-h-screen">
       <article className="mx-auto max-w-5xl px-1 py-4 md:py-6">
-        <div className="text-muted-foreground mb-6 flex flex-wrap items-center gap-3 text-sm">
+        <div className="text-muted-foreground mb-6 flex max-h-5 flex-wrap items-center gap-3 overflow-clip text-sm">
           <span className="font-mono tracking-wider">VIDIK</span>
           {uniqueCategories.slice(0, 4).map((category) => (
-            <>
+            <span className="flex gap-3">
               <span>•</span>
               <span className="capitalize">{category}</span>
-            </>
+            </span>
           ))}
         </div>
 
