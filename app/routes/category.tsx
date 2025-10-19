@@ -101,7 +101,7 @@ export default function CategoryPage({
   const sliceEnd = isLarge ? 6 : 5;
 
   return (
-    <div className="px-3 md:px-6">
+    <div className="">
       <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
         <Link to="/" className="uppercase hover:text-white">
           Domov
