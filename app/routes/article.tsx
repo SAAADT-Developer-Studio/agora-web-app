@@ -8,7 +8,6 @@ import { config } from "~/config";
 import { Info, Newspaper, Calendar, SatelliteDish } from "lucide-react";
 import { resolvePlural } from "~/utils/resolvePlurals";
 
-import fallbackImage from "~/assets/fallback.png";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
 import { isSameHour } from "~/utils/isSameHour";
@@ -53,11 +52,21 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const allCategories = cluster.articles.flatMap((a) => a.categories || []);
   const uniqueCategories = Array.from(new Set(allCategories));
 
-  const heroImage =
-    cluster.articles
-      .flatMap((a) => a.imageUrls ?? [])
-      // TODO: picking the image should be moved to a centralized place, and probably optimized
-      .filter((url) => !url.endsWith(".mp4"))[0] ?? fallbackArticleImage;
+  const heroImage = cluster.articles
+    .flatMap(
+      (a) =>
+        a.imageUrls?.map((url) => {
+          return {
+            url,
+            id: a.id,
+          };
+        }) ?? [],
+    )
+    // TODO: picking the image should be moved to a centralized place, and probably optimized
+    .filter(({ id, url }) => !url.endsWith(".mp4"))[0] ?? {
+    id: "fake-id",
+    fallbackArticleImage,
+  };
 
   return {
     cluster,
@@ -109,12 +118,12 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
           <figure className="md:col-span-2">
             <div className="bg-muted border-primary/20 overflow-hidden rounded-lg border">
               <img
-                src={heroImage ?? fallbackImage}
+                src={heroImage.url}
                 alt={cluster.title}
                 className="h-auto w-full object-cover"
                 style={{
                   aspectRatio: "16/9",
-                  viewTransitionName: "article-image",
+                  viewTransitionName: `article-image-${heroImage.id}`,
                 }}
               />
             </div>
