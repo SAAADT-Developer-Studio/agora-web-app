@@ -12,6 +12,7 @@ import "./app.css";
 import { ErrorComponent } from "~/components/error-component";
 import { Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "~/components/ui/tooltip";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -86,7 +87,9 @@ export default function App() {
     // This suspense is here so that in case of hydration errors, react does not rerender the head (it only rerenders from the closest Suspense boundary down)
     <QueryClientProvider client={queryClient}>
       <Suspense>
-        <Outlet />
+        <TooltipProvider>
+          <Outlet />
+        </TooltipProvider>
       </Suspense>
     </QueryClientProvider>
   );

@@ -96,11 +96,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const reverseAll = useMediaQuery("(min-width: 64rem)");
 
   return (
-    <div className="grid grid-cols-1 gap-3 px-3 sm:grid-cols-2 md:gap-6 md:px-6 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
       <HeroArticles articles={articles.home} />
 
       <CategorySection
         articles={articles[CategoryKey.politika]}
+        categoryKey={CategoryKey.politika}
         dividerText="POLITIKA"
         sideSection={
           <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
@@ -109,6 +110,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
       <CategorySection
         articles={articles[CategoryKey.gospodarstvo]}
+        categoryKey={CategoryKey.gospodarstvo}
         dividerText="GOSPODARSTVO"
         sideSection={
           <EconomyCard
@@ -120,36 +122,43 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
       <CategorySection
         articles={articles[CategoryKey.kriminal]}
+        categoryKey={CategoryKey.kriminal}
         dividerText="KRIMINAL"
       />
 
       <CategorySection
         articles={articles[CategoryKey.lokalno]}
+        categoryKey={CategoryKey.lokalno}
         dividerText="LOKALNO"
       />
 
       <CategorySection
         articles={articles[CategoryKey.sport]}
+        categoryKey={CategoryKey.sport}
         dividerText="ŠPORT"
       />
 
       <CategorySection
         articles={articles[CategoryKey.tehnologijaZnanost]}
+        categoryKey={CategoryKey.tehnologijaZnanost}
         dividerText="TEHNOLOGIJA & ZNANOST"
       />
 
       <CategorySection
         articles={articles[CategoryKey.kultura]}
+        categoryKey={CategoryKey.kultura}
         dividerText="KULTURA"
       />
 
       <CategorySection
         articles={articles[CategoryKey.zdravje]}
+        categoryKey={CategoryKey.zdravje}
         dividerText="ZDRAVJE"
       />
 
       <CategorySection
         articles={articles[CategoryKey.okolje]}
+        categoryKey={CategoryKey.okolje}
         dividerText="OKOLJE"
       />
     </div>

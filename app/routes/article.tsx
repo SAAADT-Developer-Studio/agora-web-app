@@ -8,7 +8,6 @@ import { config } from "~/config";
 import { Info, Newspaper, Calendar, SatelliteDish } from "lucide-react";
 import { resolvePlural } from "~/utils/resolvePlurals";
 
-import fallbackImage from "~/assets/fallback.png";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
 import { isSameHour } from "~/utils/isSameHour";
@@ -53,11 +52,21 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const allCategories = cluster.articles.flatMap((a) => a.categories || []);
   const uniqueCategories = Array.from(new Set(allCategories));
 
-  const heroImage =
-    cluster.articles
-      .flatMap((a) => a.imageUrls ?? [])
-      // TODO: picking the image should be moved to a centralized place, and probably optimized
-      .filter((url) => !url.endsWith(".mp4"))[0] ?? fallbackArticleImage;
+  const heroImage = cluster.articles
+    .flatMap(
+      (a) =>
+        a.imageUrls?.map((url) => {
+          return {
+            url,
+            id: a.id,
+          };
+        }) ?? [],
+    )
+    // TODO: picking the image should be moved to a centralized place, and probably optimized
+    .filter(({ id, url }) => !url.endsWith(".mp4"))[0] ?? {
+    id: "fake-id",
+    fallbackArticleImage,
+  };
 
   return {
     cluster,
@@ -90,14 +99,14 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="bg-background min-h-screen">
-      <article className="mx-auto max-w-5xl px-4 py-4 md:px-6 md:py-6">
-        <div className="text-muted-foreground mb-6 flex flex-wrap items-center gap-3 text-sm">
+      <article className="mx-auto max-w-5xl px-1 py-4 md:py-6">
+        <div className="text-muted-foreground mb-6 flex max-h-5 flex-wrap items-center gap-3 overflow-clip text-sm">
           <span className="font-mono tracking-wider">VIDIK</span>
           {uniqueCategories.slice(0, 4).map((category) => (
-            <>
+            <span className="flex gap-3">
               <span>•</span>
               <span className="capitalize">{category}</span>
-            </>
+            </span>
           ))}
         </div>
 
@@ -109,12 +118,12 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
           <figure className="md:col-span-2">
             <div className="bg-muted border-primary/20 overflow-hidden rounded-lg border">
               <img
-                src={heroImage ?? fallbackImage}
+                src={heroImage.url}
                 alt={cluster.title}
                 className="h-auto w-full object-cover"
                 style={{
                   aspectRatio: "16/9",
-                  viewTransitionName: "article-image",
+                  viewTransitionName: `article-image-${cluster.id}`,
                 }}
               />
             </div>
@@ -152,7 +161,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   key={article.id}
-                  className="group hover:bg-muted/50 border-primary block border-b py-6 transition-colors last:border-b-0"
+                  className="group hover:bg-muted/50 border-primary/30 block border-b py-6 transition-colors last:border-b-0"
                 >
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
@@ -168,7 +177,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                     <div className="min-w-0 flex-1">
                       <div className="text-muted-foreground mb-2 flex flex-wrap items-center gap-2 text-xs">
                         <span className="font-mono tracking-wider uppercase">
-                          {article.newsProviderKey}
+                          {article.newsProvider.name}
                         </span>
                         <span>•</span>
                         <time dateTime={article.publishedAt}>
@@ -400,16 +409,20 @@ function ArticleBottomBanner({
   );
 }
 
-export function meta({ params, data }: Route.MetaArgs): Route.MetaDescriptors {
+export function meta({
+  data,
+  location,
+}: Route.MetaArgs): Route.MetaDescriptors {
   const title = data.cluster.title;
-  const imageUrl = data.heroImage;
+  const imageUrl = data.heroImage.url;
   const keywords = data.uniqueCategories.join(", ");
+  const url = new URL(location.pathname, "https://vidik.si").href;
 
   return getSeoMetas({
     title,
     description: "Cluster summary goes here.",
     image: imageUrl,
-    url: `https://vidik.si/article/${params.articleId}`,
+    url,
     keywords,
     ogType: "article",
   });

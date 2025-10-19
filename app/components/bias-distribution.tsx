@@ -1,4 +1,10 @@
 import type { InferSelectModel } from "drizzle-orm";
+import { href, Link } from "react-router";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { config } from "~/config";
 import type { newsProvider } from "~/drizzle/schema";
 
@@ -100,22 +106,7 @@ export function BiasDistribution({
             <div className="px-2 pt-4">
               <div className="flex flex-col items-center gap-2">
                 {category.providers.map((provider, idx) => (
-                  // TODO: link to provider page
-                  <div
-                    key={idx}
-                    className="border-primary relative flex w-full items-center justify-center rounded-full border-2 bg-blue-600"
-                  >
-                    <img
-                      src={`${config.imagesUrl}/providers/${provider.key}.webp`}
-                      alt="Provider"
-                      className="h-full w-full overflow-clip rounded-full object-contain"
-                    />
-                    {provider.articleCount > 1 && (
-                      <div className="absolute -top-2 -right-2 flex size-4 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-black">
-                        {provider.articleCount}
-                      </div>
-                    )}
-                  </div>
+                  <ProviderBadge key={idx} provider={provider} />
                 ))}
               </div>
             </div>
@@ -123,5 +114,38 @@ export function BiasDistribution({
         ))}
       </div>
     </div>
+  );
+}
+
+function ProviderBadge({
+  provider,
+}: {
+  provider: { key: string; name: string; articleCount: number };
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger>
+        {/* TODO: flesh out provider page */}
+        {/* <Link
+          to={href("/provider/:providerKey", {
+            providerKey: provider.key,
+          })}
+        > */}
+        <div className="dark:border-primary border-primary/20 relative flex w-full items-center justify-center rounded-full border-2">
+          <img
+            src={`${config.imagesUrl}/providers/${provider.key}.webp`}
+            alt="Provider"
+            className="h-full w-full overflow-clip rounded-full object-contain"
+          />
+          {provider.articleCount > 1 && (
+            <div className="absolute -top-2 -right-2 flex size-4 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-black">
+              {provider.articleCount}
+            </div>
+          )}
+        </div>
+        {/* </Link> */}
+      </TooltipTrigger>
+      <TooltipContent side="right">{provider.name}</TooltipContent>
+    </Tooltip>
   );
 }

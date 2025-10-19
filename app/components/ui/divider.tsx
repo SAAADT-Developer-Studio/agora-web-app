@@ -1,12 +1,16 @@
-import { cn } from "~/lib/utils";
+import { href, Link } from "react-router";
 
 export default function Divider({
   text,
   reverse,
-}: Readonly<{ text?: string; reverse?: boolean }>) {
+  categoryKey,
+}: Readonly<{ text?: string; reverse?: boolean; categoryKey: string }>) {
   return (
-    <div className="col-span-full pt-4 text-lg font-normal dark:font-bold">
+    <Link
+      to={href("/:category", { category: categoryKey })}
+      className="col-span-full w-fit pt-4 text-lg font-normal hover:underline focus:underline dark:font-bold"
+    >
       {text}
-    </div>
+    </Link>
   );
 }
