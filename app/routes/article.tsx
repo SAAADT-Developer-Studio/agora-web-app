@@ -123,7 +123,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                 className="h-auto w-full object-cover"
                 style={{
                   aspectRatio: "16/9",
-                  viewTransitionName: `article-image-${heroImage.id}`,
+                  viewTransitionName: `article-image-${cluster.id}`,
                 }}
               />
             </div>
