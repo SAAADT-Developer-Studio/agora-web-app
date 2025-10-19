@@ -409,16 +409,20 @@ function ArticleBottomBanner({
   );
 }
 
-export function meta({ params, data }: Route.MetaArgs): Route.MetaDescriptors {
+export function meta({
+  data,
+  location,
+}: Route.MetaArgs): Route.MetaDescriptors {
   const title = data.cluster.title;
-  const imageUrl = data.heroImage;
+  const imageUrl = data.heroImage.url;
   const keywords = data.uniqueCategories.join(", ");
+  const url = new URL(location.pathname, "https://vidik.si").href;
 
   return getSeoMetas({
     title,
     description: "Cluster summary goes here.",
     image: imageUrl,
-    url: `https://vidik.si/article/${params.articleId}`,
+    url,
     keywords,
     ogType: "article",
   });
