@@ -12,14 +12,18 @@ export function Sources({
   providerKeys,
 }: Readonly<SourcesProps>) {
   const MAX_DISPLAYED_SOURCES = 4;
+
+  const displayedProviders = providerKeys.slice(0, MAX_DISPLAYED_SOURCES);
+  const itemsDisplayed =
+    providerKeys.length > MAX_DISPLAYED_SOURCES
+      ? MAX_DISPLAYED_SOURCES + 1
+      : providerKeys.length;
+
   return (
     <div className="flex items-center justify-center gap-1">
-      <div
-        className="flex h-8 items-center justify-center"
-        style={{ transform: `translateX(${(providerKeys.length - 1) * 6}px)` }}
-      >
-        {providerKeys.slice(0, MAX_DISPLAYED_SOURCES).map((key, index) => {
-          const overlap = index * -12;
+      <div className="flex h-8 items-center justify-center">
+        {displayedProviders.map((key, index) => {
+          const overlap = (itemsDisplayed - 1 - index) * 12;
           return (
             <img
               key={key}
@@ -38,7 +42,6 @@ export function Sources({
           <div
             className="flex h-6 w-6 items-center justify-center rounded-full bg-black/70 font-light"
             style={{
-              transform: `translateX(${MAX_DISPLAYED_SOURCES * -12 + 3}px)`,
               zIndex: 10 - MAX_DISPLAYED_SOURCES,
             }}
           >
