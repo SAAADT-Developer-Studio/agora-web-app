@@ -4,8 +4,8 @@ export function getSeoMetas({
   title,
   description,
   keywords = "vidik, politika, novice, slovenska politika, politična obarvanost",
-  image = "", // TODO: add default image URL
-  pathname = "",
+  image = "https://vidik.si/meta-image.png",
+  pathname = "/",
   ogType = "website",
 }: {
   title: string;

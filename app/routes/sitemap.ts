@@ -5,6 +5,7 @@ import type { Route } from "./+types/sitemap";
 import { Sitemap } from "~/lib/seo/sitemap";
 import { config } from "~/config";
 import type { CacheMeta } from "~/routes/api/populate-cache";
+import { LAST_UPDATED } from "~/routes/privacy-policy";
 
 export async function loader({ context, request }: Route.LoaderArgs) {
   const { kvCache, db } = context;
@@ -29,7 +30,7 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 
   sitemap.append(new URL(href("/kontakt"), url), { lastmod, priority: 0.5 });
   sitemap.append(new URL(href("/politika-zasebnosti"), url), {
-    lastmod,
+    lastmod: LAST_UPDATED,
     priority: 0.3,
   });
 

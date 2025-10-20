@@ -27,8 +27,7 @@ export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
     title: "Vidik",
     description:
-      "Odkrij, kako različni slovenski mediji poročajo o istih novicah.  Naša platforma razkriva medijsko pristranskost in pomaga razumeti zgodbo z vseh političnih vidikov.",
-    image: "todo",
+      "Odkrij, kako različni slovenski mediji poročajo o istih novicah. Naša platforma razkriva medijsko pristranskost in pomaga razumeti zgodbo z vseh političnih vidikov.",
     pathname: location.pathname,
     keywords:
       "vidik, novice, slovenija, aktualno, politika, gospodarstvo, šport, kriminal, kultura, zdravje, okolje, lokalno, news, slovenian news, slovenia news",
