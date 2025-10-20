@@ -1,5 +1,5 @@
 import { Facebook, Instagram, Mail, Twitter } from "lucide-react";
-import { Link } from "react-router";
+import { href, Link } from "react-router";
 
 export default function Footer() {
   return (
@@ -67,7 +67,7 @@ export default function Footer() {
             <ul className="text-primary space-y-2 text-sm">
               <li>
                 <Link
-                  to="/contact"
+                  to={href("/kontakt")}
                   className="text-primary/70 hover:text-primary transition-colors"
                 >
                   Kontakt

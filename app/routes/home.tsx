@@ -23,14 +23,13 @@ import { getEnv } from "~/utils/getEnv";
 import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
 
-export function meta({}: Route.MetaArgs) {
+export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
     title: "Vidik",
-    // gpt wrote this, thats why it sucks
     description:
-      "Odkrijte novice in razkrijte njihovo politično obarvanost na enem mestu",
+      "Odkrij, kako različni slovenski mediji poročajo o istih novicah.  Naša platforma razkriva medijsko pristranskost in pomaga razumeti zgodbo z vseh političnih vidikov.",
     image: "todo",
-    url: "https://vidik.si",
+    pathname: location.pathname,
     keywords:
       "vidik, novice, slovenija, aktualno, politika, gospodarstvo, šport, kriminal, kultura, zdravje, okolje, lokalno, news, slovenian news, slovenia news",
     ogType: "website",

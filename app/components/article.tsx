@@ -18,7 +18,7 @@ export function Article({
   const imageUrl = image.src;
   return (
     <Link
-      to={href("/:category/article/:articleId", {
+      to={href("/:category/clanek/:articleId", {
         category: tags[0].toLowerCase(),
         articleId: slug ?? id,
       })}

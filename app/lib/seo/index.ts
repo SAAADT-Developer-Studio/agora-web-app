@@ -4,17 +4,18 @@ export function getSeoMetas({
   title,
   description,
   keywords = "vidik, politika, novice, slovenska politika, politična obarvanost",
-  image = "",
-  url = "https://vidik.si",
+  image = "", // TODO: add default image URL
+  pathname = "",
   ogType = "website",
 }: {
   title: string;
   description: string;
   keywords?: string;
   image?: string;
-  url?: string;
+  pathname?: string;
   ogType?: string;
 }): MetaDescriptor[] {
+  const url = new URL(pathname, "https://vidik.si").href;
   return [
     { title },
     { name: "description", content: description },
