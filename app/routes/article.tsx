@@ -2,21 +2,19 @@ import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/article";
 import { getSeoMetas } from "~/lib/seo";
 import fallbackArticleImage from "~/assets/fallback.png";
-import { getDb } from "~/lib/db";
 import { cluster as clusterSchema } from "~/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { config } from "~/config";
 import { Info, Newspaper, Calendar, SatelliteDish } from "lucide-react";
 import { resolvePlural } from "~/utils/resolvePlural";
 
-import fallbackImage from "~/assets/fallback.png";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
 import { isSameHour } from "~/utils/isSameHour";
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
-  const db = await getDb();
+  const db = context.db;
 
   let condition = eq(clusterSchema.slug, articleId);
   if (Number.isInteger(Number.parseInt(articleId))) {
@@ -26,7 +24,20 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const cluster = await db.query.cluster.findFirst({
     where: condition,
     with: {
-      articles: { with: { newsProvider: true } },
+      articles: {
+        columns: {
+          id: true,
+          title: true,
+          url: true,
+          publishedAt: true,
+          summary: true,
+          categories: true,
+          newsProviderKey: true,
+          imageUrls: true,
+          author: true,
+        },
+        with: { newsProvider: true },
+      },
     },
   });
 
@@ -41,9 +52,21 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const allCategories = cluster.articles.flatMap((a) => a.categories || []);
   const uniqueCategories = Array.from(new Set(allCategories));
 
-  const heroImage =
-    cluster.articles.find((a) => a.imageUrls && a.imageUrls.length > 0)
-      ?.imageUrls?.[0] ?? fallbackArticleImage;
+  const heroImage = cluster.articles
+    .flatMap(
+      (a) =>
+        a.imageUrls?.map((url) => {
+          return {
+            url,
+            id: a.id,
+          };
+        }) ?? [],
+    )
+    // TODO: picking the image should be moved to a centralized place, and probably optimized
+    .filter(({ id, url }) => !url.endsWith(".mp4"))[0] ?? {
+    id: "fake-id",
+    fallbackArticleImage,
+  };
 
   return {
     cluster,
@@ -54,7 +77,6 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
 export default function ArticlePage({ loaderData }: Route.ComponentProps) {
   const { cluster, uniqueCategories, heroImage } = loaderData;
-  console.log("Loaded cluster:", cluster);
 
   const dates = cluster.articles.map((a) => new Date(a.publishedAt));
   const oldestDate = new Date(Math.min(...dates.map((d) => d.getTime())));
@@ -77,14 +99,14 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="bg-background min-h-screen">
-      <article className="mx-auto max-w-5xl px-4 py-4 md:px-6 md:py-6">
-        <div className="text-muted-foreground mb-6 flex flex-wrap items-center gap-3 text-sm">
+      <article className="mx-auto max-w-5xl px-1 py-4 md:py-6">
+        <div className="text-muted-foreground mb-6 flex max-h-5 flex-wrap items-center gap-3 overflow-clip text-sm">
           <span className="font-mono tracking-wider">VIDIK</span>
           {uniqueCategories.slice(0, 4).map((category) => (
-            <>
+            <span className="flex gap-3">
               <span>•</span>
               <span className="capitalize">{category}</span>
-            </>
+            </span>
           ))}
         </div>
 
@@ -94,14 +116,14 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
 
         <div className="mb-12 grid gap-6 md:grid-cols-3">
           <figure className="md:col-span-2">
-            <div className="bg-muted overflow-hidden rounded-lg border border-white/20">
+            <div className="bg-muted border-primary/20 overflow-hidden rounded-lg border">
               <img
-                src={heroImage ?? fallbackImage}
+                src={heroImage.url}
                 alt={cluster.title}
                 className="h-auto w-full object-cover"
                 style={{
                   aspectRatio: "16/9",
-                  viewTransitionName: "article-image",
+                  viewTransitionName: `article-image-${cluster.id}`,
                 }}
               />
             </div>
@@ -139,7 +161,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   key={article.id}
-                  className="group hover:bg-muted/50 block border-b border-white/50 py-6 transition-colors last:border-b-0"
+                  className="group hover:bg-muted/50 border-primary/30 block border-b py-6 transition-colors last:border-b-0"
                 >
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
@@ -155,7 +177,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                     <div className="min-w-0 flex-1">
                       <div className="text-muted-foreground mb-2 flex flex-wrap items-center gap-2 text-xs">
                         <span className="font-mono tracking-wider uppercase">
-                          {article.newsProviderKey}
+                          {article.newsProvider.name}
                         </span>
                         <span>•</span>
                         <time dateTime={article.publishedAt}>
@@ -233,7 +255,7 @@ function ArticleInfoBanner({
   newestDate: Date;
 }) {
   return (
-    <div className="bg-card mb-12 rounded-lg border border-white/20 p-6">
+    <div className="bg-card border-primary/20 mb-12 rounded-lg border p-6">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
           <Info className="text-accent mt-1 h-5 w-5 flex-shrink-0" />
@@ -387,16 +409,20 @@ function ArticleBottomBanner({
   );
 }
 
-export function meta({ params, data }: Route.MetaArgs): Route.MetaDescriptors {
+export function meta({
+  data,
+  location,
+}: Route.MetaArgs): Route.MetaDescriptors {
   const title = data.cluster.title;
-  const imageUrl = data.heroImage;
+  const imageUrl = data.heroImage.url;
   const keywords = data.uniqueCategories.join(", ");
+  const url = new URL(location.pathname, "https://vidik.si").href;
 
   return getSeoMetas({
     title,
     description: "Cluster summary goes here.",
     image: imageUrl,
-    url: `https://vidik.si/article/${params.articleId}`,
+    url,
     keywords,
     ogType: "article",
   });

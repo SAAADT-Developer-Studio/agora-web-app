@@ -1,14 +1,14 @@
 import { count, desc, asc, gte, and, eq } from "drizzle-orm";
-import { getDb } from "~/lib/db";
 import { newsProvider, article } from "~/drizzle/schema";
+import type { Database } from "~/lib/db";
 
 export async function getProviderStats({
   count: providerCount,
+  db,
 }: {
   count: number;
+  db: Database;
 }) {
-  const db = await getDb();
-
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 

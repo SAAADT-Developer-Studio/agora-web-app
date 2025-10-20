@@ -3,8 +3,9 @@ import { getCategoryArticlesWithOffset } from "~/lib/services/ranking";
 import type { Route } from "./+types/category";
 import { config } from "~/config";
 
-export async function loader({ params, request }: Route.LoaderArgs) {
-  const categorySet = new Set(config.categories.map((c) => c.path.slice(1)));
+const categorySet = new Set<string>(config.categories.map((c) => c.key));
+
+export async function loader({ params, request, context }: Route.LoaderArgs) {
   const category = params.category;
   const count = new URL(request.url).searchParams.get("count");
   const offset = new URL(request.url).searchParams.get("offset");
@@ -26,6 +27,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     throw new Response("Category Not Found", { status: 404 });
   }
   const articles = await getCategoryArticlesWithOffset({
+    db: context.db,
     category,
     count: Number(count),
     offset: Number(offset) || 0,

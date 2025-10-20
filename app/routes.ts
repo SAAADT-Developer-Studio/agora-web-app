@@ -12,11 +12,14 @@ export default [
     route("contact", "./routes/contact.tsx"),
     route("donate", "./routes/donate.tsx"),
     route("providers", "./routes/providers.tsx"),
-    route("provider", "./routes/provider.tsx"),
+    route("provider/:providerKey", "./routes/provider.tsx"),
     ...prefix(":category", [
       index("./routes/category.tsx"),
       route("article/:articleId", "./routes/article.tsx"),
     ]),
-    ...prefix("api", [route("category/:category", "./routes/api/category.ts")]),
+    ...prefix("api", [
+      route("category/:category", "./routes/api/category.ts"),
+      route("populate-cache", "./routes/api/populate-cache.ts"),
+    ]),
   ]),
 ] satisfies RouteConfig;

@@ -1,4 +1,4 @@
-import { getDb } from "~/lib/db";
+import type { Database } from "~/lib/db";
 import { article, cluster } from "~/drizzle/schema";
 import { inArray, sql } from "drizzle-orm";
 import fallbackArticleImage from "~/assets/fallback.png";
@@ -50,7 +50,7 @@ const MAX_CATEGORY_PRIORITY = Math.max(...Object.values(CATEGORY_PRIORITY));
 const RECENCY_DECAY_HOURS = 12;
 
 const recencyScoreExpr = sql<number>`
-  avg(
+  max(
     exp(
       -extract(epoch from (now() - ${article.publishedAt}::timestamptz)) / 3600 / ${RECENCY_DECAY_HOURS}
     )
@@ -76,12 +76,12 @@ const categoryScoreExpr = sql<number>`
 `;
 
 export async function getHomeArticles({
+  db,
   count,
 }: {
+  db: Database;
   count: number;
 }): Promise<ArticleType[]> {
-  const db = await getDb();
-
   const topClusterIds = await db.execute(sql`
     WITH cluster_scores AS (
       SELECT
@@ -127,14 +127,14 @@ export async function getHomeArticles({
 }
 
 export async function getCategoryArticles({
+  db,
   category,
   count,
 }: {
+  db: Database;
   category: string;
   count: number;
 }): Promise<ArticleType[]> {
-  const db = await getDb();
-
   // First, get the normalized scores using a subquery
   const topClusterIds = await db.execute(sql`
     WITH cluster_scores AS (
@@ -182,16 +182,16 @@ export async function getCategoryArticles({
 }
 
 export async function getCategoryArticlesWithOffset({
+  db,
   category,
   count,
   offset,
 }: {
+  db: Database;
   category: string;
   count: number;
   offset: number;
 }): Promise<ArticleType[]> {
-  const db = await getDb();
-
   // First, get the normalized scores using a subquery
   const topClusterIds = await db.execute(sql`
     WITH cluster_scores AS (
@@ -240,7 +240,7 @@ export async function getCategoryArticlesWithOffset({
 }
 
 async function common(
-  db: Awaited<ReturnType<typeof getDb>>,
+  db: Database,
   clusterIds: { id: number; article_count: number }[],
 ) {
   const topClusters = await db.query.cluster.findMany({

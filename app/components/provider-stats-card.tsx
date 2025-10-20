@@ -36,12 +36,12 @@ function ProviderStatsChart({
   const maxArticles = Math.max(
     ...providerStats.map((provider) => provider.articleCount),
   );
-
+  console.log("Provider stats:", providerStats);
   return (
     <div className="flex flex-col gap-3 px-5">
       {providerStats.map((provider) => {
         return (
-          <div className="flex gap-2">
+          <div className="flex gap-2" key={provider.key}>
             <div className="">
               <img
                 src={`${config.imagesUrl}/providers/${provider.key}.webp`}
