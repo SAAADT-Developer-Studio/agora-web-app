@@ -264,13 +264,15 @@ async function common(
 
   const articles: ArticleType[] = topClusters.map((c) => {
     const imgSrc = extractHeroImage(
-      c.articles.map((a) => {
-        return {
-          url: a.imageUrls ? a.imageUrls[0] : fallbackArticleImage,
-          providerKey: a.newsProvider.key,
-          providerRank: a.newsProvider.rank,
-        };
-      }),
+      c.articles
+        .filter((a) => a.imageUrls && a.imageUrls.length > 0)
+        .map((a) => {
+          return {
+            url: a.imageUrls![0],
+            providerKey: a.newsProvider.key,
+            providerRank: a.newsProvider.rank,
+          };
+        }),
     );
 
     const tags = new Set(
