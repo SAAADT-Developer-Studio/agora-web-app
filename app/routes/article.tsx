@@ -11,6 +11,7 @@ import { resolvePlural } from "~/utils/resolvePlural";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
 import { isSameHour } from "~/utils/isSameHour";
+import { extractHeroImage } from "~/utils/extractHeroImage";
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
@@ -45,6 +46,16 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     throw new Response("Article Not Found", { status: 404 });
   }
 
+  const heroImageUrl = extractHeroImage(
+    cluster.articles.map((a) => {
+      return {
+        url: a.imageUrls ? a.imageUrls[0] : fallbackArticleImage,
+        providerKey: a.newsProviderKey,
+        providerRank: a.newsProvider.rank,
+      };
+    }),
+  );
+
   cluster.articles.sort(
     (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
   );
@@ -52,31 +63,15 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const allCategories = cluster.articles.flatMap((a) => a.categories || []);
   const uniqueCategories = Array.from(new Set(allCategories));
 
-  const heroImage = cluster.articles
-    .flatMap(
-      (a) =>
-        a.imageUrls?.map((url) => {
-          return {
-            url,
-            id: a.id,
-          };
-        }) ?? [],
-    )
-    // TODO: picking the image should be moved to a centralized place, and probably optimized
-    .filter(({ id, url }) => !url.endsWith(".mp4"))[0] ?? {
-    id: "fake-id",
-    fallbackArticleImage,
-  };
-
   return {
     cluster,
     uniqueCategories,
-    heroImage,
+    heroImageUrl,
   };
 }
 
 export default function ArticlePage({ loaderData }: Route.ComponentProps) {
-  const { cluster, uniqueCategories, heroImage } = loaderData;
+  const { cluster, uniqueCategories, heroImageUrl } = loaderData;
 
   const dates = cluster.articles.map((a) => new Date(a.publishedAt));
   const oldestDate = new Date(Math.min(...dates.map((d) => d.getTime())));
@@ -118,7 +113,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
           <figure className="md:col-span-2">
             <div className="bg-muted border-primary/20 overflow-hidden rounded-lg border">
               <img
-                src={heroImage.url}
+                src={heroImageUrl}
                 alt={cluster.title}
                 className="h-auto w-full object-cover"
                 style={{
@@ -414,7 +409,7 @@ export function meta({
   location,
 }: Route.MetaArgs): Route.MetaDescriptors {
   const title = data.cluster.title;
-  const imageUrl = data.heroImage.url;
+  const imageUrl = data.heroImageUrl;
   const keywords = data.uniqueCategories.join(", ");
 
   const description = `${title}: ${data.cluster.articles
