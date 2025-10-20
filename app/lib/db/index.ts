@@ -1,5 +1,4 @@
 import { drizzle, NodePgDatabase } from "drizzle-orm/node-postgres";
-import { env } from "cloudflare:workers";
 import * as schema from "~/drizzle/schema";
 import * as relations from "~/drizzle/relations";
 
@@ -7,9 +6,9 @@ import { Client } from "pg";
 
 export type Database = NodePgDatabase<typeof schema & typeof relations>;
 
-export async function getDb() {
+export async function getDb(connectionString: string) {
   const client = new Client({
-    connectionString: env.HYPERDRIVE.connectionString,
+    connectionString,
   });
 
   try {

@@ -1,6 +1,5 @@
 import { href } from "react-router";
 import { xml } from "remix-utils/responses";
-import { getDb } from "~/lib/db";
 import type { Route } from "./+types/sitemap";
 import { Sitemap } from "~/lib/seo/sitemap";
 import { config } from "~/config";
