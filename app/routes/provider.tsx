@@ -1,6 +1,7 @@
 import { data } from "react-router";
 import type { Route } from "./+types/provider";
 import { getSeoMetas } from "~/lib/seo";
+import { getProviderImageUrl } from "~/components/provider-image";
 
 export async function loader({ context, params }: Route.LoaderArgs) {
   const { db } = context;
@@ -30,14 +31,16 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
 
 export function meta({ data, location }: Route.MetaArgs) {
   const { provider } = data;
-  const url = new URL(location.pathname, "https://vidik.si").href;
+
   return getSeoMetas({
     title: provider.name,
     description:
-      "Learn more about " + provider.name + " and its media bias rating.",
-    image: "todo",
-    url,
-    keywords: `${provider.name}, media bias, news provider`,
+      "Več informacij o " +
+      provider.name +
+      " in njegovi oceni medijske pristranskosti.",
+    image: getProviderImageUrl(provider.key),
+    pathname: location.pathname,
+    keywords: `${provider.name}, medijska pristranskost, mediji`,
     ogType: "article",
   });
 }

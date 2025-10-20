@@ -1,10 +1,8 @@
 import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/contact";
+import { getSeoMetas } from "~/lib/seo";
 
 export function loader({ params }: Route.LoaderArgs) {}
-
-// export function clientLoader({ params }: Route.ClientLoaderArgs) {
-// }
 
 export default function ContactPage({}: Route.ComponentProps) {
   return (
@@ -15,14 +13,17 @@ export default function ContactPage({}: Route.ComponentProps) {
   );
 }
 
-export function meta({ params }: Route.MetaArgs): Route.MetaDescriptors {
-  return [
-    {
-      title: "Contact | Vidik",
-      name: "description",
-      content: "Explore various categories of articles.",
-    },
-  ];
+export function meta({
+  params,
+  location,
+}: Route.MetaArgs): Route.MetaDescriptors {
+  return getSeoMetas({
+    title: "Kontakt | Vidik",
+    description:
+      "Kontaktirajte nas za vprašanja, predloge, podporo ali dodatne informacije.",
+    pathname: location.pathname,
+    ogType: "website",
+  });
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

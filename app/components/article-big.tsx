@@ -21,7 +21,7 @@ export default function ArticleBig({
 
   return (
     <Link
-      to={href("/:category/article/:articleId", {
+      to={href("/:category/clanek/:articleId", {
         category: tags[0].toLowerCase(),
         articleId: slug ?? id,
       })}
