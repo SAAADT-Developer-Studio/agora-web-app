@@ -3,6 +3,7 @@ import { article, cluster } from "~/drizzle/schema";
 import { inArray, sql } from "drizzle-orm";
 import fallbackArticleImage from "~/assets/fallback.png";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
+import { extractHeroImage } from "~/utils/extractHeroImage";
 
 export type Image = {
   src: string;
@@ -262,9 +263,15 @@ async function common(
   });
 
   const articles: ArticleType[] = topClusters.map((c) => {
-    const imgSrc =
-      c.articles.find((a) => a.imageUrls && a.imageUrls.length > 0)
-        ?.imageUrls?.[0] ?? fallbackArticleImage;
+    const imgSrc = extractHeroImage(
+      c.articles.map((a) => {
+        return {
+          url: a.imageUrls ? a.imageUrls[0] : fallbackArticleImage,
+          providerKey: a.newsProvider.key,
+          providerRank: a.newsProvider.rank,
+        };
+      }),
+    );
 
     const tags = new Set(
       c.articles
