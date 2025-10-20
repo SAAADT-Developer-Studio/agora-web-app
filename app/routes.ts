@@ -11,6 +11,7 @@ export default [
     index("./routes/home.tsx"),
     route("contact", "./routes/contact.tsx"),
     route("donate", "./routes/donate.tsx"),
+    route("politika-zasebnosti", "./routes/privacy-policy.tsx"),
     route("providers", "./routes/providers.tsx"),
     route("provider/:providerKey", "./routes/provider.tsx"),
     ...prefix(":category", [
