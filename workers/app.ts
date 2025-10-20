@@ -21,19 +21,19 @@ const requestHandler = createRequestHandler(
 export default {
   async fetch(request, env, ctx) {
     const cache = await caches.open("custom:vidik-page-cache");
+
+    // let response = await cache.match(request);
+
+    // if (!response) {
+    const db = await getDb();
     const kvCache = new KVCache(env.VIDIK_CACHE, ctx);
-
-    let response = await cache.match(request);
-
-    if (!response) {
-      const db = await getDb();
-      response = await requestHandler(request, {
-        cloudflare: { env, ctx },
-        db,
-        kvCache,
-      });
-      ctx.waitUntil(cache.put(request, response.clone()));
-    }
+    const response = await requestHandler(request, {
+      cloudflare: { env, ctx },
+      db,
+      kvCache,
+    });
+    // ctx.waitUntil(cache.put(request, response.clone()));
+    // }
 
     return response;
   },
