@@ -12,6 +12,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+import { useLocalStorage } from "~/hooks/use-local-storage";
+
 import {
   Card,
   CardContent,
@@ -27,6 +29,7 @@ import {
 } from "../components/ui/chart";
 import type { InflationSeries } from "~/lib/services/external";
 import { Await } from "react-router";
+import { SideCardContainer, SideCardHeader } from "~/components/ui/side-card";
 
 const gdpConfig = {
   gdp: {
@@ -55,12 +58,11 @@ export function EconomyCard({
   inflationSeries: Promise<InflationSeries[]>;
 }) {
   return (
-    <div className="bg-foreground border-vidikdarkgray/10 col-span-1 row-span-2 flex flex-col rounded-md border-1 dark:border-0">
-      <div className="flex w-full items-center justify-start gap-3 p-5">
-        <Wallet className="h-6 w-6" />
+    <SideCardContainer>
+      <SideCardHeader>
+        <Wallet className="size-5" />
         <p className="font-bold uppercase">Ekonomija</p>
-      </div>
-
+      </SideCardHeader>
       <div className="grid grid-cols-1 grid-rows-2 pt-0">
         <Card className="gap-0 border-none py-0 shadow-none">
           <CardHeader className="!p-0">
@@ -116,22 +118,26 @@ export function EconomyCard({
           </CardContent>
         </Card>
       </div>
-    </div>
+    </SideCardContainer>
   );
 }
 
 function GDPChart({ gdpData }: { gdpData: { year: string; gdp: number }[] }) {
+  const [theme, setTheme] = useLocalStorage("theme", "light");
   return (
     <ChartContainer config={gdpConfig} className="w-full md:w-[80%] lg:w-full">
       <BarChart accessibilityLayer data={gdpData} barCategoryGap={1}>
-        <CartesianGrid vertical={false} stroke="#5a5a5a" />
+        <CartesianGrid
+          vertical={false}
+          stroke={theme === "dark" ? "#5a5a5a" : "var(--color-vidiklightgray)"}
+        />
         <XAxis
           dataKey="year"
           tickLine={false}
           axisLine={false}
           tickMargin={8}
           minTickGap={16}
-          stroke="white"
+          stroke={theme === "dark" ? "white" : "black"}
         />
         <ChartTooltip
           cursor={{ fill: "#5a5a5a" }}
@@ -157,6 +163,7 @@ function InflationChart({
 }: {
   inflationData: { date: string; hicp: number }[];
 }) {
+  const [theme, setTheme] = useLocalStorage("theme", "light");
   return (
     <ChartContainer config={inflationConfig} className="w-full">
       <ResponsiveContainer width="100%" height={260}>
@@ -168,9 +175,14 @@ function InflationChart({
             </linearGradient>
           </defs>
 
-          <CartesianGrid vertical={false} stroke="#5a5a5a" />
+          <CartesianGrid
+            vertical={false}
+            stroke={
+              theme === "dark" ? "#5a5a5a" : "var(--color-vidiklightgray)"
+            }
+          />
           <XAxis
-            stroke="white"
+            stroke={theme === "dark" ? "white" : "black"}
             dataKey="date"
             tickLine={false}
             axisLine={false}

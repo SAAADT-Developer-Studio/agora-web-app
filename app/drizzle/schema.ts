@@ -8,6 +8,7 @@ import {
   doublePrecision,
   integer,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const article = pgTable(
   "article",
@@ -64,7 +65,12 @@ export const alembicVersion = pgTable("alembic_version", {
   versionNum: varchar("version_num", { length: 32 }).primaryKey().notNull(),
 });
 
-export const cluster = pgTable("cluster", {
-  id: serial().primaryKey().notNull(),
-  title: varchar().notNull(),
-});
+export const cluster = pgTable(
+  "cluster",
+  {
+    id: serial().primaryKey().notNull(),
+    title: varchar().notNull(),
+    slug: varchar(),
+  },
+  (table) => [unique("cluster_slug_key").on(table.slug)],
+);

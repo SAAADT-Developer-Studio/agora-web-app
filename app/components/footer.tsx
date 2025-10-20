@@ -5,12 +5,13 @@ export default function Footer() {
   return (
     <footer className="bg-foreground text-primary mt-20 flex items-center justify-center">
       <div className="w-[1200px] px-4 py-12">
-        <div className="flex flex-col-reverse items-center justify-around gap-8 md:flex-row md:justify-between md:gap-0">
-          <div>
+        <div className="flex flex-col items-start justify-around gap-8 md:flex-row md:justify-between md:gap-0">
+          <div className="w-full md:w-1/2">
             <h3 className="pb-2 text-lg font-semibold tracking-wide">Vidik</h3>
             <p className="text-primary w-full pb-2 text-sm md:w-2/3">
-              Providing insightful perspectives and thoughtful analysis on
-              topics that matter.
+              Odkrij, kako različni slovenski mediji poročajo o istih novicah.
+              Naša platforma razkriva medijsko pristranskost in pomaga razumeti
+              zgodbo z vseh političnih <b>vidikov</b>.
             </p>
             <div className="flex space-x-4 pt-2">
               <Link
@@ -54,23 +55,7 @@ export default function Footer() {
                   to="#"
                   className="text-primary/70 hover:text-primary transition-colors"
                 >
-                  Uvod v Politiko
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="#"
-                  className="text-primary/70 hover:text-primary transition-colors"
-                >
-                  Swiper
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/donate"
-                  className="text-primary/70 hover:text-primary transition-colors"
-                >
-                  Doniraj
+                  Kako smo klasificirali medije?
                 </Link>
               </li>
             </ul>

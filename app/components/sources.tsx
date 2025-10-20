@@ -1,23 +1,34 @@
+import { Newspaper } from "lucide-react";
 import { config } from "~/config";
+import { resolvePlural } from "~/utils/resolvePlural";
 
 export type SourcesProps = {
-  sources?: string[];
   numberOfArticles: number;
+  providerKeys: string[];
 };
 
-export function Sources({ sources, numberOfArticles }: Readonly<SourcesProps>) {
-  const sourcesKeys = sources || ["delo", "rtv", "siol"];
+export function Sources({
+  numberOfArticles,
+  providerKeys,
+}: Readonly<SourcesProps>) {
+  const MAX_DISPLAYED_SOURCES = 4;
+
+  const displayedProviders = providerKeys.slice(0, MAX_DISPLAYED_SOURCES);
+  const itemsDisplayed =
+    providerKeys.length > MAX_DISPLAYED_SOURCES
+      ? MAX_DISPLAYED_SOURCES + 1
+      : providerKeys.length;
+
   return (
-    <div className="isolate flex flex-col items-start justify-start">
-      <p className="p-sm">{numberOfArticles} člankov</p>
-      <div className="flex h-8 items-start justify-start py-2">
-        {sourcesKeys.map((key, index) => {
-          const overlap = index * -12;
+    <div className="flex items-center justify-center gap-1">
+      <div className="flex h-8 items-center justify-center">
+        {displayedProviders.map((key, index) => {
+          const overlap = (itemsDisplayed - 1 - index) * 12;
           return (
             <img
-              key={"source" + index}
+              key={key}
               src={`${config.imagesUrl}/providers/${key}.webp`}
-              alt={`Source ${index}`}
+              alt={`Vir ${index}`}
               className="h-6 w-6 rounded-full"
               style={{
                 transform: `translateX(${overlap}px)`,
@@ -27,9 +38,20 @@ export function Sources({ sources, numberOfArticles }: Readonly<SourcesProps>) {
           );
         })}
 
-        {numberOfArticles > 3 && (
-          <p className="p-sm h-full -translate-x-[24px] translate-y-1.5">...</p>
+        {providerKeys.length > MAX_DISPLAYED_SOURCES && (
+          <div
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-black/70 font-light"
+            style={{
+              zIndex: 10 - MAX_DISPLAYED_SOURCES,
+            }}
+          >
+            +
+          </div>
         )}
+      </div>
+      <div className="text-md flex h-8 items-center gap-2 rounded bg-black/50 px-2 text-white">
+        <Newspaper className="size-5" />
+        {numberOfArticles}
       </div>
     </div>
   );
