@@ -16,6 +16,11 @@ export function ThemeSwitch({
     document.documentElement.classList.remove(theme);
     document.documentElement.classList.add(newTheme);
     setTheme(newTheme);
+    console.log(
+      "Switched to theme:",
+      newTheme,
+      document.documentElement.classList,
+    );
   };
 
   return (
