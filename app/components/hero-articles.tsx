@@ -1,6 +1,5 @@
 import { Article } from "./article";
 import ArticleBig from "./article-big";
-import { useMediaQuery } from "~/hooks/use-media-query";
 import type { ArticleType } from "~/lib/services/ranking";
 
 export default function HeroArticles({
@@ -8,15 +7,17 @@ export default function HeroArticles({
 }: {
   articles: ArticleType[];
 }) {
-  const isLarge = useMediaQuery("(min-width: 64rem)");
-  const sliceEnd = isLarge ? 6 : 5;
-
   return (
     <>
       <ArticleBig {...articles[0]} />
-      {articles.slice(1, sliceEnd).map((article) => (
+      {articles.slice(1, 5).map((article) => (
         <Article key={article.id} {...article} />
       ))}
+      {articles[5] && (
+        <div className="hidden lg:block">
+          <Article key={articles[5].id} {...articles[5]} />
+        </div>
+      )}
     </>
   );
 }
