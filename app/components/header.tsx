@@ -12,7 +12,7 @@ import { Spinner } from "~/components/ui/spinner";
 
 const SIDEPANEL_WIDTH = 280; // px
 
-export function Header() {
+export function Header({ lastUpdated }: { lastUpdated: number }) {
   const [open, setOpen] = useState(false);
 
   // ESC key closes panel
@@ -54,7 +54,9 @@ export function Header() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-vidikwhite mr-3 hidden text-xs md:block">
-            <Suspense>{formatSlovenianDateTime(new Date())}</Suspense>
+            <Suspense>
+              {formatSlovenianDateTime(new Date(lastUpdated))}
+            </Suspense>
           </span>
           <ThemeSwitch />
         </div>
