@@ -19,5 +19,5 @@ export function formatSlovenianDateTime(date: Date) {
   const hour = parts.find((p) => p.type === "hour")!.value;
   const minute = parts.find((p) => p.type === "minute")!.value;
 
-  return `${day}. ${month} ${year} | ${hour}.${minute}`;
+  return `${day}. ${month} ${year} | ${hour}:${minute}`;
 }
