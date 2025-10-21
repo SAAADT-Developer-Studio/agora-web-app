@@ -25,20 +25,22 @@ export default function Footer() {
               zgodbo z vseh političnih <b>vidikov</b>.
             </p>
             <div className="flex space-x-4 pt-2">
-              <Link
-                to="#"
+              <a
+                href="https://www.facebook.com/share/1BHYtu1oJB/?mibextid=wwXIfr"
+                target="_blank"
                 className="text-primary/70 hover:text-primary transition-colors"
               >
                 <Facebook size={20} />
                 <span className="sr-only">Facebook</span>
-              </Link>
-              <Link
-                to="#"
+              </a>
+              <a
+                href="https://www.instagram.com/vidikslo?igsh=MTNnMW1vYXQyYXpvMQ%3D%3D&utm_source=qr"
+                target="_blank"
                 className="text-primary/70 hover:text-primary transition-colors"
               >
                 <Instagram size={20} />
                 <span className="sr-only">Instagram</span>
-              </Link>
+              </a>
               <a
                 href="https://x.com/VidikSlo"
                 target="_blank"
