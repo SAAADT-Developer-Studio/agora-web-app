@@ -9,11 +9,11 @@ export function ThemeSwitch({
   className,
   ...props
 }: React.ComponentProps<typeof SwitchPrimitive.Root>) {
-  const [theme, setTheme] = useLocalStorage("theme", "light");
+  const [theme, setTheme] = useLocalStorage("theme", "dark");
 
   const handleSwitch = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
-    document.documentElement.classList.remove(theme);
+    document.documentElement.classList.remove("dark", "light");
     document.documentElement.classList.add(newTheme);
     setTheme(newTheme);
   };

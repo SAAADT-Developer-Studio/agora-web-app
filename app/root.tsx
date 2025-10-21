@@ -28,19 +28,24 @@ export const links: Route.LinksFunction = () => [
 ];
 
 function initTheme() {
-  let theme = localStorage.getItem("theme");
-  if (!theme) {
-    // TODO: maybe go back to system theme detection when light mode is not ugly
-    // const systemTheme = window.matchMedia(`(prefers-color-scheme: dark)`)
-    //   .matches
-    //   ? `dark`
-    //   : `light`;
-    theme = "dark";
-  } else {
-    theme = JSON.parse(theme) as string;
+  try {
+    let theme = localStorage.getItem("theme");
+    if (!theme) {
+      // TODO: maybe go back to system theme detection when light mode is not ugly
+      // const systemTheme = window.matchMedia(`(prefers-color-scheme: dark)`)
+      //   .matches
+      //   ? `dark`
+      //   : `light`;
+      theme = "dark";
+      localStorage.setItem("theme", JSON.stringify(theme));
+    } else {
+      theme = JSON.parse(theme) as string;
+    }
+    document.documentElement.classList.remove("dark", "light");
+    document.documentElement.classList.add(theme);
+  } catch (e) {
+    document.documentElement.classList.add("dark");
   }
-  document.documentElement.classList.add(theme);
-  localStorage.setItem("theme", JSON.stringify(theme));
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
