@@ -32,6 +32,9 @@ export default {
         db,
         kvCache,
       });
+      if (import.meta.env.DEV) {
+        response.headers.set("Cache-Control", "public, max-age=0, s-maxage=0");
+      }
       ctx.waitUntil(cache.put(request, response.clone()));
     }
 
