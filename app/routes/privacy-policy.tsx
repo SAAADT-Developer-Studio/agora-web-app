@@ -1,6 +1,7 @@
 import { getSeoMetas } from "~/lib/seo";
 import type { Route } from "./+types/privacy-policy";
 import { LastUpdatedBadge } from "~/components/last-updated-badge";
+import { ErrorComponent } from "~/components/error-component";
 
 export const LAST_UPDATED = new Date("2025-10-20");
 
@@ -156,4 +157,8 @@ export function meta({ location }: Route.MetaArgs) {
     description: "Politika zasebnosti za uporabnike platforme Vidik.",
     pathname: location.pathname,
   });
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <ErrorComponent error={error} />;
 }

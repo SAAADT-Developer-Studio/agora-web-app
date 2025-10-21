@@ -1,15 +1,16 @@
 import { isRouteErrorResponse } from "react-router";
+import { ErrorUI } from "~/components/ui/error-ui";
 
 export function ErrorComponent({ error }: { error: unknown }) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
+  let message = "Ups!";
+  let details = "Prišlo je do nepričakovane napake.";
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message = error.status === 404 ? "404" : "Napaka";
     details =
       error.status === 404
-        ? "The requested page could not be found."
+        ? "Stran ni bila najdena."
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
@@ -18,9 +19,8 @@ export function ErrorComponent({ error }: { error: unknown }) {
 
   return (
     <main className="container mx-auto p-4 pt-16">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
+      <ErrorUI message={details} size="large" />
+      {import.meta.env.PROD && stack && (
         <pre className="w-full overflow-x-auto p-4">
           <code>{stack}</code>
         </pre>

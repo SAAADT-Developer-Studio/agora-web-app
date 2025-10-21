@@ -33,7 +33,7 @@ export function ErrorUI({
       </div>
       {size === "large" && (
         <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
-          Oops! Something went wrong
+          Ups! Nekaj je šlo narobe
         </h3>
       )}
       <p

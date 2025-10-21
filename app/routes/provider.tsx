@@ -2,6 +2,7 @@ import { data } from "react-router";
 import type { Route } from "./+types/provider";
 import { getSeoMetas } from "~/lib/seo";
 import { getProviderImageUrl } from "~/components/provider-image";
+import { ErrorComponent } from "~/components/error-component";
 
 export async function loader({ context, params }: Route.LoaderArgs) {
   const { db } = context;
@@ -43,4 +44,8 @@ export function meta({ data, location }: Route.MetaArgs) {
     keywords: `${provider.name}, medijska pristranskost, mediji`,
     ogType: "article",
   });
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <ErrorComponent error={error} />;
 }
