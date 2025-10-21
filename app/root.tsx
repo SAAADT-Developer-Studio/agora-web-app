@@ -30,11 +30,12 @@ export const links: Route.LinksFunction = () => [
 function initTheme() {
   let theme = localStorage.getItem("theme");
   if (!theme) {
-    const systemTheme = window.matchMedia(`(prefers-color-scheme: dark)`)
-      .matches
-      ? `dark`
-      : `light`;
-    theme = systemTheme;
+    // TODO: maybe go back to system theme detection when light mode is not ugly
+    // const systemTheme = window.matchMedia(`(prefers-color-scheme: dark)`)
+    //   .matches
+    //   ? `dark`
+    //   : `light`;
+    theme = "dark";
   } else {
     theme = JSON.parse(theme) as string;
   }
@@ -50,13 +51,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
-        {import.meta.env.PROD && (
-          <script
-            defer
-            src="https://cloud.umami.is/script.js"
-            data-website-id="9a07a807-cf46-4e37-96ef-48802444366e"
-          ></script>
-        )}
         <script
           suppressHydrationWarning
         >{`(${initTheme.toString()})()`}</script>
