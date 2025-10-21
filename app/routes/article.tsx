@@ -13,6 +13,12 @@ import { BiasDistribution } from "~/components/bias-distribution";
 import { isSameHour } from "~/utils/isSameHour";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 
+export function headers({}: Route.HeadersArgs) {
+  return {
+    "Cache-Control": "max-age=10, s-maxage=10",
+  };
+}
+
 export async function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
   const db = context.db;
