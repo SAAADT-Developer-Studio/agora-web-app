@@ -22,6 +22,7 @@ import { resolvePromises } from "~/utils/resolvePromises";
 import { getEnv } from "~/utils/getEnv";
 import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
+import { TutorialPopup } from "~/components/tutorial-popup";
 
 export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
@@ -98,72 +99,75 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   const reverseAll = useMediaQuery("(min-width: 64rem)");
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
-      <HeroArticles articles={articles.home} />
+    <>
+      <TutorialPopup />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
+        <HeroArticles articles={articles.home} />
 
-      <CategorySection
-        articles={articles[CategoryKey.politika]}
-        categoryKey={CategoryKey.politika}
-        dividerText="POLITIKA"
-        sideSection={
-          // <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-          <ProviderStatsCard providerStatsPromise={providerStats} />
-        }
-      />
+        <CategorySection
+          articles={articles[CategoryKey.politika]}
+          categoryKey={CategoryKey.politika}
+          dividerText="POLITIKA"
+          sideSection={
+            // <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
+            <ProviderStatsCard providerStatsPromise={providerStats} />
+          }
+        />
 
-      <CategorySection
-        articles={articles[CategoryKey.gospodarstvo]}
-        categoryKey={CategoryKey.gospodarstvo}
-        dividerText="GOSPODARSTVO"
-        sideSection={
-          <EconomyCard
-            gdpSeries={gdpSeries}
-            inflationSeries={inflationSeries}
-          />
-        }
-      />
+        <CategorySection
+          articles={articles[CategoryKey.gospodarstvo]}
+          categoryKey={CategoryKey.gospodarstvo}
+          dividerText="GOSPODARSTVO"
+          sideSection={
+            <EconomyCard
+              gdpSeries={gdpSeries}
+              inflationSeries={inflationSeries}
+            />
+          }
+        />
 
-      <CategorySection
-        articles={articles[CategoryKey.kriminal]}
-        categoryKey={CategoryKey.kriminal}
-        dividerText="KRIMINAL"
-      />
+        <CategorySection
+          articles={articles[CategoryKey.kriminal]}
+          categoryKey={CategoryKey.kriminal}
+          dividerText="KRIMINAL"
+        />
 
-      <CategorySection
-        articles={articles[CategoryKey.lokalno]}
-        categoryKey={CategoryKey.lokalno}
-        dividerText="LOKALNO"
-      />
+        <CategorySection
+          articles={articles[CategoryKey.lokalno]}
+          categoryKey={CategoryKey.lokalno}
+          dividerText="LOKALNO"
+        />
 
-      <CategorySection
-        articles={articles[CategoryKey.sport]}
-        categoryKey={CategoryKey.sport}
-        dividerText="ŠPORT"
-      />
+        <CategorySection
+          articles={articles[CategoryKey.sport]}
+          categoryKey={CategoryKey.sport}
+          dividerText="ŠPORT"
+        />
 
-      <CategorySection
-        articles={articles[CategoryKey.tehnologijaZnanost]}
-        categoryKey={CategoryKey.tehnologijaZnanost}
-        dividerText="TEHNOLOGIJA & ZNANOST"
-      />
+        <CategorySection
+          articles={articles[CategoryKey.tehnologijaZnanost]}
+          categoryKey={CategoryKey.tehnologijaZnanost}
+          dividerText="TEHNOLOGIJA & ZNANOST"
+        />
 
-      <CategorySection
-        articles={articles[CategoryKey.kultura]}
-        categoryKey={CategoryKey.kultura}
-        dividerText="KULTURA"
-      />
+        <CategorySection
+          articles={articles[CategoryKey.kultura]}
+          categoryKey={CategoryKey.kultura}
+          dividerText="KULTURA"
+        />
 
-      <CategorySection
-        articles={articles[CategoryKey.zdravje]}
-        categoryKey={CategoryKey.zdravje}
-        dividerText="ZDRAVJE"
-      />
+        <CategorySection
+          articles={articles[CategoryKey.zdravje]}
+          categoryKey={CategoryKey.zdravje}
+          dividerText="ZDRAVJE"
+        />
 
-      <CategorySection
-        articles={articles[CategoryKey.okolje]}
-        categoryKey={CategoryKey.okolje}
-        dividerText="OKOLJE"
-      />
-    </div>
+        <CategorySection
+          articles={articles[CategoryKey.okolje]}
+          categoryKey={CategoryKey.okolje}
+          dividerText="OKOLJE"
+        />
+      </div>
+    </>
   );
 }
