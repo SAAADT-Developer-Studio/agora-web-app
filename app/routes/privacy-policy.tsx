@@ -1,27 +1,19 @@
 import { getSeoMetas } from "~/lib/seo";
 import type { Route } from "./+types/privacy-policy";
+import { LastUpdatedBadge } from "~/components/last-updated-badge";
 
 export const LAST_UPDATED = new Date("2025-10-20");
 
 export default function PrivacyPolicyPage({}: Route.ComponentProps) {
   return (
     <div className="bg-background min-h-screen">
-      <div className="mx-auto max-w-4xl px-0 py-2 md:px-6 md:py-4">
-        <div className="mb-10 text-center">
-          <div className="bg-primary/10 mb-4 inline-block rounded-full px-3 py-1.5">
-            <span className="text-primary text-sm font-medium">
-              Nazadnje posodobljeno:{" "}
-              {LAST_UPDATED.toLocaleDateString("sl-SI", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </span>
-          </div>
+      <div className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8">
+        <div className="mb-10">
+          <LastUpdatedBadge date={LAST_UPDATED} className="mb-3" />
           <h1 className="text-primary mb-4 text-4xl font-bold tracking-tight">
             Politika zasebnosti
           </h1>
-          <p className="text-primary/70 mx-auto max-w-2xl leading-relaxed">
+          <p className="text-primary/70 max-w-2xl leading-relaxed">
             Vaša zasebnost je za nas pomembna. Spodaj je razloženo, kako
             zbiramo, uporabljamo in varujemo vaše podatke.
           </p>
