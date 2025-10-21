@@ -68,7 +68,7 @@ export function EconomyCard({
       <div className="grid h-full grid-cols-1 grid-rows-2 pt-0">
         <Card className="gap-0 border-none py-0 shadow-none">
           <CardHeader className="!p-0">
-            <div className="ml-0 px-6 pt-2 md:ml-[10%] lg:ml-0">
+            <div className="ml-0 px-6 pt-2 md:mr-[10%] lg:ml-0">
               <CardTitle>Bruto domači proizvod (BDP)</CardTitle>
             </div>
           </CardHeader>
@@ -103,7 +103,7 @@ export function EconomyCard({
         </Card>
         <Card className="gap-0 border-none py-0 shadow-none">
           <CardHeader className="!p-0">
-            <div className="px-6 pt-2">
+            <div className="px-6 pt-2 md:mr-[10%] lg:ml-0">
               <CardTitle>
                 Inflacija (
                 <a
@@ -195,7 +195,10 @@ function InflationChart({
 }) {
   const [theme, setTheme] = useLocalStorage("theme", "light");
   return (
-    <ChartContainer config={inflationConfig} className="w-full">
+    <ChartContainer
+      config={inflationConfig}
+      className="w-full md:w-[80%] lg:w-full"
+    >
       <ResponsiveContainer width="100%" height={260}>
         <AreaChart data={inflationData}>
           <defs>

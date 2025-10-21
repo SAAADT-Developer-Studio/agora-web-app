@@ -99,6 +99,9 @@ export default function Footer() {
 
         <div className="border-primary/40 text-primary/40 mt-12 flex flex-col items-center justify-between border-t pt-8 text-sm md:flex-row">
           <p>@vidik.si - {new Date().getFullYear()}</p>
+          <p className="mt-4 md:mt-0">
+            <b>M</b>&<b>B</b> Production{" "}
+          </p>
           <p className="mt-4 md:mt-0">Vse pravice pridržane.</p>
         </div>
       </div>
