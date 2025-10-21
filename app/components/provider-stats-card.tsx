@@ -4,6 +4,7 @@ import { Await } from "react-router";
 import { ProviderImage } from "~/components/provider-image";
 import { ErrorUI } from "~/components/ui/error-ui";
 import { SideCardContainer, SideCardHeader } from "~/components/ui/side-card";
+import { Spinner } from "~/components/ui/spinner";
 import {
   Tooltip,
   TooltipContent,
@@ -31,7 +32,13 @@ export function ProviderStatsCard({
         </div>
       </SideCardHeader>
 
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense
+        fallback={
+          <div className="flex flex-1 items-center justify-center">
+            <Spinner className="size-8" />
+          </div>
+        }
+      >
         <Await
           resolve={providerStatsPromise}
           errorElement={
