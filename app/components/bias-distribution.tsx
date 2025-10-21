@@ -1,10 +1,10 @@
 import type { InferSelectModel } from "drizzle-orm";
-import { href, Link } from "react-router";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
+import { BiasInfoTooltip } from "~/components/bias-info-tooltip";
 import { config } from "~/config";
 import type { newsProvider } from "~/drizzle/schema";
 import { cn } from "~/lib/utils";
@@ -79,8 +79,9 @@ export function BiasDistribution({
         className,
       )}
     >
-      <h2 className="font-bold tracking-wide uppercase">
+      <h2 className="flex items-center justify-between font-bold tracking-wide uppercase">
         Distribucija Pristranskosti
+        <BiasInfoTooltip />
       </h2>
 
       <div className="my-6 flex items-start justify-between">

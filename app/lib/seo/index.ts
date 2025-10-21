@@ -5,14 +5,14 @@ export function getSeoMetas({
   description,
   keywords = "vidik, politika, novice, slovenska politika, politična obarvanost",
   image = "https://vidik.si/meta-image.png",
-  pathname = "/",
+  pathname,
   ogType = "website",
 }: {
   title: string;
   description: string;
+  pathname: string;
   keywords?: string;
   image?: string;
-  pathname?: string;
   ogType?: string;
 }): MetaDescriptor[] {
   const url = new URL(pathname, "https://vidik.si").href;

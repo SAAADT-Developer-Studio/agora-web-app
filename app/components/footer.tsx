@@ -1,5 +1,16 @@
-import { Facebook, Instagram, Mail, Twitter } from "lucide-react";
+import { createLucideIcon, Facebook, Instagram, Mail } from "lucide-react";
 import { href, Link, NavLink } from "react-router";
+
+const XIcon = createLucideIcon("X", [
+  [
+    "path",
+    {
+      d: "M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z",
+      stroke: "none",
+      fill: "currentColor",
+    },
+  ],
+]);
 
 export default function Footer() {
   return (
@@ -28,31 +39,32 @@ export default function Footer() {
                 <Instagram size={20} />
                 <span className="sr-only">Instagram</span>
               </Link>
-              <Link
-                to="#"
+              <a
+                href="https://x.com/VidikSlo"
+                target="_blank"
                 className="text-primary/70 hover:text-primary transition-colors"
               >
-                <Twitter size={20} />
-                <span className="sr-only">Twitter</span>
-              </Link>
-              <Link
-                to="#"
+                <XIcon size={20} />
+                <span className="sr-only">X</span>
+              </a>
+              <a
+                href="mailto:info@vidik.si"
                 className="text-primary/70 hover:text-primary transition-colors"
               >
                 <Mail size={20} />
                 <span className="sr-only">Email</span>
-              </Link>
+              </a>
             </div>
           </div>
 
           <div className="w-full md:w-1/3">
             <h3 className="pb-2 text-lg font-semibold tracking-wide">
-              Hitri Povezave
+              Hitre Povezave
             </h3>
             <ul className="text-primary space-y-2 text-sm">
               <li>
                 <Link
-                  to="#"
+                  to={href("/metodologija")}
                   className="text-primary/70 hover:text-primary transition-colors"
                 >
                   Kako smo klasificirali medije?
@@ -61,14 +73,14 @@ export default function Footer() {
             </ul>
           </div>
           <div className="w-full md:w-1/3">
-            <h3 className="pb-2 text-lg font-semibold tracking-wide">Ostalo</h3>
+            <h3 className="pb-2 text-lg font-semibold tracking-wide">Drugo</h3>
             <ul className="text-primary space-y-2 text-sm">
               <li>
                 <Link
                   to={href("/kontakt")}
                   className="text-primary/70 hover:text-primary transition-colors"
                 >
-                  Kontakt
+                  Kontakt & Podpora
                 </Link>
               </li>
               <li>
@@ -76,16 +88,8 @@ export default function Footer() {
                   to={href("/politika-zasebnosti")}
                   className="text-primary/70 hover:text-primary transition-colors active:text-black"
                 >
-                  Privacy Policy
+                  Politika zasebnosti
                 </NavLink>
-              </li>
-              <li>
-                <Link
-                  to="#"
-                  className="text-primary/70 hover:text-primary transition-colors"
-                >
-                  Terms of Service
-                </Link>
               </li>
             </ul>
           </div>
@@ -93,7 +97,7 @@ export default function Footer() {
 
         <div className="border-primary/40 text-primary/40 mt-12 flex flex-col items-center justify-between border-t pt-8 text-sm md:flex-row">
           <p>@vidik.si - {new Date().getFullYear()}</p>
-          <p className="mt-4 md:mt-0">All rights reserved.</p>
+          <p className="mt-4 md:mt-0">Vse pravice pridržane.</p>
         </div>
       </div>
     </footer>
