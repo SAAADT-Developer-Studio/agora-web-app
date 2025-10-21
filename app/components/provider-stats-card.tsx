@@ -2,6 +2,7 @@ import { ChartBar } from "lucide-react";
 import { Suspense } from "react";
 import { Await } from "react-router";
 import { ProviderImage } from "~/components/provider-image";
+import { ErrorUI } from "~/components/ui/error-ui";
 import { SideCardContainer, SideCardHeader } from "~/components/ui/side-card";
 import {
   Tooltip,
@@ -31,7 +32,12 @@ export function ProviderStatsCard({
       </SideCardHeader>
 
       <Suspense fallback={<div>Loading...</div>}>
-        <Await resolve={providerStatsPromise}>
+        <Await
+          resolve={providerStatsPromise}
+          errorElement={
+            <ErrorUI message="Napaka pri nalaganju statistik" size="small" />
+          }
+        >
           {(providerStats) => (
             <ProviderStatsChart providerStats={providerStats} />
           )}

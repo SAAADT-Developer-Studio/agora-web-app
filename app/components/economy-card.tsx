@@ -30,6 +30,7 @@ import {
 import type { InflationSeries } from "~/lib/services/external";
 import { Await } from "react-router";
 import { SideCardContainer, SideCardHeader } from "~/components/ui/side-card";
+import { ErrorUI } from "~/components/ui/error-ui";
 
 const gdpConfig = {
   gdp: {
@@ -70,9 +71,17 @@ export function EconomyCard({
               <CardTitle>Bruto domači proizvod (BDP)</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="flex justify-center px-5">
+          <CardContent className="flex flex-1 justify-center px-5">
             <React.Suspense fallback={<div>Loading...</div>}>
-              <Await resolve={gdpSeries}>
+              <Await
+                resolve={gdpSeries}
+                errorElement={
+                  <ErrorUI
+                    message="Napaka pri nalaganju podatkov o BDP"
+                    size="small"
+                  />
+                }
+              >
                 {(gdpData) => (
                   <GDPChart
                     gdpData={gdpData.map((d) => ({
@@ -102,9 +111,17 @@ export function EconomyCard({
               </CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="px-5">
+          <CardContent className="flex flex-1 items-center justify-center px-5">
             <React.Suspense fallback={<div>Loading...</div>}>
-              <Await resolve={inflationSeries}>
+              <Await
+                resolve={inflationSeries}
+                errorElement={
+                  <ErrorUI
+                    message="Napaka pri nalaganju podatkov o HICP"
+                    size="small"
+                  />
+                }
+              >
                 {(inflationData) => (
                   <InflationChart
                     inflationData={inflationData.map((d) => ({
