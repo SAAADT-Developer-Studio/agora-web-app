@@ -54,9 +54,7 @@ export function Header({ lastUpdated }: { lastUpdated: number }) {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-vidikwhite mr-3 hidden text-xs md:block">
-            <Suspense>
-              {formatSlovenianDateTime(new Date(lastUpdated))}
-            </Suspense>
+            <Suspense>{formatSlovenianDateTime(new Date(0))}</Suspense>
           </span>
           <ThemeSwitch />
         </div>
