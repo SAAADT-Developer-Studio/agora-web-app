@@ -100,7 +100,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="bg-background min-h-screen">
-      <article className="mx-auto max-w-5xl px-1 py-4 md:py-6">
+      <article className="mx-auto max-w-5xl px-1 py-1 md:py-6">
         <div className="text-muted-foreground mb-6 flex max-h-5 flex-wrap items-center gap-3 overflow-clip text-sm">
           <span className="font-mono tracking-wider">VIDIK</span>
           {uniqueCategories.slice(0, 4).map((category) => (
@@ -111,7 +111,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
           ))}
         </div>
 
-        <h1 className="text-primary mb-8 text-3xl leading-tight font-bold tracking-tight text-balance lg:text-4xl">
+        <h1 className="text-primary mb-8 text-xl leading-normal font-bold tracking-tight text-balance md:text-3xl md:leading-tight lg:text-4xl">
           {cluster.title}
         </h1>
 
@@ -143,7 +143,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
         />
 
         <div className="mb-8">
-          <h2 className="text-primary mb-6 text-2xl font-bold md:text-3xl">
+          <h2 className="text-primary mb-6 text-xl font-bold md:text-3xl">
             Pokritje iz {cluster.articles.length}{" "}
             {resolvePlural({
               count: cluster.articles.length,
@@ -176,42 +176,43 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="text-muted-foreground mb-2 flex flex-wrap items-center gap-2 text-xs">
+                      <div className="text-muted-foreground mb-3 flex max-h-[12px] flex-wrap items-center gap-2 overflow-hidden text-xs">
                         <span className="font-mono tracking-wider uppercase">
                           {article.newsProvider.name}
                         </span>
-                        <span>•</span>
-                        <time dateTime={article.publishedAt}>
-                          {publishDate.toLocaleDateString("sl-SI", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}{" "}
-                          ob{" "}
-                          {publishDate.toLocaleTimeString("sl-SI", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </time>
+                        <span>
+                          •&nbsp;&nbsp;
+                          <time dateTime={article.publishedAt}>
+                            {publishDate.toLocaleDateString("sl-SI", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}{" "}
+                            ob{" "}
+                            {publishDate.toLocaleTimeString("sl-SI", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </time>
+                        </span>
                         {article.author && (
                           <>
-                            <span>•</span>
-                            <span>{article.author}</span>
+                            <span>•&nbsp;&nbsp;{article.author}</span>
                           </>
                         )}
                       </div>
 
-                      <h3 className="text-primary group-hover:text-accent mb-2 text-xl leading-snug font-semibold text-pretty transition-colors md:text-2xl">
+                      <h3 className="text-primary group-hover:text-accent text-md mb-2 leading-snug font-semibold text-pretty transition-colors md:text-2xl">
                         {article.title}
                       </h3>
 
                       {article.summary && (
-                        <p className="text-muted-foreground line-clamp-3 leading-relaxed text-pretty">
+                        <p className="text-muted-foreground line-clamp-3 text-xs leading-relaxed text-pretty md:text-base">
                           {article.summary}
                         </p>
                       )}
 
-                      <div className="text-accent mt-3 flex items-center gap-2 text-sm font-medium opacity-0 transition-opacity group-hover:opacity-100">
+                      <div className="text-accent mt-3 hidden items-center gap-2 text-sm font-medium opacity-0 transition-opacity group-hover:opacity-100 md:flex">
                         <span>Preberi cel članek</span>
                         <svg
                           className="h-4 w-4 transition-transform group-hover:translate-x-1"
@@ -256,7 +257,7 @@ function ArticleInfoBanner({
   newestDate: Date;
 }) {
   return (
-    <div className="bg-card border-primary/20 mb-12 rounded-lg border p-6">
+    <div className="bg-primary/5 border-primary/10 mb-12 rounded-lg border p-6">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
           <Info className="text-accent mt-1 h-5 w-5 flex-shrink-0" />
@@ -376,7 +377,7 @@ function ArticleBottomBanner({
   newestDate: Date;
 }) {
   return (
-    <div className="bg-muted/30 mt-12 rounded-lg border border-white/20 p-6 text-center">
+    <div className="bg-primary/5 border-primary/10 mt-12 rounded-lg border p-6 text-center">
       <p className="text-muted-foreground text-sm leading-relaxed">
         Ta sklop je bil avtomatsko generiran z analizo{" "}
         <strong className="text-primary font-semibold">
