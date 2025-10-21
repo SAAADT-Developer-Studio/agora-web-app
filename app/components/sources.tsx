@@ -1,7 +1,6 @@
 import { Newspaper } from "lucide-react";
 import { config } from "~/config";
 import { resolvePlural } from "~/utils/resolvePlural";
-import { useMediaQuery } from "~/hooks/use-media-query";
 
 export type SourcesProps = {
   numberOfArticles: number;
@@ -14,8 +13,6 @@ export function Sources({
 }: Readonly<SourcesProps>) {
   const MAX_DISPLAYED_SOURCES = 4;
 
-  const isSmall = useMediaQuery("(max-width: 450px)");
-
   const displayedProviders = providerKeys.slice(0, MAX_DISPLAYED_SOURCES);
   const itemsDisplayed =
     providerKeys.length > MAX_DISPLAYED_SOURCES
@@ -24,36 +21,34 @@ export function Sources({
 
   return (
     <div className="flex items-center justify-center gap-1">
-      {!isSmall && (
-        <div className="flex h-8 items-center justify-center">
-          {displayedProviders.map((key, index) => {
-            const overlap = (itemsDisplayed - 1 - index) * 12;
-            return (
-              <img
-                key={key}
-                src={`${config.imagesUrl}/providers/${key}.webp`}
-                alt={`Vir ${index}`}
-                className="h-6 w-6 rounded-full"
-                style={{
-                  transform: `translateX(${overlap}px)`,
-                  zIndex: 10 - index,
-                }}
-              />
-            );
-          })}
-
-          {providerKeys.length > MAX_DISPLAYED_SOURCES && (
-            <div
-              className="flex h-6 w-6 items-center justify-center rounded-full bg-black/70 font-light"
+      <div className="hidden h-8 items-center justify-center min-[450px]:flex">
+        {displayedProviders.map((key, index) => {
+          const overlap = (itemsDisplayed - 1 - index) * 12;
+          return (
+            <img
+              key={key}
+              src={`${config.imagesUrl}/providers/${key}.webp`}
+              alt={`Vir ${index}`}
+              className="h-6 w-6 rounded-full"
               style={{
-                zIndex: 10 - MAX_DISPLAYED_SOURCES,
+                transform: `translateX(${overlap}px)`,
+                zIndex: 10 - index,
               }}
-            >
-              +
-            </div>
-          )}
-        </div>
-      )}
+            />
+          );
+        })}
+
+        {providerKeys.length > MAX_DISPLAYED_SOURCES && (
+          <div
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-black/70 font-light"
+            style={{
+              zIndex: 10 - MAX_DISPLAYED_SOURCES,
+            }}
+          >
+            +
+          </div>
+        )}
+      </div>
       <div className="text-md flex h-8 items-center gap-2 rounded bg-black/50 px-2 text-white">
         <Newspaper className="size-5" />
         {numberOfArticles}
