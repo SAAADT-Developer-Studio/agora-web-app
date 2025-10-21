@@ -23,6 +23,7 @@ import { getEnv } from "~/utils/getEnv";
 import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { TutorialPopup } from "~/components/tutorial-popup";
+import { ErrorComponent } from "~/components/error-component";
 
 export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
@@ -96,8 +97,6 @@ export async function loader({ context }: Route.LoaderArgs) {
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { articles, gdpSeries, inflationSeries, providerStats } = loaderData;
 
-  const reverseAll = useMediaQuery("(min-width: 64rem)");
-
   return (
     <>
       <TutorialPopup />
@@ -170,4 +169,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       </div>
     </>
   );
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <ErrorComponent error={error} />;
 }

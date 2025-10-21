@@ -8,11 +8,6 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   return { providers };
 }
 
-// export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-//   const articleId = params.articleId;
-//   return sharedLoader();
-// }
-
 export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
   const { providers } = loaderData;
 

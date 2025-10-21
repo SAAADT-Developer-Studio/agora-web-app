@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { LastUpdatedBadge } from "~/components/last-updated-badge";
+import { ErrorComponent } from "~/components/error-component";
 
 export const LAST_UPDATED = new Date("2025-10-21");
 
@@ -171,4 +172,8 @@ export function meta({ location }: Route.MetaArgs) {
       "Naša metodologija ocenjevanja pristranskosti virov novic na podlagi analize vsebine, lastništva, zgodovine poročanja in neodvisnih ocen.",
     pathname: location.pathname,
   });
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <ErrorComponent error={error} />;
 }

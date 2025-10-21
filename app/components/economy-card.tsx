@@ -30,6 +30,8 @@ import {
 import type { InflationSeries } from "~/lib/services/external";
 import { Await } from "react-router";
 import { SideCardContainer, SideCardHeader } from "~/components/ui/side-card";
+import { ErrorUI } from "~/components/ui/error-ui";
+import { Spinner } from "~/components/ui/spinner";
 
 const gdpConfig = {
   gdp: {
@@ -63,16 +65,30 @@ export function EconomyCard({
         <Wallet className="size-5" />
         <p className="font-bold uppercase">Ekonomija</p>
       </SideCardHeader>
-      <div className="grid grid-cols-1 grid-rows-2 pt-0">
+      <div className="grid h-full grid-cols-1 grid-rows-2 pt-0">
         <Card className="gap-0 border-none py-0 shadow-none">
           <CardHeader className="!p-0">
             <div className="ml-0 px-6 pt-2 md:mr-[10%] lg:ml-0">
               <CardTitle>Bruto domači proizvod (BDP)</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="flex justify-center px-5">
-            <React.Suspense fallback={<div>Loading...</div>}>
-              <Await resolve={gdpSeries}>
+          <CardContent className="flex flex-1 justify-center px-5">
+            <React.Suspense
+              fallback={
+                <div className="flex flex-1 items-center justify-center">
+                  <Spinner className="size-8" />
+                </div>
+              }
+            >
+              <Await
+                resolve={gdpSeries}
+                errorElement={
+                  <ErrorUI
+                    message="Napaka pri nalaganju podatkov o BDP"
+                    size="small"
+                  />
+                }
+              >
                 {(gdpData) => (
                   <GDPChart
                     gdpData={gdpData.map((d) => ({
@@ -102,9 +118,23 @@ export function EconomyCard({
               </CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="flex justify-center px-5">
-            <React.Suspense fallback={<div>Loading...</div>}>
-              <Await resolve={inflationSeries}>
+          <CardContent className="flex flex-1 items-center justify-center px-5">
+            <React.Suspense
+              fallback={
+                <div className="flex flex-1 items-center justify-center">
+                  <Spinner className="size-8" />
+                </div>
+              }
+            >
+              <Await
+                resolve={inflationSeries}
+                errorElement={
+                  <ErrorUI
+                    message="Napaka pri nalaganju podatkov o HICP"
+                    size="small"
+                  />
+                }
+              >
                 {(inflationData) => (
                   <InflationChart
                     inflationData={inflationData.map((d) => ({

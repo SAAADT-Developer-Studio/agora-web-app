@@ -1,6 +1,7 @@
 import type { Route } from "./+types/layout";
 
 import { Outlet } from "react-router";
+import { ErrorComponent } from "~/components/error-component";
 import Footer from "~/components/footer";
 import { Header } from "~/components/header";
 
@@ -18,4 +19,8 @@ export default function RootLayout({}: Route.ComponentProps) {
       </div>
     </>
   );
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <ErrorComponent error={error} />;
 }
