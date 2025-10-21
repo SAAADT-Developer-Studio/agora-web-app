@@ -51,7 +51,7 @@ function ProviderStatsChart({
   );
 
   return (
-    <div className="flex flex-col gap-3 px-5">
+    <div className="flex flex-col gap-3 px-5 pb-4 md:pb-0">
       {providerStats.map((provider) => {
         return (
           <div className="group flex gap-2" key={provider.key}>
