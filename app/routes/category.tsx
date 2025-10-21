@@ -104,7 +104,7 @@ export default function CategoryPage({
   return (
     <div className="">
       <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
-        <Link to="/" className="uppercase hover:text-white">
+        <Link to="/" className="hover:text-primary uppercase">
           Domov
         </Link>
         <span className="text-primary">·</span>

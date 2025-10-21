@@ -22,18 +22,18 @@ export default {
   async fetch(request, env, ctx) {
     const cache = await caches.open("custom:vidik-page-cache");
 
-    // let response = await cache.match(request);
+    let response = await cache.match(request);
 
-    // if (!response) {
-    const db = await getDb();
-    const kvCache = new KVCache(env.VIDIK_CACHE, ctx);
-    const response = await requestHandler(request, {
-      cloudflare: { env, ctx },
-      db,
-      kvCache,
-    });
-    // ctx.waitUntil(cache.put(request, response.clone()));
-    // }
+    if (!response) {
+      const db = await getDb(env.HYPERDRIVE.connectionString);
+      const kvCache = new KVCache(env.VIDIK_CACHE, ctx);
+      response = await requestHandler(request, {
+        cloudflare: { env, ctx },
+        db,
+        kvCache,
+      });
+      ctx.waitUntil(cache.put(request, response.clone()));
+    }
 
     return response;
   },

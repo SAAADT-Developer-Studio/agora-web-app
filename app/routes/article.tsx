@@ -416,13 +416,17 @@ export function meta({
   const title = data.cluster.title;
   const imageUrl = data.heroImage.url;
   const keywords = data.uniqueCategories.join(", ");
-  const url = new URL(location.pathname, "https://vidik.si").href;
+
+  const description = `${title}: ${data.cluster.articles
+    .slice(0, 3)
+    .map((a) => a.newsProvider.name + " - " + a.title)
+    .join("; ")} in več`;
 
   return getSeoMetas({
     title,
-    description: "Cluster summary goes here.",
+    description,
     image: imageUrl,
-    url,
+    pathname: location.pathname,
     keywords,
     ogType: "article",
   });

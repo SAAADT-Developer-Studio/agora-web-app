@@ -1,12 +1,22 @@
-export default function PrivacyPolicyPage() {
+import { getSeoMetas } from "~/lib/seo";
+import type { Route } from "./+types/privacy-policy";
+
+export const LAST_UPDATED = new Date("2025-10-20");
+
+export default function PrivacyPolicyPage({}: Route.ComponentProps) {
   return (
     <div className="bg-background min-h-screen">
-      <div className="mx-auto max-w-4xl px-6 py-4">
+      <div className="mx-auto max-w-4xl py-4 md:px-6">
         {/* Header Section */}
         <div className="mb-10 text-center">
           <div className="bg-primary/10 mb-4 inline-block rounded-full px-3 py-1.5">
             <span className="text-primary text-sm font-medium">
-              Nazadnje posodobljeno: 20. oktober 2025
+              Nazadnje posodobljeno:{" "}
+              {LAST_UPDATED.toLocaleDateString("sl-SI", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
             </span>
           </div>
           <h1 className="text-primary mb-4 text-4xl font-bold tracking-tight">
@@ -152,4 +162,11 @@ export default function PrivacyPolicyPage() {
       </div>
     </div>
   );
+}
+
+export function meta({}: Route.MetaArgs) {
+  return getSeoMetas({
+    title: "Politika zasebnosti | Vidik",
+    description: "Politika zasebnosti za uporabnike platforme Vidik.",
+  });
 }

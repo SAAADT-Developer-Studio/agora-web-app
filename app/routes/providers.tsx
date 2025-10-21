@@ -32,12 +32,15 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
   );
 }
 
-export function meta({ params }: Route.MetaArgs): Route.MetaDescriptors {
+export function meta({
+  params,
+  location,
+}: Route.MetaArgs): Route.MetaDescriptors {
   return getSeoMetas({
-    title: "Providers | Vidik",
-    description: "News organisations supported by Vidik",
-    url: `https://vidik.si/providers`,
-    // keywords: "vidik, ",
+    title: "Mediji | Vidik",
+    description: "Novičarske organizacije, ki jih podpira Vidik",
+    pathname: location.pathname,
+    keywords: "vidik, mediji, novičarske organizacije",
     ogType: "website",
   });
 }

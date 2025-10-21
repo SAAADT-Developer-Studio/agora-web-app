@@ -1,5 +1,5 @@
 import { Facebook, Instagram, Mail, Twitter } from "lucide-react";
-import { Link } from "react-router";
+import { href, Link, NavLink } from "react-router";
 
 export default function Footer() {
   return (
@@ -47,7 +47,7 @@ export default function Footer() {
 
           <div className="w-full md:w-1/3">
             <h3 className="pb-2 text-lg font-semibold tracking-wide">
-              Quick Links
+              Hitri Povezave
             </h3>
             <ul className="text-primary space-y-2 text-sm">
               <li>
@@ -61,25 +61,23 @@ export default function Footer() {
             </ul>
           </div>
           <div className="w-full md:w-1/3">
-            <h3 className="pb-2 text-lg font-semibold tracking-wide">
-              Kontakt & Podpora
-            </h3>
+            <h3 className="pb-2 text-lg font-semibold tracking-wide">Ostalo</h3>
             <ul className="text-primary space-y-2 text-sm">
               <li>
                 <Link
-                  to="/contact"
+                  to={href("/kontakt")}
                   className="text-primary/70 hover:text-primary transition-colors"
                 >
                   Kontakt
                 </Link>
               </li>
               <li>
-                <Link
-                  to="#"
-                  className="text-primary/70 hover:text-primary transition-colors"
+                <NavLink
+                  to={href("/politika-zasebnosti")}
+                  className="text-primary/70 hover:text-primary transition-colors active:text-black"
                 >
                   Privacy Policy
-                </Link>
+                </NavLink>
               </li>
               <li>
                 <Link

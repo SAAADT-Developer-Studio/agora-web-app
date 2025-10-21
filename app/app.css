@@ -30,7 +30,7 @@
   --color-background: oklch(28.09% 0 0);
   --color-secondary: oklch(23.93% 0 0);
   --color-foreground: oklch(0.374 0 0);
-  --color-primary: oklch(0.82 0 0);
+  --color-primary: oklch(0.978 0.009 247.5);
   --color-electricblue: oklch(0.6 0.18 248.1);
   --color-electricblue-light: oklch(0.651 0.206 271.2);
 }
