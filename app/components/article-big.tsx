@@ -29,15 +29,16 @@ export default function ArticleBig({
       className="contents w-full"
       viewTransition={isLarge}
     >
-      <article
-        className="border-vidikdarkgray border-px flex h-[300px] w-full cursor-pointer flex-col gap-4 rounded-md bg-cover bg-center transition-transform duration-300 hover:scale-[1.01] sm:col-span-2 sm:row-span-2 md:h-[500px] dark:border-0"
-        style={{
-          backgroundImage: `url(${imageUrl})`,
-          viewTransitionName: `article-image-${id}`,
-        }}
-      >
+      <article className="border-vidikdarkgray border-px group relative flex h-[300px] w-full cursor-pointer flex-col gap-4 overflow-hidden rounded-md sm:col-span-2 sm:row-span-2 md:h-[500px] dark:border-0">
         <link rel="preload" as="image" fetchPriority="high" href={image.src} />
-        <div className="text-vidikwhite flex h-full w-full flex-col items-center justify-between rounded-md [background-image:linear-gradient(to_top,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.55)_15%,rgba(0,0,0,0)_50%)] font-bold">
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-400 group-hover:scale-103"
+          style={{
+            backgroundImage: `url(${imageUrl})`,
+            viewTransitionName: `article-image-${id}`,
+          }}
+        />
+        <div className="text-vidikwhite relative z-10 flex h-full w-full flex-col items-center justify-between rounded-md [background-image:linear-gradient(to_top,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.55)_15%,rgba(0,0,0,0)_50%)] font-bold">
           <div className="flex w-full items-center justify-between p-2">
             <div className="flex max-h-[23px] flex-wrap gap-2 overflow-hidden">
               {tags.map((tag) => (
