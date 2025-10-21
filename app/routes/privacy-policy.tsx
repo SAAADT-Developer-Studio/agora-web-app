@@ -6,8 +6,7 @@ export const LAST_UPDATED = new Date("2025-10-20");
 export default function PrivacyPolicyPage({}: Route.ComponentProps) {
   return (
     <div className="bg-background min-h-screen">
-      <div className="mx-auto max-w-4xl py-4 md:px-6">
-        {/* Header Section */}
+      <div className="mx-auto max-w-4xl px-0 py-2 md:px-6 md:py-4">
         <div className="mb-10 text-center">
           <div className="bg-primary/10 mb-4 inline-block rounded-full px-3 py-1.5">
             <span className="text-primary text-sm font-medium">
@@ -28,9 +27,7 @@ export default function PrivacyPolicyPage({}: Route.ComponentProps) {
           </p>
         </div>
 
-        {/* Main Content */}
         <div className="space-y-4">
-          {/* Introduction Card */}
           <div className="border-primary/10 bg-primary/5 rounded-xl border p-4">
             <h2 className="text-primary mb-3 text-2xl font-bold">
               Katere podatke obdelujemo
@@ -41,8 +38,7 @@ export default function PrivacyPolicyPage({}: Route.ComponentProps) {
             </p>
           </div>
 
-          {/* Technical Data Section */}
-          <section className="border-primary/10 bg-card rounded-2xl border p-6 shadow-sm transition-shadow hover:shadow-md">
+          <section className="border-primary/10 bg-card rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md">
             <div className="mb-4 flex items-center gap-3">
               <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-xl">
                 <svg
@@ -82,8 +78,7 @@ export default function PrivacyPolicyPage({}: Route.ComponentProps) {
             </ul>
           </section>
 
-          {/* Settings Section */}
-          <section className="border-primary/10 bg-card rounded-2xl border p-6 shadow-sm transition-shadow hover:shadow-md">
+          <section className="border-primary/10 bg-card rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md">
             <div className="mb-4 flex items-center gap-3">
               <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-xl">
                 <svg
@@ -120,8 +115,7 @@ export default function PrivacyPolicyPage({}: Route.ComponentProps) {
             </ul>
           </section>
 
-          {/* Analytics Section */}
-          <section className="border-primary/10 bg-card rounded-2xl border p-6 shadow-sm transition-shadow hover:shadow-md">
+          <section className="border-primary/10 bg-card rounded-2xl border p-4 shadow-sm transition-shadow hover:shadow-md">
             <div className="mb-4 flex items-center gap-3">
               <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-xl">
                 <svg
@@ -164,9 +158,10 @@ export default function PrivacyPolicyPage({}: Route.ComponentProps) {
   );
 }
 
-export function meta({}: Route.MetaArgs) {
+export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
     title: "Politika zasebnosti | Vidik",
     description: "Politika zasebnosti za uporabnike platforme Vidik.",
+    pathname: location.pathname,
   });
 }

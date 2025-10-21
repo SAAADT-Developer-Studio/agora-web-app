@@ -59,7 +59,7 @@ export default function Footer() {
 
           <div className="w-full md:w-1/3">
             <h3 className="pb-2 text-lg font-semibold tracking-wide">
-              Hitri Povezave
+              Hitre Povezave
             </h3>
             <ul className="text-primary space-y-2 text-sm">
               <li>

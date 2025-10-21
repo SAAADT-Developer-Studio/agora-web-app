@@ -49,7 +49,7 @@ function ProviderStatsChart({
   const maxArticles = Math.max(
     ...providerStats.map((provider) => provider.articleCount),
   );
-  console.log("Provider stats:", providerStats);
+
   return (
     <div className="flex flex-col gap-3 px-5">
       {providerStats.map((provider) => {
