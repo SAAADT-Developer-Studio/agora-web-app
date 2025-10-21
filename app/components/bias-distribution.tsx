@@ -7,6 +7,7 @@ import {
 } from "~/components/ui/tooltip";
 import { config } from "~/config";
 import type { newsProvider } from "~/drizzle/schema";
+import { cn } from "~/lib/utils";
 
 type BiasRating = "left" | "center-left" | "center" | "center-right" | "right";
 type BiasCategory = {
@@ -46,6 +47,7 @@ const biasCategories: BiasCategory[] = [
 export function BiasDistribution({
   biasDistribution: { leftPercent, centerPercent, rightPercent },
   providers,
+  className,
 }: {
   biasDistribution: {
     leftPercent: number;
@@ -55,6 +57,7 @@ export function BiasDistribution({
   providers: (InferSelectModel<typeof newsProvider> & {
     articleCount: number;
   })[];
+  className?: string;
 }) {
   const providersByBias = biasCategories.map((category) => ({
     ...category,
@@ -70,7 +73,12 @@ export function BiasDistribution({
   const providersWithoutBias = providers.filter((p) => !p.biasRating);
 
   return (
-    <div className="bg-foreground text-primary flex flex-col overflow-hidden rounded-lg p-4 md:col-span-1">
+    <div
+      className={cn(
+        "bg-foreground text-primary flex flex-col overflow-hidden rounded-lg p-4 md:col-span-1",
+        className,
+      )}
+    >
       <h2 className="font-bold tracking-wide uppercase">
         Distribucija Pristranskosti
       </h2>
@@ -100,7 +108,7 @@ export function BiasDistribution({
         {providersByBias.map((category) => (
           <div
             key={category.key}
-            className="bg-background/50 flex flex-col overflow-hidden rounded-lg"
+            className="bg-background/50 flex flex-col overflow-hidden rounded-lg pb-2"
           >
             <div className={`h-2 ${category.barColor}`} />
             <div className="px-2 pt-4">
