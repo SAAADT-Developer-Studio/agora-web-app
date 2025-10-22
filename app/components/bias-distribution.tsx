@@ -19,12 +19,12 @@ type BiasCategory = {
 const biasCategories: BiasCategory[] = [
   {
     key: "left",
-    barColor: "bg-blue-500",
+    barColor: "bg-red-500",
     textColor: "text-white",
   },
   {
     key: "center-left",
-    barColor: "bg-blue-400",
+    barColor: "bg-red-300",
     textColor: "text-gray-800",
   },
   {
@@ -34,12 +34,12 @@ const biasCategories: BiasCategory[] = [
   },
   {
     key: "center-right",
-    barColor: "bg-red-300",
+    barColor: "bg-blue-400",
     textColor: "text-gray-800",
   },
   {
     key: "right",
-    barColor: "bg-red-500",
+    barColor: "bg-blue-500",
     textColor: "text-white",
   },
 ];
@@ -86,7 +86,7 @@ export function BiasDistribution({
 
       <div className="my-6 flex items-start justify-between">
         <div>
-          <div className="text-sm font-semibold tracking-wider text-blue-400 uppercase">
+          <div className="text-sm font-semibold tracking-wider text-red-400 uppercase">
             Leva
           </div>
           <div className="text-xl font-bold">{leftPercent}%</div>
@@ -98,7 +98,7 @@ export function BiasDistribution({
           <div className="text-center text-xl font-bold">{centerPercent}%</div>
         </div>
         <div>
-          <div className="text-sm font-semibold tracking-wider text-red-400 uppercase">
+          <div className="text-sm font-semibold tracking-wider text-blue-400 uppercase">
             Desna
           </div>
           <div className="text-right text-xl font-bold">{rightPercent}%</div>
