@@ -9,8 +9,8 @@ export function loader({ params }: Route.LoaderArgs) {
 
 export default function ContactPage({}: Route.ComponentProps) {
   return (
-    <div className="bg-background">
-      <div className="mx-auto max-w-5xl px-6 py-4">
+    <div className="bg-background mx-auto max-w-5xl px-1 py-6 sm:px-4 md:px-6 md:py-8">
+      <div className="">
         <div className="text-start">
           <h1 className="text-primary mb-6 text-4xl font-bold tracking-tight">
             Kontakt
@@ -22,9 +22,9 @@ export default function ContactPage({}: Route.ComponentProps) {
         </div>
       </div>
 
-      <div className="mx-auto mt-6 max-w-5xl px-6 pb-12">
+      <div className="mx-auto mt-6 max-w-5xl pb-12">
         <div className="grid gap-8 md:grid-cols-2">
-          <div className="group bg-primary/5 border-primary/10 relative flex flex-col items-start justify-between overflow-hidden rounded-lg border p-5 shadow-sm transition-all duration-300 hover:shadow-lg">
+          <div className="group bg-primary/5 border-primary/10 relative flex flex-col items-start justify-between overflow-hidden rounded-lg border p-4 shadow-sm transition-all duration-300 hover:shadow-lg sm:p-5">
             <div className="mb-2 flex w-full items-center justify-between rounded-full">
               {" "}
               <h2 className="text-primary mb-2 text-2xl font-medium tracking-tight">
@@ -44,7 +44,7 @@ export default function ContactPage({}: Route.ComponentProps) {
               info@vidik.si
             </a>
           </div>
-          <div className="group bg-primary/5 border-primary/10 relative flex flex-col items-start justify-between overflow-hidden rounded-lg border p-5 shadow-sm transition-all duration-300 hover:shadow-lg">
+          <div className="group bg-primary/5 border-primary/10 relative flex flex-col items-start justify-between overflow-hidden rounded-lg border p-4 shadow-sm transition-all duration-300 hover:shadow-lg sm:p-5">
             <div className="bg-muted mb-2 flex w-full items-center justify-between rounded-full">
               {" "}
               <h2 className="text-primary mb-2 text-2xl font-medium tracking-tight">

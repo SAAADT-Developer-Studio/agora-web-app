@@ -8,7 +8,7 @@ export const LAST_UPDATED = new Date("2025-10-20");
 export default function PrivacyPolicyPage({}: Route.ComponentProps) {
   return (
     <div className="bg-background min-h-screen">
-      <div className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8">
+      <div className="mx-auto max-w-5xl px-1 py-6 sm:px-4 md:px-6 md:py-8">
         <div className="mb-10">
           <LastUpdatedBadge date={LAST_UPDATED} className="mb-3" />
           <h1 className="text-primary mb-4 text-4xl font-bold tracking-tight">

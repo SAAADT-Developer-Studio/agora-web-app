@@ -49,7 +49,7 @@ const BIAS_RATINGS = [
 export default function BiasMethodologyPage({}: Route.ComponentProps) {
   return (
     <div className="bg-background min-h-screen">
-      <div className="mx-auto max-w-5xl px-4 py-6 md:px-6 md:py-8">
+      <div className="mx-auto max-w-5xl px-1 py-6 sm:px-4 md:px-6 md:py-8">
         {/* Header */}
         <div className="text mb-10">
           <LastUpdatedBadge date={LAST_UPDATED} className="mb-3" />
