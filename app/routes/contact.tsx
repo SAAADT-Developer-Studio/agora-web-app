@@ -7,6 +7,13 @@ export function loader({ params }: Route.LoaderArgs) {
   return null;
 }
 
+export function headers() {
+  // Prevent caching, for now, since we have some sort of caching issue
+  return {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+  };
+}
+
 export default function ContactPage({}: Route.ComponentProps) {
   return (
     <div className="bg-background mx-auto max-w-5xl px-1 py-6 sm:px-4 md:px-6 md:py-8">

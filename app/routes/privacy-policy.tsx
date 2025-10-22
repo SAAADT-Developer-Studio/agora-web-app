@@ -5,6 +5,13 @@ import { ErrorComponent } from "~/components/error-component";
 
 export const LAST_UPDATED = new Date("2025-10-20");
 
+export function headers() {
+  // Prevent caching, for now, since we have some sort of caching issue
+  return {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+  };
+}
+
 export default function PrivacyPolicyPage({}: Route.ComponentProps) {
   return (
     <div className="bg-background min-h-screen">

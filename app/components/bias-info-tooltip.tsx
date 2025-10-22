@@ -19,11 +19,11 @@ import { useMediaQuery } from "~/hooks/use-media-query";
 import { Button } from "~/components/ui/button";
 
 const biasRatings = [
-  { label: "Leva", color: "bg-blue-500", textColor: "text-white" },
-  { label: "C. Leva", color: "bg-blue-400", textColor: "text-gray-800" },
+  { label: "Leva", color: "bg-red-500", textColor: "text-white" },
+  { label: "C. Leva", color: "bg-red-300", textColor: "text-gray-800" },
   { label: "Center", color: "bg-gray-300", textColor: "text-gray-800" },
-  { label: "C. Desna", color: "bg-red-300", textColor: "text-gray-800" },
-  { label: "Desna", color: "bg-red-500", textColor: "text-white" },
+  { label: "C. Desna", color: "bg-blue-400", textColor: "text-gray-800" },
+  { label: "Desna", color: "bg-blue-500", textColor: "text-white" },
 ];
 
 export function BiasInfoTooltip() {

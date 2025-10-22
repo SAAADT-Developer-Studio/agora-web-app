@@ -16,13 +16,13 @@ export const LAST_UPDATED = new Date("2025-10-21");
 const BIAS_RATINGS = [
   {
     label: "Leva",
-    color: "bg-blue-500",
+    color: "bg-red-500",
     description:
       "Mediji z izrazito levo politično usmeritvijo, ki pogosto podpirajo progresivne ali liberalne ideje, oz. stranke",
   },
   {
     label: "Center Leva",
-    color: "bg-blue-400",
+    color: "bg-red-300",
     description:
       "Mediji z blago levo naklonjenostjo, ki se osredotočajo na uravnoteženo poročanje z rahlo liberalno perspektivo",
   },
@@ -34,17 +34,24 @@ const BIAS_RATINGS = [
   },
   {
     label: "Center Desna",
-    color: "bg-red-300",
+    color: "bg-blue-400",
     description:
       "Mediji z blago desno naklonjenostjo, ki se osredotočajo na uravnoteženo poročanje z rahlo konservativno perspektivo",
   },
   {
     label: "Desna",
-    color: "bg-red-500",
+    color: "bg-blue-500",
     description:
       "Mediji z izrazito desno politično usmeritvijo, ki pogosto podpirajo konservativne ali tradicionalne ideje oz. stranke",
   },
 ];
+
+export function headers() {
+  // Prevent caching, for now, since we have some sort of caching issue
+  return {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+  };
+}
 
 export default function BiasMethodologyPage({}: Route.ComponentProps) {
   return (
