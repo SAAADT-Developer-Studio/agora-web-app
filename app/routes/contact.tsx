@@ -37,11 +37,11 @@ export default function ContactPage({}: Route.ComponentProps) {
               Pišite nam in odgovorili bomo v najkrajšem možnem času.
             </p>
             <a
-              href="mailto:info@vidk.si"
+              href="mailto:info@vidik.si"
               className="bg-primary text-background hover:bg-primary/90 mt-2 inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 hover:shadow-md"
-              aria-label="Pošlji e-pošto na info@vidk.si"
+              aria-label="Pošlji e-pošto na info@vidik.si"
             >
-              info@vidk.si
+              info@vidik.si
             </a>
           </div>
           <div className="group bg-primary/5 border-primary/10 relative flex flex-col items-start justify-between overflow-hidden rounded-lg border p-5 shadow-sm transition-all duration-300 hover:shadow-lg">
