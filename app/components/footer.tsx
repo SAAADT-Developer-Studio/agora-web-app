@@ -19,7 +19,7 @@ export default function Footer() {
         <div className="flex flex-col items-start justify-around gap-8 md:flex-row md:justify-between md:gap-0">
           <div className="w-full md:w-1/2">
             <h3 className="pb-2 text-lg font-semibold tracking-wide">Vidik</h3>
-            <p className="text-primary w-full pb-2 text-sm md:w-2/3">
+            <p className="text-primary w-full pb-2 text-sm leading-6 md:w-2/3">
               Odkrij, kako različni slovenski mediji poročajo o istih novicah.
               Naša platforma razkriva medijsko pristranskost in pomaga razumeti
               zgodbo z vseh političnih <b>vidikov</b>.
