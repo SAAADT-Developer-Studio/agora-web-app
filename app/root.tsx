@@ -10,7 +10,7 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 import { ErrorComponent } from "~/components/error-component";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "~/components/ui/tooltip";
 
@@ -82,6 +82,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
 const queryClient = new QueryClient();
 
 export default function App() {
+  useEffect(() => {
+    let userId = localStorage.getItem("user_id");
+    if (!userId) {
+      userId = crypto.randomUUID();
+      localStorage.setItem("user_id", userId);
+    }
+    window.posthog?.identify(
+      userId,
+      { last_visit_date: new Date() }, // updates every time
+      { created_date: new Date() }, // sets only once
+    );
+  }, []);
+
   return (
     // This suspense is here so that in case of hydration errors, react does not rerender the head (it only rerenders from the closest Suspense boundary down)
     <QueryClientProvider client={queryClient}>
