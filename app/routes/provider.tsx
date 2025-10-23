@@ -1,7 +1,7 @@
-import { data, Link } from "react-router";
+import { data, href, Link } from "react-router";
 import type { Route } from "./+types/provider";
 import { getSeoMetas } from "~/lib/seo";
-import { Globe, Newspaper } from "lucide-react";
+import { Globe, Newspaper, Info } from "lucide-react";
 import {
   getProviderImageUrl,
   ProviderImage,
@@ -180,16 +180,18 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
             <a
               href={provider.url}
               target="_blank"
-              className="bg-foreground/70 hover:bg-foreground text-primary flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold md:px-4 md:py-2 md:text-lg"
+              className="bg-foreground/70 hover:bg-foreground text-primary flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold md:gap-2 md:px-3 md:py-2 md:text-lg"
             >
               <Globe className="size-3 md:size-5" />
               {removeUrlProtocol(provider.url)}
             </a>
-            <div
-              className={`${biasKeyToColor(provider.biasRating ?? "")} text-vidikwhite flex items-center justify-center rounded-lg px-2 py-1 text-xs font-semibold md:px-4 md:py-2 md:text-lg`}
+            <Link
+              to={href("/metodologija")}
+              className={`${biasKeyToColor(provider.biasRating ?? "")} text-vidikwhite flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold md:gap-2 md:px-3 md:py-2 md:text-lg`}
             >
+              <Info className="size-3 md:size-5" />
               {biasKeyToLabel(provider.biasRating ?? "")}
-            </div>
+            </Link>
           </div>
           <h1 className="text-[30px] font-bold sm:text-[40px] md:text-[100px]">
             {provider.name}
