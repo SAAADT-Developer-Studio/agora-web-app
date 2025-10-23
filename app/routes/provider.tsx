@@ -1,7 +1,7 @@
-import { data, Link } from "react-router";
+import { data, Link, href } from "react-router";
 import type { Route } from "./+types/provider";
 import { getSeoMetas } from "~/lib/seo";
-import { Globe } from "lucide-react";
+import { CircleCheck, Globe } from "lucide-react";
 import {
   getProviderImageUrl,
   ProviderImage,
@@ -9,9 +9,26 @@ import {
 import { ErrorComponent } from "~/components/error-component";
 import { sql, and, gte, desc, count } from "drizzle-orm";
 import { article } from "~/drizzle/schema";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { get, post } from "~/lib/fetcher";
+import type { VoteInput } from "~/routes/api/post-vote";
+import { type Vote } from "~/routes/api/get-vote";
+import { cn } from "~/lib/utils";
+import { removeUrlProtocol } from "~/utils/removeUrlProtocol";
+import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
+import type { Database } from "~/lib/db";
 
-async function getProviderStats(db: any, providerKey: string) {
+const BiasRating = {
+  Left: "left",
+  CenterLeft: "center-left",
+  Center: "center",
+  CenterRight: "center-right",
+  Right: "right",
+} as const;
+
+type BiasRating = (typeof BiasRating)[keyof typeof BiasRating];
+
+async function getProviderStats(db: Database, providerKey: string) {
   const now = new Date();
   const startOfToday = new Date(
     now.getFullYear(),
@@ -128,43 +145,63 @@ export async function loader({ context, params }: Route.LoaderArgs) {
 
   const stats = await getProviderStats(db, params.providerKey ?? "");
 
-  return data({ provider, otherProviders, stats }, {});
-}
-
-function removeUrlProtocol(url: string) {
-  return url
-    .replace(/^https?:\/\//, "")
-    .replace(/\/$/, "")
-    .replace(/^www\./, "");
-}
-
-function biasKeyToLabel(biasKey: string) {
-  const biasMap: Record<string, string> = {
-    left: "levo",
-    "center-left": "center levo",
-    center: "center",
-    "center-right": "center desno",
-    right: "desno",
-  };
-
-  return biasMap[biasKey] || "Neznano";
+  return data(
+    { provider, otherProviders, stats, votes: await db.query.vote.findMany() },
+    {},
+  );
 }
 
 function biasKeyToColor(biasKey: string) {
-  const biasMap: Record<string, string> = {
+  const biasMap = {
     left: "bg-[#FA2D36]",
     "center-left": "bg-[#FF6166]",
     center: "bg-[#FEFFFF] !text-black",
     "center-right": "bg-[#52A1FF]",
     right: "bg-[#2D7EFF]",
-  };
+  } satisfies Record<BiasRating, string>;
 
-  return biasMap[biasKey] || "#FFFFFF";
+  return biasMap[biasKey as BiasRating] || "#FFFFFF";
 }
 
 export default function ProviderPage({ loaderData }: Route.ComponentProps) {
-  const { provider, otherProviders } = loaderData;
-  const [voted, setVoted] = useState(false);
+  const { provider, otherProviders, votes } = loaderData;
+  const queryClient = useQueryClient();
+  const queryKey = ["vote", provider.key, localStorage.getItem("user_id")];
+  console.log({ votes, queryKey });
+
+  const voteResult = useQuery({
+    queryKey,
+    queryFn: async () => {
+      console.log("Fetching vote for", provider.key);
+      return await get<Vote>(
+        href("/api/votes/:providerKey/:userId", {
+          providerKey: provider.key,
+          userId: localStorage.getItem("user_id")!,
+        }),
+      );
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (value: BiasRating) => {
+      await post(href("/api/votes"), {
+        providerKey: provider.key,
+        userId: localStorage.getItem("user_id"),
+        value,
+      } satisfies VoteInput);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  const handleClick = (value: BiasRating) => {
+    console.log("Button clicked", value);
+    mutation.mutate(value);
+  };
+
+  const voteValue = voteResult.data?.value;
+  const isLoading = voteResult.isLoading;
 
   return (
     <section>
@@ -195,7 +232,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
       </div>
       <div>
         <h2 className="text-primary mt-4 text-2xl font-bold">
-          Ali se ne strinjaš da {provider.name} spada pod{" "}
+          Se ne strinjaš da {provider.name} spada pod{" "}
           {biasKeyToLabel(provider.biasRating ?? "")}?
         </h2>
         <p className="text-primary/50 text-lg">
@@ -203,38 +240,27 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
         </p>
       </div>
       <div className="mt-4 grid w-full grid-cols-5 gap-2">
-        <div
-          onClick={() => setVoted(true)}
-          className="text-vidikwhite transition-duration-200 flex h-48 cursor-pointer items-center justify-center rounded-lg bg-[#FA2D36] text-xl font-semibold transition-transform hover:scale-102"
-        >
-          leva
-        </div>
-        <div
-          onClick={() => setVoted(true)}
-          className="text-vidikwhite transition-duration-200 flex cursor-pointer items-center justify-center rounded-lg bg-[#FF6166] text-xl font-semibold transition-transform hover:scale-102"
-        >
-          center leva
-        </div>
-        <div
-          onClick={() => setVoted(true)}
-          className="transition-duration-200 flex cursor-pointer items-center justify-center rounded-lg bg-[#FEFFFF] text-xl font-semibold !text-black transition-transform hover:scale-102"
-        >
-          center
-        </div>
-        <div
-          onClick={() => setVoted(true)}
-          className="text-vidikwhite transition-duration-200 flex cursor-pointer items-center justify-center rounded-lg bg-[#52A1FF] text-xl font-semibold transition-transform hover:scale-102"
-        >
-          center desna
-        </div>
-        <div
-          onClick={() => setVoted(true)}
-          className="text-vidikwhite transition-duration-200 flex cursor-pointer items-center justify-center rounded-lg bg-[#2D7EFF] text-xl font-semibold transition-transform hover:scale-102"
-        >
-          desna
-        </div>
+        {Object.entries(BiasRating).map(([key, value]) => (
+          <button
+            key={key}
+            onClick={() => handleClick(value)}
+            disabled={mutation.isPending}
+            className={cn(
+              "text-vidikwhite transition-duration-200 relative flex h-48 cursor-pointer items-center justify-center rounded-lg text-xl font-semibold transition-transform hover:scale-102",
+              biasKeyToColor(value),
+              voteValue === value && "border-2 border-white",
+            )}
+          >
+            {biasKeyToLabel(value)}
+            {voteValue === value && (
+              <span className="absolute top-2 right-2">
+                <CircleCheck size={25} />
+              </span>
+            )}
+          </button>
+        ))}
       </div>
-      {voted && (
+      {voteValue && (
         <div className="animate-in slide-in-from-top-4 fade-in mt-12 duration-500">
           <h2 className="text-primary text-2xl font-bold">
             Glasuj še za druge medije!
@@ -243,11 +269,10 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
             {otherProviders.map((p) => (
               <Link
                 key={p.key}
-                to={`/medij/${p.key}`}
-                onClick={() => setVoted(false)}
+                to={href("/medij/:providerKey", { providerKey: p.key })}
               >
                 <div
-                  className="relative h-[160px] w-[160px] cursor-pointer rounded-lg bg-cover bg-center transition-transform duration-200 hover:scale-102"
+                  className="relative size-[160px] cursor-pointer rounded-lg bg-cover bg-center transition-transform duration-200 hover:scale-102"
                   style={{
                     backgroundImage: `url(${getProviderImageUrl(p.key, 160)})`,
                   }}

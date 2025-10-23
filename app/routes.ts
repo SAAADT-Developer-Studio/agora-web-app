@@ -22,6 +22,8 @@ export default [
     ...prefix("api", [
       route("category/:category", "./routes/api/category.ts"),
       route("populate-cache", "./routes/api/populate-cache.ts"),
+      route("votes", "./routes/api/post-vote.ts"),
+      route("votes/:providerKey/:userId", "./routes/api/get-vote.ts"),
     ]),
   ]),
   route("sitemap.xml", "./routes/sitemap.ts"),
