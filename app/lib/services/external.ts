@@ -1,3 +1,5 @@
+import { get } from "~/lib/fetcher";
+
 export type InflationSeries = {
   month: string;
   value: number;
@@ -22,9 +24,7 @@ export async function fetchSloveniaGDP() {
   const url =
     "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nama_10_gdp?freq=A&unit=CP_MEUR&na_item=B1GQ&geo=SI&format=JSON";
 
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Eurostat GDP fetch failed: ${res.status}`);
-  const data = (await res.json()) as JSONStat;
+  const data = await get<JSONStat>(url);
 
   const timeKey =
     (data.id || []).find((k) => k.toLowerCase() === "time") ?? "time";
@@ -71,10 +71,9 @@ export async function fetchInflationMonthlyYoY_SI(): Promise<
   const url =
     "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_manr?freq=M&geo=SI&coicop=CP00&unit=RCH_A&format=JSON";
 
-  const res = await fetch(url, { headers: { "Accept-Encoding": "gzip" } });
-  if (!res.ok) throw new Error(`Eurostat HICP fetch failed: ${res.status}`);
-
-  const data = (await res.json()) as JSONStat;
+  const data = await get<JSONStat>(url, {
+    headers: { "Accept-Encoding": "gzip" },
+  });
 
   // find "time" dimension & build ordered list of YYYY-MM labels
   const timeKey =
