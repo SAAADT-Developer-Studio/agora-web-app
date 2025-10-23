@@ -1,7 +1,7 @@
 import { data, Link } from "react-router";
 import type { Route } from "./+types/provider";
 import { getSeoMetas } from "~/lib/seo";
-import { Globe } from "lucide-react";
+import { Globe, Newspaper } from "lucide-react";
 import {
   getProviderImageUrl,
   ProviderImage,
@@ -10,6 +10,7 @@ import { ErrorComponent } from "~/components/error-component";
 import { sql, and, gte, desc, count } from "drizzle-orm";
 import { article } from "~/drizzle/schema";
 import { useState } from "react";
+import { Card } from "~/components/ui/card";
 
 async function getProviderStats(db: any, providerKey: string) {
   const now = new Date();
@@ -163,7 +164,7 @@ function biasKeyToColor(biasKey: string) {
 }
 
 export default function ProviderPage({ loaderData }: Route.ComponentProps) {
-  const { provider, otherProviders } = loaderData;
+  const { provider, otherProviders, stats } = loaderData;
   const [voted, setVoted] = useState(false);
 
   return (
@@ -266,6 +267,67 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
       )}
+      <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+        <Card className="bg-foreground border-none">
+          <div className="space-y-4 p-8">
+            <div className="flex justify-end">
+              <Newspaper className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-7xl font-bold text-white">
+                {stats.today.count}
+              </h2>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-lg leading-tight font-medium text-white">
+                Objavljenih člankov danes
+              </p>
+              <p className="text-sm text-gray-400">Rank: #{stats.today.rank}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-foreground border-none">
+          <div className="space-y-4 p-8">
+            <div className="flex justify-end">
+              <Newspaper className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-7xl font-bold text-white">
+                {stats.week.count}
+              </h2>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-lg leading-tight font-medium text-white">
+                Objavljenih člankov ta teden
+              </p>
+              <p className="text-sm text-gray-400">Rank: #{stats.week.count}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-foreground border-none">
+          <div className="space-y-4 p-8">
+            <div className="flex justify-end">
+              <Newspaper className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-7xl font-bold text-white">
+                {stats.month.count}
+              </h2>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-lg leading-tight font-medium text-white">
+                Objavljenih člankov ta mesec
+              </p>
+              <p className="text-sm text-gray-400">Rank: #{stats.month.rank}</p>
+            </div>
+          </div>
+        </Card>
+      </div>
     </section>
   );
 }
