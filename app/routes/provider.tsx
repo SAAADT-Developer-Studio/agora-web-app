@@ -1,7 +1,10 @@
 import { data } from "react-router";
 import type { Route } from "./+types/provider";
 import { getSeoMetas } from "~/lib/seo";
-import { getProviderImageUrl } from "~/components/provider-image";
+import {
+  getProviderImageUrl,
+  ProviderImage,
+} from "~/components/provider-image";
 import { ErrorComponent } from "~/components/error-component";
 
 export async function loader({ context, params }: Route.LoaderArgs) {
@@ -24,6 +27,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
   return (
     <div>
       <h1>{provider.name}</h1>
+      <ProviderImage provider={provider} className="size-[160px]" size={160} />
       <p>{provider.biasRating}</p>
       <p>{provider.url}</p>
     </div>

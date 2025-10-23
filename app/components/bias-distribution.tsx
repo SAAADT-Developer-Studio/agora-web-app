@@ -8,6 +8,7 @@ import { BiasInfoTooltip } from "~/components/bias-info-tooltip";
 import { config } from "~/config";
 import type { newsProvider } from "~/drizzle/schema";
 import { cn } from "~/lib/utils";
+import { href, Link } from "react-router";
 
 type BiasRating = "left" | "center-left" | "center" | "center-right" | "right";
 type BiasCategory = {
@@ -134,25 +135,24 @@ function ProviderBadge({
   return (
     <Tooltip>
       <TooltipTrigger>
-        {/* TODO: flesh out provider page */}
-        {/* <Link
-          to={href("/provider/:providerKey", {
+        <Link
+          to={href("/medij/:providerKey", {
             providerKey: provider.key,
           })}
-        > */}
-        <div className="dark:border-primary border-primary/20 relative flex w-full items-center justify-center rounded-full border-2">
-          <img
-            src={`${config.imagesUrl}/providers/${provider.key}.webp`}
-            alt="Provider"
-            className="h-full w-full overflow-clip rounded-full object-contain"
-          />
-          {provider.articleCount > 1 && (
-            <div className="absolute -top-2 -right-2 flex size-4 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-black">
-              {provider.articleCount}
-            </div>
-          )}
-        </div>
-        {/* </Link> */}
+        >
+          <div className="dark:border-primary border-primary/20 relative flex w-full items-center justify-center rounded-full border-2">
+            <img
+              src={`${config.imagesUrl}/providers/${provider.key}.webp`}
+              alt="Provider"
+              className="h-full w-full overflow-clip rounded-full object-contain"
+            />
+            {provider.articleCount > 1 && (
+              <div className="absolute -top-2 -right-2 flex size-4 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-black">
+                {provider.articleCount}
+              </div>
+            )}
+          </div>
+        </Link>
       </TooltipTrigger>
       <TooltipContent side="right">{provider.name}</TooltipContent>
     </Tooltip>
