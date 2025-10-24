@@ -4,7 +4,7 @@ import { getSeoMetas } from "~/lib/seo";
 import { fetchProviders } from "~/lib/services";
 import { ProviderImage } from "~/components/provider-image";
 import { Globe, Info, Newspaper } from "lucide-react";
-import { Link, href } from "react-router";
+import { Link, data, href } from "react-router";
 import { sql, and, gte, desc, count } from "drizzle-orm";
 import { article } from "~/drizzle/schema";
 import { Card } from "~/components/ui/card";
@@ -169,14 +169,14 @@ function biasKeyToLabel(biasKey: string) {
 
 function biasKeyToColor(biasKey: string) {
   const biasMap: Record<string, string> = {
-    left: "bg-[#FA2D36]",
-    "center-left": "bg-[#FF6166]",
+    left: "bg-[#FA2D36] text-vidikwhite",
+    "center-left": "bg-[#FF6166] text-vidikwhite",
     center: "bg-[#FEFFFF] !text-black",
-    "center-right": "bg-[#52A1FF]",
-    right: "bg-[#2D7EFF]",
+    "center-right": "bg-[#52A1FF] text-vidikwhite",
+    right: "bg-[#2D7EFF] text-vidikwhite",
   };
 
-  return biasMap[biasKey] || "bg-foreground";
+  return biasMap[biasKey] || "bg-foreground text-primary";
 }
 
 export function toProviderMap<T extends { providerKey: string }>(
@@ -189,12 +189,12 @@ export function toProviderMap<T extends { providerKey: string }>(
   return map;
 }
 
-export function headers() {
+/*export function headers() {
   // Prevent caching, for now, since we have some sort of caching issue
   return {
     "Cache-Control": "no-cache, no-store, must-revalidate",
   };
-}
+} */
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const { db } = context;
@@ -207,7 +207,10 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   const providerStatsMap = toProviderMap(providerStats);
 
-  return { providers, providerStatsMap };
+  return data(
+    { providers, providerStatsMap },
+    { headers: { "Cache-Control": "max-age=60, s-maxage=60" } },
+  );
 }
 
 export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
@@ -364,7 +367,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
                 </a>
                 <Link
                   to={href("/metodologija")}
-                  className={`${biasKeyToColor(provider.biasRating ?? "")} text-vidikwhite flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold`}
+                  className={`${biasKeyToColor(provider.biasRating ?? "")} flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold`}
                 >
                   <Info className="size-3" />
                   {biasKeyToLabel(provider.biasRating ?? "")}

@@ -61,7 +61,7 @@ function biasKeyToColor(biasKey: string) {
     right: "bg-[#2D7EFF]",
   } satisfies Record<BiasRating, string>;
 
-  return biasMap[biasKey as BiasRating] || "#FFFFFF";
+  return biasMap[biasKey as BiasRating] || "bg-foreground text-primary";
 }
 
 export default function ProviderPage({ loaderData }: Route.ComponentProps) {
@@ -283,19 +283,19 @@ function ProviderStatsCards({
       <Card className="bg-foreground border-none !py-0">
         <div className="space-y-4 p-8">
           <div className="flex justify-end">
-            <Newspaper className="h-6 w-6 text-white" />
+            <Newspaper className="text-primary h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-7xl font-bold text-white">
+            <h2 className="text-primary text-7xl font-bold">
               {stats.today.count}
             </h2>
           </div>
 
           <div className="space-y-1">
-            <p className="text-lg leading-tight font-medium text-white">
+            <p className="text-primary text-lg leading-tight font-medium">
               Objavljenih člankov danes
             </p>
-            <p className="text-sm text-gray-400">Rank: #{stats.today.rank}</p>
+            <p className="text-primary/70 text-sm">Rank: #{stats.today.rank}</p>
           </div>
         </div>
       </Card>
@@ -303,19 +303,19 @@ function ProviderStatsCards({
       <Card className="bg-foreground border-none !py-0">
         <div className="space-y-4 p-8">
           <div className="flex justify-end">
-            <Newspaper className="h-6 w-6 text-white" />
+            <Newspaper className="text-primary h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-7xl font-bold text-white">
+            <h2 className="text-primary text-7xl font-bold">
               {stats.week.count}
             </h2>
           </div>
 
           <div className="space-y-1">
-            <p className="text-lg leading-tight font-medium text-white">
+            <p className="text-primary text-lg leading-tight font-medium">
               Objavljenih člankov ta teden
             </p>
-            <p className="text-sm text-gray-400">Rank: #{stats.week.rank}</p>
+            <p className="text-primary/70 text-sm">Rank: #{stats.week.rank}</p>
           </div>
         </div>
       </Card>
@@ -323,19 +323,19 @@ function ProviderStatsCards({
       <Card className="bg-foreground border-none !py-0">
         <div className="space-y-4 p-8">
           <div className="flex justify-end">
-            <Newspaper className="h-6 w-6 text-white" />
+            <Newspaper className="text-primary h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-7xl font-bold text-white">
+            <h2 className="text-primary text-7xl font-bold">
               {stats.month.count}
             </h2>
           </div>
 
           <div className="space-y-1">
-            <p className="text-lg leading-tight font-medium text-white">
+            <p className="text-primary text-lg leading-tight font-medium">
               Objavljenih člankov ta mesec
             </p>
-            <p className="text-sm text-gray-400">Rank: #{stats.month.rank}</p>
+            <p className="text-primary/70 text-sm">Rank: #{stats.month.rank}</p>
           </div>
         </div>
       </Card>
