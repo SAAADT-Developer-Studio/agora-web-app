@@ -1,18 +1,15 @@
 import type { Route } from "./+types/home";
+import { sql } from "drizzle-orm";
 
-import { VidikBanner, VidikBannerType } from "~/components/vidik-banner";
 import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
 import { getSeoMetas } from "~/lib/seo";
-import { dummyPeople } from "~/mocks/people";
 import {
   fetchInflationMonthlyYoY_SI,
   fetchSloveniaGDP,
 } from "~/lib/services/external";
 import { getCategoryArticles, getHomeArticles } from "~/lib/services/ranking";
-import { PeopleCard } from "~/components/people-card";
 import { EconomyCard } from "~/components/economy-card";
-import { useMediaQuery } from "~/hooks/use-media-query";
 import { getProviderStats } from "~/lib/services/homePageProviderStats";
 import { ProviderStatsCard } from "~/components/provider-stats-card";
 import { config, CategoryKey, type CategoryKeyValue } from "~/config";
@@ -24,6 +21,7 @@ import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { TutorialPopup } from "~/components/tutorial-popup";
 import { ErrorComponent } from "~/components/error-component";
+import { VotingCard } from "~/components/voting-card";
 
 export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
@@ -60,6 +58,44 @@ export async function fetchHomeArticlesData({ db }: { db: Database }) {
 
   return await resolvePromises(promiseMap);
 }
+export async function fetchRandomProviders({ db }: { db: Database }) {
+  const rank0 = await db.query.newsProvider.findMany({
+    orderBy: sql`RANDOM()`,
+    where: (newsProvider) =>
+      sql`${newsProvider.rank} = 0 AND ${newsProvider.biasRating} IS NOT NULL`,
+    limit: 2,
+  });
+
+  const rank1 = await db.query.newsProvider.findMany({
+    orderBy: sql`RANDOM()`,
+    where: (newsProvider) =>
+      sql`${newsProvider.rank} = 1 AND ${newsProvider.biasRating} IS NOT NULL`,
+    limit: 1,
+  });
+
+  const rank2 = await db.query.newsProvider.findMany({
+    orderBy: sql`RANDOM()`,
+    where: (newsProvider) =>
+      sql`${newsProvider.rank} = 2 AND ${newsProvider.biasRating} IS NOT NULL`,
+    limit: 1,
+  });
+
+  const rank3 = await db.query.newsProvider.findMany({
+    orderBy: sql`RANDOM()`,
+    where: (newsProvider) =>
+      sql`${newsProvider.rank} = 3 AND ${newsProvider.biasRating} IS NOT NULL`,
+    limit: 1,
+  });
+
+  const rank4 = await db.query.newsProvider.findMany({
+    orderBy: sql`RANDOM()`,
+    where: (newsProvider) =>
+      sql`${newsProvider.rank} = 4 AND ${newsProvider.biasRating} IS NOT NULL`,
+    limit: 1,
+  });
+
+  return [...rank0, ...rank1, ...rank2, ...rank3, ...rank4];
+}
 
 export async function loader({ context }: Route.LoaderArgs) {
   const { db, kvCache } = context;
@@ -72,6 +108,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     },
   );
 
+  const randomProviders = fetchRandomProviders({ db });
   const gdpSeries = fetchSloveniaGDP();
   const inflationSeries = fetchInflationMonthlyYoY_SI();
   const providerStats = getProviderStats({ count: 9, db });
@@ -84,6 +121,7 @@ export async function loader({ context }: Route.LoaderArgs) {
       gdpSeries,
       inflationSeries,
       providerStats,
+      randomProviders,
       env: getEnv(),
     },
     {
@@ -95,7 +133,13 @@ export async function loader({ context }: Route.LoaderArgs) {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { articles, gdpSeries, inflationSeries, providerStats } = loaderData;
+  const {
+    articles,
+    gdpSeries,
+    inflationSeries,
+    providerStats,
+    randomProviders,
+  } = loaderData;
 
   return (
     <>
@@ -107,10 +151,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           articles={articles[CategoryKey.politika]}
           categoryKey={CategoryKey.politika}
           dividerText="POLITIKA"
-          sideSection={
-            // <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
-            <ProviderStatsCard providerStatsPromise={providerStats} />
-          }
+          sideSection={<VotingCard randomProviders={randomProviders} />}
         />
 
         <CategorySection
@@ -129,6 +170,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           articles={articles[CategoryKey.kriminal]}
           categoryKey={CategoryKey.kriminal}
           dividerText="KRIMINAL"
+          sideSection={
+            // <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
+            <ProviderStatsCard providerStatsPromise={providerStats} />
+          }
         />
 
         <CategorySection
