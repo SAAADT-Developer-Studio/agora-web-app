@@ -24,17 +24,19 @@ export async function getVote({
 export type Vote = NonNullable<Awaited<ReturnType<typeof getVote>>>;
 
 export async function loader({ params, context }: Route.LoaderArgs) {
-  const { db } = context;
+  return await context.measurer.time("get-vote-loader", async () => {
+    const { db } = context;
 
-  const vote = await getVote({
-    db,
-    providerKey: params.providerKey,
-    userId: params.userId,
+    const vote = await getVote({
+      db,
+      providerKey: params.providerKey,
+      userId: params.userId,
+    });
+
+    // if (!vote) {
+    //   throw new Response("Vote not found", { status: 404 });
+    // }
+
+    return data(vote);
   });
-
-  // if (!vote) {
-  //   throw new Response("Vote not found", { status: 404 });
-  // }
-
-  return data(vote);
 }
