@@ -1,114 +1,38 @@
-import { data, href, Link } from "react-router";
+import { data, Link, href, Await } from "react-router";
 import type { Route } from "./+types/provider";
 import { getSeoMetas } from "~/lib/seo";
-import { Globe, Newspaper, Info } from "lucide-react";
+import { CircleCheck, Globe, Newspaper, Info } from "lucide-react";
 import {
   getProviderImageUrl,
   ProviderImage,
 } from "~/components/provider-image";
 import { ErrorComponent } from "~/components/error-component";
-import { sql, and, gte, desc, count } from "drizzle-orm";
-import { article } from "~/drizzle/schema";
-import { useState } from "react";
+
 import { Card } from "~/components/ui/card";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { get, post } from "~/lib/fetcher";
+import type { VoteInput } from "~/routes/api/post-vote";
+import { type Vote } from "~/routes/api/get-vote";
+import { cn } from "~/lib/utils";
+import { removeUrlProtocol } from "~/utils/removeUrlProtocol";
+import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
+import { useLocalStorage } from "~/hooks/use-local-storage";
+import { Spinner } from "~/components/ui/spinner";
+import { toast } from "sonner";
+import type { ProviderSuggestionsData } from "~/routes/api/get-provider-suggestions";
+import { getProviderStats } from "~/lib/services/providerPageProviderStats";
+import { Suspense } from "react";
+import { ErrorUI } from "~/components/ui/error-ui";
 
-async function getProviderStats(db: any, providerKey: string) {
-  const now = new Date();
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  );
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+const BiasRating = {
+  Left: "left",
+  CenterLeft: "center-left",
+  Center: "center",
+  CenterRight: "center-right",
+  Right: "right",
+} as const;
 
-  const [todayCount] = await db
-    .select({ count: count() })
-    .from(article)
-    .where(
-      and(
-        sql`${article.newsProviderKey} = ${providerKey}`,
-        gte(article.publishedAt, startOfToday.toISOString()),
-      ),
-    );
-
-  const [weekCount] = await db
-    .select({ count: count() })
-    .from(article)
-    .where(
-      and(
-        sql`${article.newsProviderKey} = ${providerKey}`,
-        gte(article.publishedAt, startOfWeek.toISOString()),
-      ),
-    );
-
-  const [monthCount] = await db
-    .select({ count: count() })
-    .from(article)
-    .where(
-      and(
-        sql`${article.newsProviderKey} = ${providerKey}`,
-        gte(article.publishedAt, startOfMonth.toISOString()),
-      ),
-    );
-
-  const todayRankings = await db
-    .select({
-      providerKey: article.newsProviderKey,
-      count: count(),
-    })
-    .from(article)
-    .where(gte(article.publishedAt, startOfToday.toISOString()))
-    .groupBy(article.newsProviderKey)
-    .orderBy(desc(count()));
-
-  const weekRankings = await db
-    .select({
-      providerKey: article.newsProviderKey,
-      count: count(),
-    })
-    .from(article)
-    .where(gte(article.publishedAt, startOfWeek.toISOString()))
-    .groupBy(article.newsProviderKey)
-    .orderBy(desc(count()));
-
-  const monthRankings = await db
-    .select({
-      providerKey: article.newsProviderKey,
-      count: count(),
-    })
-    .from(article)
-    .where(gte(article.publishedAt, startOfMonth.toISOString()))
-    .groupBy(article.newsProviderKey)
-    .orderBy(desc(count()));
-
-  const todayRank =
-    todayRankings.findIndex((r: any) => r.providerKey === providerKey) + 1;
-  const weekRank =
-    weekRankings.findIndex((r: any) => r.providerKey === providerKey) + 1;
-  const monthRank =
-    monthRankings.findIndex((r: any) => r.providerKey === providerKey) + 1;
-
-  return {
-    today: {
-      count: todayCount.count,
-      rank: todayRank || null,
-      totalProviders: todayRankings.length,
-    },
-    week: {
-      count: weekCount.count,
-      rank: weekRank || null,
-      totalProviders: weekRankings.length,
-    },
-    month: {
-      count: monthCount.count,
-      rank: monthRank || null,
-      totalProviders: monthRankings.length,
-    },
-  };
-}
+type BiasRating = (typeof BiasRating)[keyof typeof BiasRating];
 
 export async function loader({ context, params }: Route.LoaderArgs) {
   const { db } = context;
@@ -121,51 +45,91 @@ export async function loader({ context, params }: Route.LoaderArgs) {
     throw new Response("Provider not found", { status: 404 });
   }
 
-  const otherProviders = await db.query.newsProvider.findMany({
-    where: (provider, { ne }) => ne(provider.key, params.providerKey ?? ""),
-    orderBy: (provider, { asc }) => [asc(provider.rank)],
-    limit: 5,
+  const stats = context.measurer.time("get-provider-stats", async () => {
+    return await getProviderStats(db, params.providerKey);
   });
 
-  const stats = await getProviderStats(db, params.providerKey ?? "");
-
-  return data({ provider, otherProviders, stats }, {});
-}
-
-function removeUrlProtocol(url: string) {
-  return url
-    .replace(/^https?:\/\//, "")
-    .replace(/\/$/, "")
-    .replace(/^www\./, "");
-}
-
-function biasKeyToLabel(biasKey: string) {
-  const biasMap: Record<string, string> = {
-    left: "levo",
-    "center-left": "center levo",
-    center: "center",
-    "center-right": "center desno",
-    right: "desno",
-  };
-
-  return biasMap[biasKey] || "Neznano";
+  return data({ provider, stats }, {});
 }
 
 function biasKeyToColor(biasKey: string) {
-  const biasMap: Record<string, string> = {
+  const biasMap = {
     left: "bg-[#FA2D36]",
     "center-left": "bg-[#FF6166]",
     center: "bg-[#FEFFFF] !text-black",
     "center-right": "bg-[#52A1FF]",
     right: "bg-[#2D7EFF]",
-  };
+  } satisfies Record<BiasRating, string>;
 
-  return biasMap[biasKey] || "#FFFFFF";
+  return biasMap[biasKey as BiasRating] || "#FFFFFF";
 }
 
 export default function ProviderPage({ loaderData }: Route.ComponentProps) {
-  const { provider, otherProviders, stats } = loaderData;
-  const [voted, setVoted] = useState(false);
+  const { provider, stats } = loaderData;
+  const queryClient = useQueryClient();
+  const [userId] = useLocalStorage("user_id", null);
+
+  const queryKey = ["vote", provider.key, userId];
+
+  const voteResult = useQuery({
+    queryKey,
+    queryFn: async () => {
+      return await get<Vote | undefined>(
+        href("/api/votes/:providerKey/:userId", {
+          providerKey: provider.key,
+          userId,
+        }),
+      );
+    },
+    enabled: !!userId,
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (value: BiasRating) => {
+      await post(href("/api/votes"), {
+        providerKey: provider.key,
+        userId,
+        value,
+      } satisfies VoteInput);
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey });
+    },
+    onMutate(ratingValue) {
+      queryClient.setQueryData(queryKey, (old: Vote) => ({
+        ...old,
+        value: ratingValue,
+      }));
+    },
+    onError(error) {
+      toast.error("Prišlo je do napake pri glasovanju. Poskusi znova.");
+      window.posthog?.capture("vote_error", {
+        providerKey: provider.key,
+        userId,
+        error: error.message,
+        stack: error.stack,
+      });
+    },
+  });
+
+  const voteSuggestions = useQuery({
+    queryKey: ["provider-suggestions", provider.key, userId],
+    queryFn: async () => {
+      return await get<ProviderSuggestionsData>(
+        href("/api/provider-suggestions/:providerKey/:userId", {
+          userId,
+          providerKey: provider.key,
+        }),
+      );
+    },
+    enabled: !!userId,
+  });
+
+  const handleClick = (value: BiasRating) => {
+    mutation.mutate(value);
+  };
+
+  const voteValue = voteResult.data?.value;
 
   return (
     <section>
@@ -200,7 +164,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
       </div>
       <div>
         <h2 className="text-primary mt-4 text-lg font-bold md:text-2xl">
-          Ali se ne strinjaš da {provider.name} spada pod{" "}
+          Se ne strinjaš da {provider.name} spada pod{" "}
           {biasKeyToLabel(provider.biasRating ?? "")}?
         </h2>
         <p className="text-primary/50 text-sm md:text-lg">
@@ -208,52 +172,48 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
         </p>
       </div>
       <div className="mt-4 grid w-full grid-cols-5 gap-2">
-        <div
-          onClick={() => setVoted(true)}
-          className="text-vidikwhite transition-duration-200 flex aspect-square cursor-pointer items-center justify-center rounded-lg bg-[#FA2D36] text-center text-sm leading-4 font-semibold transition-transform hover:scale-102 md:text-xl md:leading-5"
-        >
-          leva
-        </div>
-        <div
-          onClick={() => setVoted(true)}
-          className="text-vidikwhite transition-duration-200 flex aspect-square cursor-pointer items-center justify-center rounded-lg bg-[#FF6166] text-center text-sm leading-4 font-semibold transition-transform hover:scale-102 md:text-xl md:leading-5"
-        >
-          center leva
-        </div>
-        <div
-          onClick={() => setVoted(true)}
-          className="transition-duration-200 flex aspect-square cursor-pointer items-center justify-center rounded-lg bg-[#FEFFFF] text-center text-sm leading-4 font-semibold !text-black transition-transform hover:scale-102 md:text-xl md:leading-5"
-        >
-          center
-        </div>
-        <div
-          onClick={() => setVoted(true)}
-          className="text-vidikwhite transition-duration-200 flex aspect-square cursor-pointer items-center justify-center rounded-lg bg-[#52A1FF] text-center text-sm leading-4 font-semibold transition-transform hover:scale-102 md:text-xl md:leading-5"
-        >
-          center desna
-        </div>
-        <div
-          onClick={() => setVoted(true)}
-          className="text-vidikwhite transition-duration-200 flex aspect-square cursor-pointer items-center justify-center rounded-lg bg-[#2D7EFF] text-center text-sm leading-4 font-semibold transition-transform hover:scale-102 md:text-xl md:leading-5"
-        >
-          desna
-        </div>
+        {Object.entries(BiasRating).map(([key, value]) => (
+          <button
+            key={key}
+            onClick={() => handleClick(value)}
+            disabled={mutation.isPending}
+            className={cn(
+              "text-vidikwhite transition-duration-200 relative flex aspect-square cursor-pointer items-center justify-center rounded-lg text-center text-sm leading-4 font-semibold transition-transform hover:scale-102 md:text-xl md:leading-5",
+              biasKeyToColor(value),
+              voteValue === value && "border-2 border-white",
+            )}
+          >
+            {biasKeyToLabel(value)}
+            {voteValue === value && (
+              <span className="absolute top-2 right-2">
+                {mutation.isPending ? (
+                  <Spinner className="size-[25px] fill-current" />
+                ) : (
+                  <CircleCheck size={25} />
+                )}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
-      {voted && (
+      {voteValue && !voteSuggestions.isError && (
         <div className="animate-in slide-in-from-top-4 fade-in mt-12 duration-500">
           <h2 className="text-primary text-lg font-bold md:text-2xl">
             Glasuj še za druge medije!
           </h2>
           <div className="mt-6 grid w-full grid-cols-2 items-center gap-4 sm:grid-cols-3 md:grid-cols-5">
-            {otherProviders.map((p) => (
+            {voteSuggestions.isLoading && (
+              <Spinner className="col-span-5 m-auto size-8" />
+            )}
+            {voteSuggestions.data?.providers.map((p) => (
               <Link
                 key={p.key}
-                to={`/medij/${p.key}`}
-                onClick={() => setVoted(false)}
+                to={href("/medij/:providerKey", { providerKey: p.key })}
                 className="flex items-center justify-center"
+                prefetch="intent"
               >
                 <div
-                  className="relative h-[160px] w-[160px] cursor-pointer rounded-lg bg-cover bg-center transition-transform duration-200 hover:scale-102"
+                  className="relative size-[160px] cursor-pointer rounded-lg bg-cover bg-center transition-transform duration-200 hover:scale-102"
                   style={{
                     backgroundImage: `url(${getProviderImageUrl(p.key, 160)})`,
                   }}
@@ -272,66 +232,22 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
       )}
+
       <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <Card className="bg-foreground border-none !py-0">
-          <div className="space-y-4 p-8">
-            <div className="flex justify-end">
-              <Newspaper className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-7xl font-bold text-white">
-                {stats.today.count}
-              </h2>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-lg leading-tight font-medium text-white">
-                Objavljenih člankov danes
-              </p>
-              <p className="text-sm text-gray-400">Rank: #{stats.today.rank}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-foreground border-none !py-0">
-          <div className="space-y-4 p-8">
-            <div className="flex justify-end">
-              <Newspaper className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-7xl font-bold text-white">
-                {stats.week.count}
-              </h2>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-lg leading-tight font-medium text-white">
-                Objavljenih člankov ta teden
-              </p>
-              <p className="text-sm text-gray-400">Rank: #{stats.week.rank}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-foreground border-none !py-0">
-          <div className="space-y-4 p-8">
-            <div className="flex justify-end">
-              <Newspaper className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-7xl font-bold text-white">
-                {stats.month.count}
-              </h2>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-lg leading-tight font-medium text-white">
-                Objavljenih člankov ta mesec
-              </p>
-              <p className="text-sm text-gray-400">Rank: #{stats.month.rank}</p>
-            </div>
-          </div>
-        </Card>
+        <Suspense fallback={<Spinner className="col-span-5 m-auto size-8" />}>
+          <Await
+            resolve={stats}
+            errorElement={
+              <ErrorUI
+                message="Napaka pri nalaganju statistik"
+                size="small"
+                className="col-span-5"
+              />
+            }
+          >
+            {(statsResolved) => <ProviderStatsCards stats={statsResolved} />}
+          </Await>
+        </Suspense>
       </div>
     </section>
   );
@@ -355,4 +271,74 @@ export function meta({ data, location }: Route.MetaArgs) {
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return <ErrorComponent error={error} />;
+}
+
+function ProviderStatsCards({
+  stats,
+}: {
+  stats: Awaited<ReturnType<typeof getProviderStats>>;
+}) {
+  return (
+    <>
+      <Card className="bg-foreground border-none !py-0">
+        <div className="space-y-4 p-8">
+          <div className="flex justify-end">
+            <Newspaper className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-7xl font-bold text-white">
+              {stats.today.count}
+            </h2>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-lg leading-tight font-medium text-white">
+              Objavljenih člankov danes
+            </p>
+            <p className="text-sm text-gray-400">Rank: #{stats.today.rank}</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="bg-foreground border-none !py-0">
+        <div className="space-y-4 p-8">
+          <div className="flex justify-end">
+            <Newspaper className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-7xl font-bold text-white">
+              {stats.week.count}
+            </h2>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-lg leading-tight font-medium text-white">
+              Objavljenih člankov ta teden
+            </p>
+            <p className="text-sm text-gray-400">Rank: #{stats.week.rank}</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="bg-foreground border-none !py-0">
+        <div className="space-y-4 p-8">
+          <div className="flex justify-end">
+            <Newspaper className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-7xl font-bold text-white">
+              {stats.month.count}
+            </h2>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-lg leading-tight font-medium text-white">
+              Objavljenih člankov ta mesec
+            </p>
+            <p className="text-sm text-gray-400">Rank: #{stats.month.rank}</p>
+          </div>
+        </div>
+      </Card>
+    </>
+  );
 }

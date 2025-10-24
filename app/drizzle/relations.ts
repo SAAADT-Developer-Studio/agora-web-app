@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { cluster, article, newsProvider } from "./schema";
+import { cluster, article, newsProvider, vote } from "./schema";
 
 export const articleRelations = relations(article, ({one}) => ({
 	cluster: one(cluster, {
@@ -18,4 +18,12 @@ export const clusterRelations = relations(cluster, ({many}) => ({
 
 export const newsProviderRelations = relations(newsProvider, ({many}) => ({
 	articles: many(article),
+	votes: many(vote),
+}));
+
+export const voteRelations = relations(vote, ({one}) => ({
+	newsProvider: one(newsProvider, {
+		fields: [vote.providerId],
+		references: [newsProvider.key]
+	}),
 }));

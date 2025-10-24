@@ -7,6 +7,8 @@ import {
   timestamp,
   doublePrecision,
   integer,
+  primaryKey,
+  uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -73,4 +75,28 @@ export const cluster = pgTable(
     slug: varchar(),
   },
   (table) => [unique("cluster_slug_key").on(table.slug)],
+);
+
+export const vote = pgTable(
+  "vote",
+  {
+    userId: uuid("user_id").notNull(),
+    providerId: varchar("provider_id").notNull(),
+    value: varchar().notNull(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "string",
+    }).notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.providerId],
+      foreignColumns: [newsProvider.key],
+      name: "vote_provider_id_fkey",
+    }),
+    primaryKey({
+      columns: [table.userId, table.providerId],
+      name: "vote_pkey",
+    }),
+  ],
 );

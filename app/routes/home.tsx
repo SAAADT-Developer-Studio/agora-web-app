@@ -13,7 +13,7 @@ import { getCategoryArticles, getHomeArticles } from "~/lib/services/ranking";
 import { PeopleCard } from "~/components/people-card";
 import { EconomyCard } from "~/components/economy-card";
 import { useMediaQuery } from "~/hooks/use-media-query";
-import { getProviderStats } from "~/lib/services/providerStats";
+import { getProviderStats } from "~/lib/services/homePageProviderStats";
 import { ProviderStatsCard } from "~/components/provider-stats-card";
 import { config, CategoryKey, type CategoryKeyValue } from "~/config";
 import type { ArticleType } from "~/lib/services/ranking";
