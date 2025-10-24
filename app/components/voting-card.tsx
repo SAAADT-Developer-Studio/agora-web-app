@@ -19,7 +19,7 @@ function biasKeyToColor(biasKey: string) {
     right: "bg-[#2D7EFF]",
   } satisfies Record<BiasRating, string>;
 
-  return biasMap[biasKey as BiasRating] || "#FFFFFF";
+  return biasMap[biasKey as BiasRating] || "bg-foreground text-primary";
 }
 
 type ProviderType = {
@@ -71,10 +71,10 @@ export function VotingCard({
                     <Link
                       key={p.key}
                       to={href("/medij/:providerKey", { providerKey: p.key })}
-                      className="flex items-center justify-center"
+                      className="flex items-center justify-center p-2 md:p-0"
                     >
                       <div
-                        className="relative size-[110px] cursor-pointer rounded-lg bg-cover bg-center transition-transform duration-200 hover:scale-102"
+                        className="relative size-[110px] cursor-pointer rounded-lg bg-cover bg-center transition-transform duration-200 hover:scale-102 md:size-[110px]"
                         style={{
                           backgroundImage: `url(${getProviderImageUrl(p.key, 160)})`,
                         }}

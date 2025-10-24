@@ -169,14 +169,14 @@ function biasKeyToLabel(biasKey: string) {
 
 function biasKeyToColor(biasKey: string) {
   const biasMap: Record<string, string> = {
-    left: "bg-[#FA2D36]",
-    "center-left": "bg-[#FF6166]",
+    left: "bg-[#FA2D36] text-vidikwhite",
+    "center-left": "bg-[#FF6166] text-vidikwhite",
     center: "bg-[#FEFFFF] !text-black",
-    "center-right": "bg-[#52A1FF]",
-    right: "bg-[#2D7EFF]",
+    "center-right": "bg-[#52A1FF] text-vidikwhite",
+    right: "bg-[#2D7EFF] text-vidikwhite",
   };
 
-  return biasMap[biasKey] || "bg-foreground";
+  return biasMap[biasKey] || "bg-foreground text-primary";
 }
 
 export function toProviderMap<T extends { providerKey: string }>(
@@ -364,7 +364,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
                 </a>
                 <Link
                   to={href("/metodologija")}
-                  className={`${biasKeyToColor(provider.biasRating ?? "")} text-vidikwhite flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold`}
+                  className={`${biasKeyToColor(provider.biasRating ?? "")} flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold`}
                 >
                   <Info className="size-3" />
                   {biasKeyToLabel(provider.biasRating ?? "")}
