@@ -4,6 +4,9 @@ import { Await, Link } from "react-router";
 import { href } from "react-router";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import { getProviderImageUrl } from "./provider-image";
+import { ErrorUI } from "./ui/error-ui";
+import { Suspense } from "react";
+import { Spinner } from "./ui/spinner";
 
 type BiasRating = "left" | "center-left" | "center" | "center-right" | "right";
 
@@ -49,35 +52,48 @@ export function VotingCard({
       </SideCardHeader>
       <div className="flex flex-1 flex-col items-center justify-center gap-4 py-2">
         <div className="grid h-full w-4/5 grid-cols-2 pt-0">
-          <Await resolve={randomProviders}>
-            {(providers) => (
-              <>
-                {providers.map((p) => (
-                  <Link
-                    key={p.key}
-                    to={href("/medij/:providerKey", { providerKey: p.key })}
-                    className="flex items-center justify-center"
-                  >
-                    <div
-                      className="relative size-[110px] cursor-pointer rounded-lg bg-cover bg-center transition-transform duration-200 hover:scale-102"
-                      style={{
-                        backgroundImage: `url(${getProviderImageUrl(p.key, 160)})`,
-                      }}
+          <Suspense
+            fallback={
+              <div className="flex flex-1 items-center justify-center">
+                <Spinner className="size-8" />
+              </div>
+            }
+          >
+            <Await
+              resolve={randomProviders}
+              errorElement={
+                <ErrorUI message="Napaka pri nalaganju medijev" size="small" />
+              }
+            >
+              {(providers) => (
+                <>
+                  {providers.map((p) => (
+                    <Link
+                      key={p.key}
+                      to={href("/medij/:providerKey", { providerKey: p.key })}
+                      className="flex items-center justify-center"
                     >
                       <div
-                        className={
-                          "absolute top-[-5px] right-[-10px] rounded-lg px-2 py-1 text-sm font-semibold " +
-                          biasKeyToColor(p.biasRating ?? "")
-                        }
+                        className="relative size-[110px] cursor-pointer rounded-lg bg-cover bg-center transition-transform duration-200 hover:scale-102"
+                        style={{
+                          backgroundImage: `url(${getProviderImageUrl(p.key, 160)})`,
+                        }}
                       >
-                        {biasKeyToLabel(p.biasRating ?? "")}
+                        <div
+                          className={
+                            "absolute top-[-5px] right-[-10px] rounded-lg px-2 py-1 text-sm font-semibold " +
+                            biasKeyToColor(p.biasRating ?? "")
+                          }
+                        >
+                          {biasKeyToLabel(p.biasRating ?? "")}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
-              </>
-            )}
-          </Await>
+                    </Link>
+                  ))}
+                </>
+              )}
+            </Await>
+          </Suspense>
         </div>
       </div>
     </SideCardContainer>
