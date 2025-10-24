@@ -7,8 +7,6 @@ import {
   ProviderImage,
 } from "~/components/provider-image";
 import { ErrorComponent } from "~/components/error-component";
-import { sql, and, gte, desc, count } from "drizzle-orm";
-import { article } from "~/drizzle/schema";
 
 import { Card } from "~/components/ui/card";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,10 +16,11 @@ import { type Vote } from "~/routes/api/get-vote";
 import { cn } from "~/lib/utils";
 import { removeUrlProtocol } from "~/utils/removeUrlProtocol";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
-import type { Database } from "~/lib/db";
 import { useLocalStorage } from "~/hooks/use-local-storage";
 import { Spinner } from "~/components/ui/spinner";
 import { toast } from "sonner";
+import type { ProviderSuggestionsData } from "~/routes/api/get-provider-suggestions";
+import { getProviderStats } from "~/lib/services/providerPageProviderStats";
 
 const BiasRating = {
   Left: "left",
@@ -32,106 +31,6 @@ const BiasRating = {
 } as const;
 
 type BiasRating = (typeof BiasRating)[keyof typeof BiasRating];
-
-async function getProviderStats(db: Database, providerKey: string) {
-  const now = new Date();
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  );
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  // TODO: parallelize these queries and possibly stream them
-
-  const [todayCount] = await db
-    .select({ count: count() })
-    .from(article)
-    .where(
-      and(
-        sql`${article.newsProviderKey} = ${providerKey}`,
-        gte(article.publishedAt, startOfToday.toISOString()),
-      ),
-    );
-
-  const [weekCount] = await db
-    .select({ count: count() })
-    .from(article)
-    .where(
-      and(
-        sql`${article.newsProviderKey} = ${providerKey}`,
-        gte(article.publishedAt, startOfWeek.toISOString()),
-      ),
-    );
-
-  const [monthCount] = await db
-    .select({ count: count() })
-    .from(article)
-    .where(
-      and(
-        sql`${article.newsProviderKey} = ${providerKey}`,
-        gte(article.publishedAt, startOfMonth.toISOString()),
-      ),
-    );
-
-  const todayRankings = await db
-    .select({
-      providerKey: article.newsProviderKey,
-      count: count(),
-    })
-    .from(article)
-    .where(gte(article.publishedAt, startOfToday.toISOString()))
-    .groupBy(article.newsProviderKey)
-    .orderBy(desc(count()));
-
-  const weekRankings = await db
-    .select({
-      providerKey: article.newsProviderKey,
-      count: count(),
-    })
-    .from(article)
-    .where(gte(article.publishedAt, startOfWeek.toISOString()))
-    .groupBy(article.newsProviderKey)
-    .orderBy(desc(count()));
-
-  const monthRankings = await db
-    .select({
-      providerKey: article.newsProviderKey,
-      count: count(),
-    })
-    .from(article)
-    .where(gte(article.publishedAt, startOfMonth.toISOString()))
-    .groupBy(article.newsProviderKey)
-    .orderBy(desc(count()));
-
-  const todayRank =
-    todayRankings.findIndex((r: any) => r.providerKey === providerKey) + 1;
-  const weekRank =
-    weekRankings.findIndex((r: any) => r.providerKey === providerKey) + 1;
-  const monthRank =
-    monthRankings.findIndex((r: any) => r.providerKey === providerKey) + 1;
-
-  return {
-    today: {
-      count: todayCount.count,
-      rank: todayRank || null,
-      totalProviders: todayRankings.length,
-    },
-    week: {
-      count: weekCount.count,
-      rank: weekRank || null,
-      totalProviders: weekRankings.length,
-    },
-    month: {
-      count: monthCount.count,
-      rank: monthRank || null,
-      totalProviders: monthRankings.length,
-    },
-  };
-}
 
 export async function loader({ context, params }: Route.LoaderArgs) {
   const { db } = context;
@@ -144,16 +43,9 @@ export async function loader({ context, params }: Route.LoaderArgs) {
     throw new Response("Provider not found", { status: 404 });
   }
 
-  // TODO: filter out providers the user has already voted on, move this somewhere else, because we dont have user id on the server
-  const otherProviders = await db.query.newsProvider.findMany({
-    where: (provider, { ne }) => ne(provider.key, params.providerKey ?? ""),
-    orderBy: (provider, { asc }) => [asc(provider.rank)],
-    limit: 5,
-  });
+  const stats = await getProviderStats(db, params.providerKey);
 
-  const stats = await getProviderStats(db, params.providerKey ?? "");
-
-  return data({ provider, otherProviders, stats }, {});
+  return data({ provider, stats }, {});
 }
 
 function biasKeyToColor(biasKey: string) {
@@ -169,7 +61,7 @@ function biasKeyToColor(biasKey: string) {
 }
 
 export default function ProviderPage({ loaderData }: Route.ComponentProps) {
-  const { provider, otherProviders, stats } = loaderData;
+  const { provider, stats } = loaderData;
   const queryClient = useQueryClient();
   const [userId] = useLocalStorage("user_id", null);
 
@@ -216,12 +108,24 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
     },
   });
 
+  const voteSuggestions = useQuery({
+    queryKey: ["provider-suggestions", provider.key, userId],
+    queryFn: async () => {
+      return await get<ProviderSuggestionsData>(
+        href("/api/provider-suggestions/:providerKey/:userId", {
+          userId,
+          providerKey: provider.key,
+        }),
+      );
+    },
+    enabled: !!userId,
+  });
+
   const handleClick = (value: BiasRating) => {
     mutation.mutate(value);
   };
 
   const voteValue = voteResult.data?.value;
-  console.log("Current vote value:", voteValue);
 
   return (
     <section>
@@ -288,13 +192,16 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
           </button>
         ))}
       </div>
-      {voteValue && (
+      {voteValue && !voteSuggestions.isError && (
         <div className="animate-in slide-in-from-top-4 fade-in mt-12 duration-500">
           <h2 className="text-primary text-lg font-bold md:text-2xl">
             Glasuj še za druge medije!
           </h2>
           <div className="mt-6 grid w-full grid-cols-2 items-center gap-4 sm:grid-cols-3 md:grid-cols-5">
-            {otherProviders.map((p) => (
+            {voteSuggestions.isLoading && (
+              <Spinner className="col-span-5 m-auto size-8" />
+            )}
+            {voteSuggestions.data?.providers.map((p) => (
               <Link
                 key={p.key}
                 to={href("/medij/:providerKey", { providerKey: p.key })}

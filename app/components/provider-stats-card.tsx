@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { config } from "~/config";
-import type { getProviderStats } from "~/lib/services/providerStats";
+import type { getProviderStats } from "~/lib/services/homePageProviderStats";
 
 export function ProviderStatsCard({
   providerStatsPromise,
