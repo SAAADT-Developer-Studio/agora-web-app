@@ -17,8 +17,6 @@ export async function loader({ context, request }: Route.LoaderArgs) {
 
   const sitemap = new Sitemap();
 
-  // TODO: compute the dates properly
-
   sitemap.append(new URL(href("/"), url), { lastmod, priority: 1.0 });
   for (const category of config.categories) {
     sitemap.append(
@@ -43,6 +41,8 @@ export async function loader({ context, request }: Route.LoaderArgs) {
       { lastmod, priority: 0.7 },
     );
   }
+
+  sitemap.append(new URL(href("/mediji"), url), { lastmod, priority: 0.8 });
 
   // const clusters = await db.query.cluster.findMany({ columns: { id: true } });
   // for (const cluster of clusters) {

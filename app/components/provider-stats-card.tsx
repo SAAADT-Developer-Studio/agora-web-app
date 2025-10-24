@@ -70,7 +70,6 @@ function ProviderStatsChart({
           <div className="group flex gap-2" key={provider.key}>
             <Tooltip>
               <TooltipTrigger>
-                {/* TODO: create a common provider image component, that handles building the url */}
                 <ProviderImage
                   provider={provider}
                   className="size-8 overflow-clip rounded border-2 border-black/20 transition-all group-hover:border-black/40 dark:border-white/70 dark:group-hover:border-white"
