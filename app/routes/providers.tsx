@@ -4,7 +4,7 @@ import { getSeoMetas } from "~/lib/seo";
 import { fetchProviders } from "~/lib/services";
 import { ProviderImage } from "~/components/provider-image";
 import { Globe, Info, Newspaper } from "lucide-react";
-import { Link, href } from "react-router";
+import { Link, data, href } from "react-router";
 import { sql, and, gte, desc, count } from "drizzle-orm";
 import { article } from "~/drizzle/schema";
 import { Card } from "~/components/ui/card";
@@ -189,12 +189,12 @@ export function toProviderMap<T extends { providerKey: string }>(
   return map;
 }
 
-export function headers() {
+/*export function headers() {
   // Prevent caching, for now, since we have some sort of caching issue
   return {
     "Cache-Control": "no-cache, no-store, must-revalidate",
   };
-}
+} */
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const { db } = context;
@@ -207,7 +207,10 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   const providerStatsMap = toProviderMap(providerStats);
 
-  return { providers, providerStatsMap };
+  return data(
+    { providers, providerStatsMap },
+    { headers: { "Cache-Control": "max-age=60, s-maxage=60" } },
+  );
 }
 
 export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
