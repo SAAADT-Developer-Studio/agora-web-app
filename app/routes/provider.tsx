@@ -208,6 +208,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
                 key={p.key}
                 to={href("/medij/:providerKey", { providerKey: p.key })}
                 className="flex items-center justify-center"
+                prefetch="intent"
               >
                 <div
                   className="relative size-[160px] cursor-pointer rounded-lg bg-cover bg-center transition-transform duration-200 hover:scale-102"
