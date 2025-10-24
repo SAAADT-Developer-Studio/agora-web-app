@@ -1,4 +1,4 @@
-import { data, Link, href } from "react-router";
+import { data, Link, href, Await } from "react-router";
 import type { Route } from "./+types/provider";
 import { getSeoMetas } from "~/lib/seo";
 import { CircleCheck, Globe, Newspaper, Info } from "lucide-react";
@@ -21,6 +21,8 @@ import { Spinner } from "~/components/ui/spinner";
 import { toast } from "sonner";
 import type { ProviderSuggestionsData } from "~/routes/api/get-provider-suggestions";
 import { getProviderStats } from "~/lib/services/providerPageProviderStats";
+import { Suspense } from "react";
+import { ErrorUI } from "~/components/ui/error-ui";
 
 const BiasRating = {
   Left: "left",
@@ -43,7 +45,7 @@ export async function loader({ context, params }: Route.LoaderArgs) {
     throw new Response("Provider not found", { status: 404 });
   }
 
-  const stats = await context.measurer.time("get-provider-stats", async () => {
+  const stats = context.measurer.time("get-provider-stats", async () => {
     return await getProviderStats(db, params.providerKey);
   });
 
@@ -230,66 +232,22 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
           </div>
         </div>
       )}
+
       <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
-        <Card className="bg-foreground border-none !py-0">
-          <div className="space-y-4 p-8">
-            <div className="flex justify-end">
-              <Newspaper className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-7xl font-bold text-white">
-                {stats.today.count}
-              </h2>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-lg leading-tight font-medium text-white">
-                Objavljenih člankov danes
-              </p>
-              <p className="text-sm text-gray-400">Rank: #{stats.today.rank}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-foreground border-none !py-0">
-          <div className="space-y-4 p-8">
-            <div className="flex justify-end">
-              <Newspaper className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-7xl font-bold text-white">
-                {stats.week.count}
-              </h2>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-lg leading-tight font-medium text-white">
-                Objavljenih člankov ta teden
-              </p>
-              <p className="text-sm text-gray-400">Rank: #{stats.week.rank}</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="bg-foreground border-none !py-0">
-          <div className="space-y-4 p-8">
-            <div className="flex justify-end">
-              <Newspaper className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-7xl font-bold text-white">
-                {stats.month.count}
-              </h2>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-lg leading-tight font-medium text-white">
-                Objavljenih člankov ta mesec
-              </p>
-              <p className="text-sm text-gray-400">Rank: #{stats.month.rank}</p>
-            </div>
-          </div>
-        </Card>
+        <Suspense fallback={<Spinner className="col-span-5 m-auto size-8" />}>
+          <Await
+            resolve={stats}
+            errorElement={
+              <ErrorUI
+                message="Napaka pri nalaganju statistik"
+                size="small"
+                className="col-span-5"
+              />
+            }
+          >
+            {(statsResolved) => <ProviderStatsCards stats={statsResolved} />}
+          </Await>
+        </Suspense>
       </div>
     </section>
   );
@@ -313,4 +271,74 @@ export function meta({ data, location }: Route.MetaArgs) {
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return <ErrorComponent error={error} />;
+}
+
+function ProviderStatsCards({
+  stats,
+}: {
+  stats: Awaited<ReturnType<typeof getProviderStats>>;
+}) {
+  return (
+    <>
+      <Card className="bg-foreground border-none !py-0">
+        <div className="space-y-4 p-8">
+          <div className="flex justify-end">
+            <Newspaper className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-7xl font-bold text-white">
+              {stats.today.count}
+            </h2>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-lg leading-tight font-medium text-white">
+              Objavljenih člankov danes
+            </p>
+            <p className="text-sm text-gray-400">Rank: #{stats.today.rank}</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="bg-foreground border-none !py-0">
+        <div className="space-y-4 p-8">
+          <div className="flex justify-end">
+            <Newspaper className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-7xl font-bold text-white">
+              {stats.week.count}
+            </h2>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-lg leading-tight font-medium text-white">
+              Objavljenih člankov ta teden
+            </p>
+            <p className="text-sm text-gray-400">Rank: #{stats.week.rank}</p>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="bg-foreground border-none !py-0">
+        <div className="space-y-4 p-8">
+          <div className="flex justify-end">
+            <Newspaper className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-7xl font-bold text-white">
+              {stats.month.count}
+            </h2>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-lg leading-tight font-medium text-white">
+              Objavljenih člankov ta mesec
+            </p>
+            <p className="text-sm text-gray-400">Rank: #{stats.month.rank}</p>
+          </div>
+        </div>
+      </Card>
+    </>
+  );
 }

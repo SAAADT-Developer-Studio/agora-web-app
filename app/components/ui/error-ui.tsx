@@ -4,9 +4,11 @@ import { cn } from "~/lib/utils";
 export function ErrorUI({
   message,
   size = "large",
+  className,
 }: {
   message: string;
   size?: "small" | "large";
+  className?: string;
 }) {
   return (
     <div
@@ -16,6 +18,7 @@ export function ErrorUI({
           "p-4": size === "small",
           "p-8": size === "large",
         },
+        className,
       )}
     >
       <div
