@@ -3,7 +3,7 @@ import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
 import logoWhite from "~/assets/logo-white.svg";
 import { ThemeSwitch } from "./theme-switch";
-import { Link, NavLink, useNavigation } from "react-router";
+import { Link, NavLink, useNavigation, href } from "react-router";
 import { twMerge } from "tailwind-merge";
 import { formatSlovenianDateTime } from "~/lib/date";
 import { config } from "~/config";
@@ -52,11 +52,17 @@ export function Header() {
 
           {isNavigating && <Spinner />}
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-vidikwhite mr-3 hidden text-xs md:block">
+        <div className="flex items-center gap-5">
+          <span className="text-vidikwhite hidden text-xs md:block">
             <Suspense>{formatSlovenianDateTime(new Date())}</Suspense>
           </span>
           <ThemeSwitch />
+          <Link
+            to={href("/mediji")}
+            className="bg-vidikwhite text-vidikdarkgray hover:bg-vidikwhite/90 text-md rounded-lg px-3 py-1 font-medium"
+          >
+            Mediji
+          </Link>
         </div>
       </div>
 
