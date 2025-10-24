@@ -4,6 +4,7 @@ import * as relations from "~/drizzle/relations";
 import { Client, type ClientConfig } from "pg";
 import "dotenv/config";
 import { getProdCredentials } from "~/lib/db/credentials";
+import { desc } from "drizzle-orm";
 
 async function getDb(config: ClientConfig | string) {
   const client = new Client(config);
@@ -26,6 +27,11 @@ async function main() {
     where: (article, { isNotNull }) => isNotNull(article.clusterId),
   });
 
+  const votes = await prodDb.query.vote.findMany({
+    limit: 10000,
+    orderBy: [desc(schema.vote.createdAt)],
+  });
+
   await devDb.transaction(async (tx) => {
     await tx.delete(schema.article);
     await tx.delete(schema.cluster);
@@ -34,6 +40,9 @@ async function main() {
     await tx.insert(schema.newsProvider).values(newsProviders);
     await tx.insert(schema.cluster).values(clusters);
     await tx.insert(schema.article).values(articles);
+    if (votes.length > 0) {
+      await tx.insert(schema.vote).values(votes);
+    }
   });
 }
 

@@ -9,7 +9,8 @@
     "dev": "react-router dev",
     "preview": "pnpm run build && vite preview",
     "typecheck": "npm run cf-typegen && react-router typegen && tsc -b",
-    "db:seed": "SEED=true drizzle-kit push && tsx ./app/drizzle/seed.ts"
+    "db:seed": "SEED=true drizzle-kit push && tsx ./app/drizzle/seed.ts",
+    "db:reset": "docker compose down  && docker compose up -d && pnpm run db:seed"
   },
   "dependencies": {
     "@nasa-gcn/remix-seo": "^2.0.1",
@@ -26,12 +27,15 @@
     "lucide-react": "^0.525.0",
     "pg": "^8.16.3",
     "pg-connection-string": "^2.9.1",
+    "posthog-js": "^1.280.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router": "^7.5.0",
     "recharts": "2.15.4",
     "remix-utils": "^9.0.0",
-    "tailwind-merge": "^3.3.1"
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.0.0",
