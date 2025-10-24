@@ -32,9 +32,9 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     userId: params.userId,
   });
 
-  if (!vote) {
-    throw new Response("Vote not found", { status: 404 });
-  }
+  // if (!vote) {
+  //   throw new Response("Vote not found", { status: 404 });
+  // }
 
   return data(vote);
 }

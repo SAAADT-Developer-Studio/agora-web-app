@@ -19,6 +19,9 @@ import { cn } from "~/lib/utils";
 import { removeUrlProtocol } from "~/utils/removeUrlProtocol";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import type { Database } from "~/lib/db";
+import { useLocalStorage } from "~/hooks/use-local-storage";
+import { Spinner } from "~/components/ui/spinner";
+import { toast } from "sonner";
 
 const BiasRating = {
   Left: "left",
@@ -168,32 +171,48 @@ function biasKeyToColor(biasKey: string) {
 export default function ProviderPage({ loaderData }: Route.ComponentProps) {
   const { provider, otherProviders, stats } = loaderData;
   const queryClient = useQueryClient();
-  // TODO: handle loading query and mutation
-  const queryKey = ["vote", provider.key, localStorage.getItem("user_id")];
+  const [userId] = useLocalStorage("user_id", null);
+
+  const queryKey = ["vote", provider.key, userId];
 
   const voteResult = useQuery({
     queryKey,
     queryFn: async () => {
-      console.log("Fetching vote for", provider.key);
-      return await get<Vote>(
+      return await get<Vote | undefined>(
         href("/api/votes/:providerKey/:userId", {
           providerKey: provider.key,
-          userId: localStorage.getItem("user_id")!,
+          userId,
         }),
       );
     },
+    enabled: !!userId,
   });
 
   const mutation = useMutation({
     mutationFn: async (value: BiasRating) => {
       await post(href("/api/votes"), {
         providerKey: provider.key,
-        userId: localStorage.getItem("user_id"),
+        userId,
         value,
       } satisfies VoteInput);
     },
-    onSuccess: async () => {
+    onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey });
+    },
+    onMutate(ratingValue) {
+      queryClient.setQueryData(queryKey, (old: Vote) => ({
+        ...old,
+        value: ratingValue,
+      }));
+    },
+    onError(error) {
+      toast.error("Prišlo je do napake pri glasovanju. Poskusi znova.");
+      window.posthog?.capture("vote_error", {
+        providerKey: provider.key,
+        userId,
+        error: error.message,
+        stack: error.stack,
+      });
     },
   });
 
@@ -202,6 +221,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
   };
 
   const voteValue = voteResult.data?.value;
+  console.log("Current vote value:", voteValue);
 
   return (
     <section>
@@ -250,7 +270,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
             onClick={() => handleClick(value)}
             disabled={mutation.isPending}
             className={cn(
-              "text-vidikwhite transition-duration-200 flex aspect-square cursor-pointer items-center justify-center rounded-lg text-center text-sm leading-4 font-semibold transition-transform hover:scale-102 md:text-xl md:leading-5",
+              "text-vidikwhite transition-duration-200 relative flex aspect-square cursor-pointer items-center justify-center rounded-lg text-center text-sm leading-4 font-semibold transition-transform hover:scale-102 md:text-xl md:leading-5",
               biasKeyToColor(value),
               voteValue === value && "border-2 border-white",
             )}
@@ -258,7 +278,11 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
             {biasKeyToLabel(value)}
             {voteValue === value && (
               <span className="absolute top-2 right-2">
-                <CircleCheck size={25} />
+                {mutation.isPending ? (
+                  <Spinner className="size-[25px] fill-current" />
+                ) : (
+                  <CircleCheck size={25} />
+                )}
               </span>
             )}
           </button>

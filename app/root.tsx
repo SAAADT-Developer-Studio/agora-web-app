@@ -13,6 +13,7 @@ import { ErrorComponent } from "~/components/error-component";
 import { Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "~/components/ui/tooltip";
+import { Toaster } from "sonner";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -86,7 +87,7 @@ export default function App() {
     let userId = localStorage.getItem("user_id");
     if (!userId) {
       userId = crypto.randomUUID();
-      localStorage.setItem("user_id", userId);
+      localStorage.setItem("user_id", JSON.stringify(userId));
     }
     window.posthog?.identify(
       userId,
@@ -100,6 +101,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <Suspense>
         <TooltipProvider>
+          <Toaster />
           <Outlet />
         </TooltipProvider>
       </Suspense>
