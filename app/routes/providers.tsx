@@ -189,6 +189,13 @@ export function toProviderMap<T extends { providerKey: string }>(
   return map;
 }
 
+export function headers() {
+  // Prevent caching, for now, since we have some sort of caching issue
+  return {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+  };
+}
+
 export async function loader({ params, context }: Route.LoaderArgs) {
   const { db } = context;
 
@@ -368,7 +375,9 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
               </h1>
             </div>
           </div>
-          <div className="grid w-full grid-cols-3 gap-2 md:w-1/2 md:min-w-1/2">
+          <div
+            className={`grid w-full grid-cols-3 gap-2 md:w-1/2 md:min-w-1/2 ${provider.key === "mladina" ? "hidden" : ""}`}
+          >
             <Card className="bg-foreground border-none !py-0">
               <div className="space-y-4 p-2 md:p-4">
                 <div className="flex items-center justify-between">
