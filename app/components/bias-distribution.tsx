@@ -139,6 +139,7 @@ function ProviderBadge({
           to={href("/medij/:providerKey", {
             providerKey: provider.key,
           })}
+          prefetch="intent"
         >
           <div className="dark:border-primary border-primary/20 relative flex w-full items-center justify-center rounded-full border-2">
             <img

@@ -74,6 +74,7 @@ function ProviderStatsChart({
                     providerKey: provider.key,
                   })}
                   className="group flex gap-2"
+                  prefetch="intent"
                 >
                   <ProviderImage
                     provider={provider}
