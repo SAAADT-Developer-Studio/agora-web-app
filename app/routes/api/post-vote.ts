@@ -27,21 +27,23 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const { db } = context;
 
-  await db
-    .insert(vote)
-    .values({
-      userId,
-      providerId: providerKey,
-      value,
-      createdAt: new Date().toISOString(),
-    })
-    .onConflictDoUpdate({
-      target: [vote.userId, vote.providerId],
-      set: {
+  await context.measurer.time("post-vote-db-insert", async () => {
+    await db
+      .insert(vote)
+      .values({
+        userId,
+        providerId: providerKey,
         value,
         createdAt: new Date().toISOString(),
-      },
-    });
+      })
+      .onConflictDoUpdate({
+        target: [vote.userId, vote.providerId],
+        set: {
+          value,
+          createdAt: new Date().toISOString(),
+        },
+      });
+  });
 
   return data({ success: true }, { status: 200 });
 }

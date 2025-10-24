@@ -43,7 +43,9 @@ export async function loader({ context, params }: Route.LoaderArgs) {
     throw new Response("Provider not found", { status: 404 });
   }
 
-  const stats = await getProviderStats(db, params.providerKey);
+  const stats = await context.measurer.time("get-provider-stats", async () => {
+    return await getProviderStats(db, params.providerKey);
+  });
 
   return data({ provider, stats }, {});
 }
