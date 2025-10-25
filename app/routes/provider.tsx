@@ -1,7 +1,7 @@
 import { data, Link, href, Await } from "react-router";
 import type { Route } from "./+types/provider";
 import { getSeoMetas } from "~/lib/seo";
-import { CircleCheck, Globe, Newspaper, Info } from "lucide-react";
+import { CircleCheck, Globe, Newspaper } from "lucide-react";
 import {
   getProviderImageUrl,
   ProviderImage,
@@ -25,6 +25,7 @@ import { Suspense } from "react";
 import { ErrorUI } from "~/components/ui/error-ui";
 import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { BiasRatingKey, type BiasRating } from "~/enums/biasRatingKey";
+import { BiasInfoTooltip } from "~/components/bias-info-tooltip";
 
 export async function loader({ context, params }: Route.LoaderArgs) {
   const { db } = context;
@@ -129,13 +130,15 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
               <Globe className="size-3 md:size-5" />
               {removeUrlProtocol(provider.url)}
             </a>
-            <Link
-              to={href("/metodologija")}
-              className={`${biasKeyToColor(provider.biasRating ?? "")} text-vidikwhite flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold md:gap-2 md:px-3 md:py-2 md:text-lg`}
+            <div
+              className={cn(
+                "text-vidikwhite flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold md:gap-2 md:px-3 md:py-2 md:text-lg",
+                biasKeyToColor(provider.biasRating ?? ""),
+              )}
             >
-              <Info className="size-3 md:size-5" />
+              <BiasInfoTooltip iconClassName="size-3 md:size-5" />
               {biasKeyToLabel(provider.biasRating ?? "")}
-            </Link>
+            </div>
           </div>
           <h1 className="text-[30px] font-bold sm:text-[40px] md:text-[100px]">
             {provider.name}

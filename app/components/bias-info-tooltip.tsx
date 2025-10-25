@@ -17,6 +17,7 @@ import {
 } from "~/components/ui/dialog";
 import { useMediaQuery } from "~/hooks/use-media-query";
 import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 
 const biasRatings = [
   { label: "Leva", color: "bg-red-500", textColor: "text-white" },
@@ -26,7 +27,7 @@ const biasRatings = [
   { label: "Desna", color: "bg-blue-500", textColor: "text-white" },
 ];
 
-export function BiasInfoTooltip() {
+export function BiasInfoTooltip({ iconClassName }: { iconClassName?: string }) {
   const [open, setOpen] = React.useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
@@ -36,7 +37,7 @@ export function BiasInfoTooltip() {
       className="transition-opacity hover:opacity-70"
       aria-label="Razlaga ocene pristranskosti"
     >
-      <CircleQuestionMark className="size-4" />
+      <CircleQuestionMark className={cn("size-4", iconClassName)} />
     </button>
   );
 
