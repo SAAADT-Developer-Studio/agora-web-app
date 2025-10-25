@@ -143,7 +143,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   return (
     <>
-      <TutorialPopup />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
         <HeroArticles articles={articles.home} />
 

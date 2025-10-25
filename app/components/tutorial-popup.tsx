@@ -68,10 +68,6 @@ export function TutorialPopup() {
     }
   };
 
-  const handleSkip = () => {
-    handleClose();
-  };
-
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
       handleClose();

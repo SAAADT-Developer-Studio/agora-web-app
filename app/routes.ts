@@ -19,16 +19,16 @@ export default [
       index("./routes/category.tsx"),
       route("clanek/:articleId", "./routes/article.tsx"),
     ]),
-    ...prefix("api", [
-      route("category/:category", "./routes/api/category.ts"),
-      route("populate-cache", "./routes/api/populate-cache.ts"),
-      route("votes", "./routes/api/post-vote.ts"),
-      route("votes/:providerKey/:userId", "./routes/api/get-vote.ts"),
-      route(
-        "provider-suggestions/:providerKey/:userId",
-        "./routes/api/get-provider-suggestions.ts",
-      ),
-    ]),
+  ]),
+  ...prefix("api", [
+    route("category/:category", "./routes/api/category.ts"),
+    route("populate-cache", "./routes/api/populate-cache.ts"),
+    route("votes", "./routes/api/post-vote.ts"),
+    route("votes/:providerKey/:userId", "./routes/api/get-vote.ts"),
+    route(
+      "provider-suggestions/:providerKey/:userId",
+      "./routes/api/get-provider-suggestions.ts",
+    ),
   ]),
   route("sitemap.xml", "./routes/sitemap.ts"),
   route("robots.txt", "./routes/robots.ts"),
