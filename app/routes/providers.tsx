@@ -1,7 +1,6 @@
 import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/providers";
 import { getSeoMetas } from "~/lib/seo";
-import { fetchProviders } from "~/lib/services";
 import { ProviderImage } from "~/components/provider-image";
 import { Globe, Info, Newspaper } from "lucide-react";
 import { Link, data, href } from "react-router";
@@ -25,8 +24,10 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Button } from "~/components/ui/button";
-
-type PeriodKey = "today" | "week" | "month";
+import { removeUrlProtocol } from "~/utils/removeUrlProtocol";
+import { biasKeyToColor } from "~/utils/biasKeyToColor";
+import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
+import { BiasRatingKey } from "~/enums/biasRatingKey";
 
 export interface PeriodStats {
   count: number;
@@ -148,38 +149,7 @@ async function getAllProviderStats(db: any): Promise<ProviderStats[]> {
   return results;
 }
 
-function removeUrlProtocol(url: string) {
-  return url
-    .replace(/^https?:\/\//, "")
-    .replace(/\/$/, "")
-    .replace(/^www\./, "");
-}
-
-function biasKeyToLabel(biasKey: string) {
-  const biasMap: Record<string, string> = {
-    left: "levo",
-    "center-left": "center levo",
-    center: "center",
-    "center-right": "center desno",
-    right: "desno",
-  };
-
-  return biasMap[biasKey] || "Neznano";
-}
-
-function biasKeyToColor(biasKey: string) {
-  const biasMap: Record<string, string> = {
-    left: "bg-[#FA2D36] text-vidikwhite",
-    "center-left": "bg-[#FF6166] text-vidikwhite",
-    center: "bg-[#FEFFFF] !text-black",
-    "center-right": "bg-[#52A1FF] text-vidikwhite",
-    right: "bg-[#2D7EFF] text-vidikwhite",
-  };
-
-  return biasMap[biasKey] || "bg-foreground text-primary";
-}
-
-export function toProviderMap<T extends { providerKey: string }>(
+function buildProviderMap<T extends { providerKey: string }>(
   providers: readonly T[],
 ): Map<string, Omit<T, "providerKey">> {
   const map = new Map<string, Omit<T, "providerKey">>();
@@ -205,7 +175,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   const providerStats = await getAllProviderStats(db);
 
-  const providerStatsMap = toProviderMap(providerStats);
+  const providerStatsMap = buildProviderMap(providerStats);
 
   return data(
     { providers, providerStatsMap },
@@ -218,14 +188,6 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
 
   const [selectedBiasRatings, setSelectedBiasRatings] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("rank");
-
-  const biasRatingOptions = [
-    { value: "left", label: "Levo" },
-    { value: "center-left", label: "Center Levo" },
-    { value: "center", label: "Center" },
-    { value: "center-right", label: "Center Desno" },
-    { value: "right", label: "Desno" },
-  ];
 
   const toggleBiasRating = (rating: string) => {
     setSelectedBiasRatings((prev) =>
@@ -294,13 +256,13 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
             <DropdownMenuContent className="bg-primary text-background w-56">
               <DropdownMenuLabel>Filtriraj po pristranskosti</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {biasRatingOptions.map((option) => (
+              {Object.values(BiasRatingKey).map((biasRatingKey) => (
                 <DropdownMenuCheckboxItem
-                  key={option.value}
-                  checked={selectedBiasRatings.includes(option.value)}
-                  onCheckedChange={() => toggleBiasRating(option.value)}
+                  key={biasRatingKey}
+                  checked={selectedBiasRatings.includes(biasRatingKey)}
+                  onCheckedChange={() => toggleBiasRating(biasRatingKey)}
                 >
-                  {option.label}
+                  {biasKeyToLabel(biasRatingKey)}
                 </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>

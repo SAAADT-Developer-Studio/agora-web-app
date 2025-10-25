@@ -23,16 +23,8 @@ import type { ProviderSuggestionsData } from "~/routes/api/get-provider-suggesti
 import { getProviderStats } from "~/lib/services/providerPageProviderStats";
 import { Suspense } from "react";
 import { ErrorUI } from "~/components/ui/error-ui";
-
-const BiasRating = {
-  Left: "left",
-  CenterLeft: "center-left",
-  Center: "center",
-  CenterRight: "center-right",
-  Right: "right",
-} as const;
-
-type BiasRating = (typeof BiasRating)[keyof typeof BiasRating];
+import { biasKeyToColor } from "~/utils/biasKeyToColor";
+import { BiasRatingKey, type BiasRating } from "~/enums/biasRatingKey";
 
 export async function loader({ context, params }: Route.LoaderArgs) {
   const { db } = context;
@@ -50,18 +42,6 @@ export async function loader({ context, params }: Route.LoaderArgs) {
   });
 
   return data({ provider, stats }, {});
-}
-
-function biasKeyToColor(biasKey: string) {
-  const biasMap = {
-    left: "bg-[#FA2D36]",
-    "center-left": "bg-[#FF6166]",
-    center: "bg-[#FEFFFF] !text-black",
-    "center-right": "bg-[#52A1FF]",
-    right: "bg-[#2D7EFF]",
-  } satisfies Record<BiasRating, string>;
-
-  return biasMap[biasKey as BiasRating] || "bg-foreground text-primary";
 }
 
 export default function ProviderPage({ loaderData }: Route.ComponentProps) {
@@ -172,7 +152,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
         </p>
       </div>
       <div className="mt-4 grid w-full grid-cols-5 gap-2">
-        {Object.entries(BiasRating).map(([key, value]) => (
+        {Object.entries(BiasRatingKey).map(([key, value]) => (
           <button
             key={key}
             onClick={() => handleClick(value)}

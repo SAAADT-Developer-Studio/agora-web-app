@@ -7,20 +7,7 @@ import { getProviderImageUrl } from "./provider-image";
 import { ErrorUI } from "./ui/error-ui";
 import { Suspense } from "react";
 import { Spinner } from "./ui/spinner";
-
-type BiasRating = "left" | "center-left" | "center" | "center-right" | "right";
-
-function biasKeyToColor(biasKey: string) {
-  const biasMap = {
-    left: "bg-[#FA2D36]",
-    "center-left": "bg-[#FF6166]",
-    center: "bg-[#FEFFFF] !text-black",
-    "center-right": "bg-[#52A1FF]",
-    right: "bg-[#2D7EFF]",
-  } satisfies Record<BiasRating, string>;
-
-  return biasMap[biasKey as BiasRating] || "bg-foreground text-primary";
-}
+import { biasKeyToColor } from "~/utils/biasKeyToColor";
 
 type ProviderType = {
   name: string;
