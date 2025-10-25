@@ -28,6 +28,7 @@ import { removeUrlProtocol } from "~/utils/removeUrlProtocol";
 import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import { BiasRatingKey } from "~/enums/biasRatingKey";
+import { cn } from "~/lib/utils";
 
 export interface PeriodStats {
   count: number;
@@ -315,7 +316,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
             <ProviderImage
               size={160}
               provider={provider}
-              className={`h-[135px] min-w-[135px] rounded-lg ${provider.key === "zurnal24" ? "border-primary border" : ""}`}
+              className={`size-[135px] rounded-lg ${provider.key === "zurnal24" ? "border-primary/20 border" : ""}`}
             />
             <div className="@container ml-3 flex w-full flex-col justify-between md:ml-6">
               <div className="flex flex-wrap gap-2">
@@ -330,7 +331,12 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
                   {biasKeyToLabel(provider.biasRating ?? "")}
                 </div>
               </div>
-              <h1 className="text-[20px] leading-6 font-bold @min-[180px]:text-[35px] @min-[180px]:leading-8 @min-[400px]:text-[40px] @min-[400px]:leading-10">
+              <h1
+                className={cn(
+                  "text-[20px] leading-6 font-bold @min-[180px]:text-[35px] @min-[180px]:leading-8 @min-[400px]:text-[40px] @min-[400px]:leading-10",
+                  provider.key === "necenzurirano" && "truncate", // not ideal, but works for now
+                )}
+              >
                 {provider.name}
               </h1>
             </div>
