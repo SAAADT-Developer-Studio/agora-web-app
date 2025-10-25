@@ -2,7 +2,7 @@ import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/providers";
 import { getSeoMetas } from "~/lib/seo";
 import { ProviderImage } from "~/components/provider-image";
-import { Globe, Info, Newspaper } from "lucide-react";
+import { ArrowLeftRight, Globe, Newspaper } from "lucide-react";
 import { Link, data, href } from "react-router";
 import { sql, and, gte, desc, count } from "drizzle-orm";
 import { article } from "~/drizzle/schema";
@@ -319,21 +319,16 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
             />
             <div className="@container ml-3 flex w-full flex-col justify-between md:ml-6">
               <div className="flex flex-wrap gap-2">
-                <a
-                  href={provider.url}
-                  target="_blank"
-                  className="bg-foreground/70 hover:bg-foreground text-primary flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold"
-                >
+                <div className="bg-foreground/70 hover:bg-foreground text-primary flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold">
                   <Globe className="size-3" />
                   {removeUrlProtocol(provider.url)}
-                </a>
-                <Link
-                  to={href("/metodologija")}
+                </div>
+                <div
                   className={`${biasKeyToColor(provider.biasRating ?? "")} flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold`}
                 >
-                  <Info className="size-3" />
+                  <ArrowLeftRight className="size-3" />
                   {biasKeyToLabel(provider.biasRating ?? "")}
-                </Link>
+                </div>
               </div>
               <h1 className="text-[20px] leading-6 font-bold @min-[180px]:text-[35px] @min-[180px]:leading-8 @min-[400px]:text-[40px] @min-[400px]:leading-10">
                 {provider.name}
