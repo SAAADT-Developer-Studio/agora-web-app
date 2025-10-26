@@ -1,3 +1,5 @@
+import type { BiasRating } from "~/enums/biasRatingKey";
+
 export function biasKeyToLabel(biasKey: string) {
   const biasMap: Record<string, string> = {
     left: "levo",
@@ -5,7 +7,7 @@ export function biasKeyToLabel(biasKey: string) {
     center: "center",
     "center-right": "center desno",
     right: "desno",
-  };
+  } satisfies Record<BiasRating, string>;
 
-  return biasMap[biasKey] || "Neznano";
+  return biasMap[biasKey] || "neznano";
 }

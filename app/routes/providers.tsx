@@ -1,9 +1,8 @@
 import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/providers";
 import { getSeoMetas } from "~/lib/seo";
-import { fetchProviders } from "~/lib/services";
 import { ProviderImage } from "~/components/provider-image";
-import { Globe, Info, Newspaper } from "lucide-react";
+import { ArrowLeftRight, Globe, Newspaper } from "lucide-react";
 import { Link, data, href } from "react-router";
 import { sql, and, gte, desc, count } from "drizzle-orm";
 import { article } from "~/drizzle/schema";
@@ -25,8 +24,11 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Button } from "~/components/ui/button";
-
-type PeriodKey = "today" | "week" | "month";
+import { removeUrlProtocol } from "~/utils/removeUrlProtocol";
+import { biasKeyToColor } from "~/utils/biasKeyToColor";
+import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
+import { BiasRatingKey } from "~/enums/biasRatingKey";
+import { cn } from "~/lib/utils";
 
 export interface PeriodStats {
   count: number;
@@ -148,38 +150,7 @@ async function getAllProviderStats(db: any): Promise<ProviderStats[]> {
   return results;
 }
 
-function removeUrlProtocol(url: string) {
-  return url
-    .replace(/^https?:\/\//, "")
-    .replace(/\/$/, "")
-    .replace(/^www\./, "");
-}
-
-function biasKeyToLabel(biasKey: string) {
-  const biasMap: Record<string, string> = {
-    left: "levo",
-    "center-left": "center levo",
-    center: "center",
-    "center-right": "center desno",
-    right: "desno",
-  };
-
-  return biasMap[biasKey] || "Neznano";
-}
-
-function biasKeyToColor(biasKey: string) {
-  const biasMap: Record<string, string> = {
-    left: "bg-[#FA2D36] text-vidikwhite",
-    "center-left": "bg-[#FF6166] text-vidikwhite",
-    center: "bg-[#FEFFFF] !text-black",
-    "center-right": "bg-[#52A1FF] text-vidikwhite",
-    right: "bg-[#2D7EFF] text-vidikwhite",
-  };
-
-  return biasMap[biasKey] || "bg-foreground text-primary";
-}
-
-export function toProviderMap<T extends { providerKey: string }>(
+function buildProviderMap<T extends { providerKey: string }>(
   providers: readonly T[],
 ): Map<string, Omit<T, "providerKey">> {
   const map = new Map<string, Omit<T, "providerKey">>();
@@ -189,12 +160,12 @@ export function toProviderMap<T extends { providerKey: string }>(
   return map;
 }
 
-/*export function headers() {
+export function headers() {
   // Prevent caching, for now, since we have some sort of caching issue
   return {
-    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Cache-Control": "max-age=0, must-revalidate",
   };
-} */
+}
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const { db } = context;
@@ -205,7 +176,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   const providerStats = await getAllProviderStats(db);
 
-  const providerStatsMap = toProviderMap(providerStats);
+  const providerStatsMap = buildProviderMap(providerStats);
 
   return data(
     { providers, providerStatsMap },
@@ -218,14 +189,6 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
 
   const [selectedBiasRatings, setSelectedBiasRatings] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("rank");
-
-  const biasRatingOptions = [
-    { value: "left", label: "Levo" },
-    { value: "center-left", label: "Center Levo" },
-    { value: "center", label: "Center" },
-    { value: "center-right", label: "Center Desno" },
-    { value: "right", label: "Desno" },
-  ];
 
   const toggleBiasRating = (rating: string) => {
     setSelectedBiasRatings((prev) =>
@@ -294,13 +257,13 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
             <DropdownMenuContent className="bg-primary text-background w-56">
               <DropdownMenuLabel>Filtriraj po pristranskosti</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {biasRatingOptions.map((option) => (
+              {Object.values(BiasRatingKey).map((biasRatingKey) => (
                 <DropdownMenuCheckboxItem
-                  key={option.value}
-                  checked={selectedBiasRatings.includes(option.value)}
-                  onCheckedChange={() => toggleBiasRating(option.value)}
+                  key={biasRatingKey}
+                  checked={selectedBiasRatings.includes(biasRatingKey)}
+                  onCheckedChange={() => toggleBiasRating(biasRatingKey)}
                 >
-                  {option.label}
+                  {biasKeyToLabel(biasRatingKey)}
                 </DropdownMenuCheckboxItem>
               ))}
             </DropdownMenuContent>
@@ -353,27 +316,27 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
             <ProviderImage
               size={160}
               provider={provider}
-              className={`h-[135px] min-w-[135px] rounded-lg ${provider.key === "zurnal24" ? "border-primary border" : ""}`}
+              className={`size-[135px] rounded-lg ${provider.key === "zurnal24" ? "border-primary/20 border" : ""}`}
             />
             <div className="@container ml-3 flex w-full flex-col justify-between md:ml-6">
               <div className="flex flex-wrap gap-2">
-                <a
-                  href={provider.url}
-                  target="_blank"
-                  className="bg-foreground/70 hover:bg-foreground text-primary flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold"
-                >
+                <div className="bg-foreground/70 hover:bg-foreground text-primary flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold">
                   <Globe className="size-3" />
                   {removeUrlProtocol(provider.url)}
-                </a>
-                <Link
-                  to={href("/metodologija")}
+                </div>
+                <div
                   className={`${biasKeyToColor(provider.biasRating ?? "")} flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold`}
                 >
-                  <Info className="size-3" />
+                  <ArrowLeftRight className="size-3" />
                   {biasKeyToLabel(provider.biasRating ?? "")}
-                </Link>
+                </div>
               </div>
-              <h1 className="text-[20px] leading-6 font-bold @min-[180px]:text-[35px] @min-[180px]:leading-8 @min-[400px]:text-[40px] @min-[400px]:leading-10">
+              <h1
+                className={cn(
+                  "text-[20px] leading-6 font-bold @min-[180px]:text-[35px] @min-[180px]:leading-8 @min-[400px]:text-[40px] @min-[400px]:leading-10",
+                  provider.key === "necenzurirano" && "truncate", // not ideal, but works for now
+                )}
+              >
                 {provider.name}
               </h1>
             </div>

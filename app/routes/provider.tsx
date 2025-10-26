@@ -1,7 +1,7 @@
 import { data, Link, href, Await } from "react-router";
 import type { Route } from "./+types/provider";
 import { getSeoMetas } from "~/lib/seo";
-import { CircleCheck, Globe, Newspaper, Info } from "lucide-react";
+import { CircleCheck, Globe, Newspaper } from "lucide-react";
 import {
   getProviderImageUrl,
   ProviderImage,
@@ -23,16 +23,9 @@ import type { ProviderSuggestionsData } from "~/routes/api/get-provider-suggesti
 import { getProviderStats } from "~/lib/services/providerPageProviderStats";
 import { Suspense } from "react";
 import { ErrorUI } from "~/components/ui/error-ui";
-
-const BiasRating = {
-  Left: "left",
-  CenterLeft: "center-left",
-  Center: "center",
-  CenterRight: "center-right",
-  Right: "right",
-} as const;
-
-type BiasRating = (typeof BiasRating)[keyof typeof BiasRating];
+import { biasKeyToColor } from "~/utils/biasKeyToColor";
+import { BiasRatingKey, type BiasRating } from "~/enums/biasRatingKey";
+import { BiasInfoTooltip } from "~/components/bias-info-tooltip";
 
 export async function loader({ context, params }: Route.LoaderArgs) {
   const { db } = context;
@@ -50,18 +43,6 @@ export async function loader({ context, params }: Route.LoaderArgs) {
   });
 
   return data({ provider, stats }, {});
-}
-
-function biasKeyToColor(biasKey: string) {
-  const biasMap = {
-    left: "bg-[#FA2D36]",
-    "center-left": "bg-[#FF6166]",
-    center: "bg-[#FEFFFF] !text-black",
-    "center-right": "bg-[#52A1FF]",
-    right: "bg-[#2D7EFF]",
-  } satisfies Record<BiasRating, string>;
-
-  return biasMap[biasKey as BiasRating] || "bg-foreground text-primary";
 }
 
 export default function ProviderPage({ loaderData }: Route.ComponentProps) {
@@ -137,7 +118,10 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
         <ProviderImage
           size={160}
           provider={provider}
-          className="h-[160px] min-w-[160px] rounded-lg"
+          className={cn(
+            "h-[160px] min-w-[160px] rounded-lg",
+            provider.key === "zurnal24" && "border border-white/20",
+          )}
         />
         <div className="ml-3 flex flex-col justify-between md:ml-6">
           <div className="flex flex-wrap gap-2">
@@ -149,13 +133,15 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
               <Globe className="size-3 md:size-5" />
               {removeUrlProtocol(provider.url)}
             </a>
-            <Link
-              to={href("/metodologija")}
-              className={`${biasKeyToColor(provider.biasRating ?? "")} text-vidikwhite flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold md:gap-2 md:px-3 md:py-2 md:text-lg`}
+            <div
+              className={cn(
+                "text-vidikwhite flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold md:gap-2 md:px-3 md:py-2 md:text-lg",
+                biasKeyToColor(provider.biasRating ?? ""),
+              )}
             >
-              <Info className="size-3 md:size-5" />
+              <BiasInfoTooltip iconClassName="size-3 md:size-5" />
               {biasKeyToLabel(provider.biasRating ?? "")}
-            </Link>
+            </div>
           </div>
           <h1 className="text-[30px] font-bold sm:text-[40px] md:text-[100px]">
             {provider.name}
@@ -172,12 +158,13 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
         </p>
       </div>
       <div className="mt-4 grid w-full grid-cols-5 gap-2">
-        {Object.entries(BiasRating).map(([key, value]) => (
+        {Object.entries(BiasRatingKey).map(([key, value]) => (
           <button
             key={key}
             onClick={() => handleClick(value)}
             disabled={mutation.isPending}
             className={cn(
+              "@container",
               "text-vidikwhite transition-duration-200 relative flex aspect-square cursor-pointer items-center justify-center rounded-lg text-center text-sm leading-4 font-semibold transition-transform hover:scale-102 md:text-xl md:leading-5",
               biasKeyToColor(value),
               voteValue === value && "border-2 border-white",
@@ -185,11 +172,16 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
           >
             {biasKeyToLabel(value)}
             {voteValue === value && (
-              <span className="absolute top-2 right-2">
+              <span
+                className={cn(
+                  "absolute top-0.5 right-0.5",
+                  "@min-[90px]:top-2 @min-[90px]:right-2 @min-[90px]:block",
+                )}
+              >
                 {mutation.isPending ? (
-                  <Spinner className="size-[25px] fill-current" />
+                  <Spinner className="size-5 fill-current @min-[90px]:size-[25px]" />
                 ) : (
-                  <CircleCheck size={25} />
+                  <CircleCheck className="size-5 @min-[90px]:size-[25px]" />
                 )}
               </span>
             )}
@@ -219,10 +211,10 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
                   }}
                 >
                   <div
-                    className={
-                      "absolute top-[-5px] right-[-10px] rounded-lg px-2 py-1 text-sm font-semibold " +
-                      biasKeyToColor(p.biasRating ?? "")
-                    }
+                    className={cn(
+                      "absolute top-[-5px] right-[-10px] rounded-lg px-2 py-1 text-sm font-semibold shadow",
+                      biasKeyToColor(p.biasRating ?? ""),
+                    )}
                   >
                     {biasKeyToLabel(p.biasRating ?? "")}
                   </div>

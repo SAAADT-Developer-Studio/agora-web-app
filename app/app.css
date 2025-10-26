@@ -46,6 +46,14 @@ body {
   color: var(--color-primary);
 }
 
+/* tailwind v4 made buttons not have pointer cursor by default for some reason, so this re-adds it */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 @utility p-xl-light {
   font-size: 30px;
   font-weight: 200;
