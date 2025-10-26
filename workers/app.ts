@@ -36,7 +36,7 @@ export default {
         kvCache,
         measurer,
       });
-      if (import.meta.env.DEV || !response.headers.has("Cache-Control")) {
+      if (import.meta.env.DEV) {
         response.headers.set("Cache-Control", "public, max-age=0, s-maxage=0");
       }
       measurer.toHeaders(response.headers);

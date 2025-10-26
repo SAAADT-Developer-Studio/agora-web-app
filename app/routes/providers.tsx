@@ -160,12 +160,12 @@ function buildProviderMap<T extends { providerKey: string }>(
   return map;
 }
 
-/*export function headers() {
+export function headers() {
   // Prevent caching, for now, since we have some sort of caching issue
   return {
     "Cache-Control": "no-cache, no-store, must-revalidate",
   };
-} */
+}
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const { db } = context;
