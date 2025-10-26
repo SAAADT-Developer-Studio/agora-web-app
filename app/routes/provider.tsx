@@ -161,6 +161,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
             onClick={() => handleClick(value)}
             disabled={mutation.isPending}
             className={cn(
+              "@container",
               "text-vidikwhite transition-duration-200 relative flex aspect-square cursor-pointer items-center justify-center rounded-lg text-center text-sm leading-4 font-semibold transition-transform hover:scale-102 md:text-xl md:leading-5",
               biasKeyToColor(value),
               voteValue === value && "border-2 border-white",
@@ -168,11 +169,16 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
           >
             {biasKeyToLabel(value)}
             {voteValue === value && (
-              <span className="absolute top-2 right-2">
+              <span
+                className={cn(
+                  "absolute top-0.5 right-0.5",
+                  "@min-[90px]:top-2 @min-[90px]:right-2 @min-[90px]:block",
+                )}
+              >
                 {mutation.isPending ? (
-                  <Spinner className="size-[25px] fill-current" />
+                  <Spinner className="size-5 fill-current @min-[90px]:size-[25px]" />
                 ) : (
-                  <CircleCheck size={25} />
+                  <CircleCheck className="size-5 @min-[90px]:size-[25px]" />
                 )}
               </span>
             )}
@@ -202,10 +208,10 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
                   }}
                 >
                   <div
-                    className={
-                      "absolute top-[-5px] right-[-10px] rounded-lg px-2 py-1 text-sm font-semibold " +
-                      biasKeyToColor(p.biasRating ?? "")
-                    }
+                    className={cn(
+                      "absolute top-[-5px] right-[-10px] rounded-lg px-2 py-1 text-sm font-semibold shadow",
+                      biasKeyToColor(p.biasRating ?? ""),
+                    )}
                   >
                     {biasKeyToLabel(p.biasRating ?? "")}
                   </div>

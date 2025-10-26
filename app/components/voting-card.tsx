@@ -3,11 +3,12 @@ import { SideCardContainer, SideCardHeader } from "./ui/side-card";
 import { Await, Link } from "react-router";
 import { href } from "react-router";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
-import { getProviderImageUrl } from "./provider-image";
+import { getProviderImageUrl, ProviderImage } from "./provider-image";
 import { ErrorUI } from "./ui/error-ui";
 import { Suspense } from "react";
 import { Spinner } from "./ui/spinner";
 import { biasKeyToColor } from "~/utils/biasKeyToColor";
+import { cn } from "~/lib/utils";
 
 type ProviderType = {
   name: string;
@@ -38,7 +39,7 @@ export function VotingCard({
         </div>
       </SideCardHeader>
       <div className="flex flex-1 flex-col items-center justify-center gap-4 py-2">
-        <div className="grid h-full w-4/5 grid-cols-2 pt-0">
+        <div className="grid h-full grid-cols-2 gap-x-8 pt-0">
           <Suspense
             fallback={
               <div className="flex flex-1 items-center justify-center">
@@ -61,16 +62,16 @@ export function VotingCard({
                       className="flex items-center justify-center p-2 md:p-0"
                     >
                       <div
-                        className="relative size-[110px] cursor-pointer rounded-lg bg-cover bg-center transition-transform duration-200 hover:scale-102 md:size-[110px]"
+                        className="relative size-[110px] cursor-pointer rounded-lg bg-cover bg-center transition-transform duration-200 hover:-translate-y-[2px] hover:shadow-lg"
                         style={{
                           backgroundImage: `url(${getProviderImageUrl(p.key, 160)})`,
                         }}
                       >
                         <div
-                          className={
-                            "absolute top-[-5px] right-[-10px] rounded-lg px-2 py-1 text-sm font-semibold " +
-                            biasKeyToColor(p.biasRating ?? "")
-                          }
+                          className={cn(
+                            "absolute top-[-5px] right-[-10px] rounded-lg px-2 py-1 text-sm font-semibold shadow-sm",
+                            biasKeyToColor(p.biasRating ?? ""),
+                          )}
                         >
                           {biasKeyToLabel(p.biasRating ?? "")}
                         </div>
