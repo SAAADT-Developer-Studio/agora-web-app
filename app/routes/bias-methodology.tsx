@@ -49,7 +49,7 @@ const BIAS_RATINGS = [
 export function headers() {
   // Prevent caching, for now, since we have some sort of caching issue
   return {
-    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Cache-Control": "max-age=0, must-revalidate",
   };
 }
 

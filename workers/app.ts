@@ -36,8 +36,11 @@ export default {
         kvCache,
         measurer,
       });
-      if (import.meta.env.DEV) {
-        response.headers.set("Cache-Control", "public, max-age=0, s-maxage=0");
+      if (import.meta.env.DEV || !response.headers.has("Cache-Control")) {
+        response.headers.set(
+          "Cache-Control",
+          "public, max-age=0, must-revalidate",
+        );
       }
       measurer.toHeaders(response.headers);
       ctx.waitUntil(cache.put(request, response.clone()));
