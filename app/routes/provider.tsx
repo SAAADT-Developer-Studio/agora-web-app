@@ -118,7 +118,10 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
         <ProviderImage
           size={160}
           provider={provider}
-          className="h-[160px] min-w-[160px] rounded-lg"
+          className={cn(
+            "h-[160px] min-w-[160px] rounded-lg",
+            provider.key === "zurnal24" && "border border-white/20",
+          )}
         />
         <div className="ml-3 flex flex-col justify-between md:ml-6">
           <div className="flex flex-wrap gap-2">
