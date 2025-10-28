@@ -5,10 +5,10 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { BiasInfoTooltip } from "~/components/bias-info-tooltip";
-import { config } from "~/config";
 import type { newsProvider } from "~/drizzle/schema";
 import { cn } from "~/lib/utils";
 import { href, Link } from "react-router";
+import { ProviderImage } from "~/components/provider-image";
 
 type BiasRating = "left" | "center-left" | "center" | "center-right" | "right";
 type BiasCategory = {
@@ -142,9 +142,9 @@ function ProviderBadge({
           prefetch="intent"
         >
           <div className="dark:border-primary border-primary/20 relative flex w-full items-center justify-center rounded-full border-2">
-            <img
-              src={`${config.imagesUrl}/providers/${provider.key}.webp`}
-              alt="Provider"
+            <ProviderImage
+              provider={provider}
+              size={60}
               className="h-full w-full overflow-clip rounded-full object-contain"
             />
             {provider.articleCount > 1 && (

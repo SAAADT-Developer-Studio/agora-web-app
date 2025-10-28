@@ -1,5 +1,5 @@
 import { Newspaper } from "lucide-react";
-import { config } from "~/config";
+import { ProviderImage } from "~/components/provider-image";
 import { resolvePlural } from "~/utils/resolvePlural";
 
 export type SourcesProps = {
@@ -25,10 +25,10 @@ export function Sources({
         {displayedProviders.map((key, index) => {
           const overlap = (itemsDisplayed - 1 - index) * 12;
           return (
-            <img
+            <ProviderImage
               key={key}
-              src={`${config.imagesUrl}/providers/${key}.webp`}
-              alt={`Vir ${index}`}
+              provider={{ key, name: key }}
+              size={60}
               className="h-6 w-6 rounded-full"
               style={{
                 transform: `translateX(${overlap}px)`,
