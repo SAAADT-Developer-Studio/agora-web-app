@@ -22,7 +22,7 @@ export function ErrorComponent({ error }: { error: unknown }) {
   return (
     <main className="container mx-auto flex flex-col items-center justify-center p-4 pt-16">
       <ErrorUI message={details} size="large" />
-      {import.meta.env.PROD && stack && (
+      {import.meta.env.DEV && stack && (
         <pre className="w-full overflow-x-auto p-4">
           <code>{stack}</code>
         </pre>

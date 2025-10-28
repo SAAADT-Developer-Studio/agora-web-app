@@ -414,14 +414,18 @@ export function meta({
   data,
   location,
 }: Route.MetaArgs): Route.MetaDescriptors {
-  const title = data.cluster.title;
-  const imageUrl = data.heroImageUrl;
-  const keywords = data.uniqueCategories.join(", ");
+  const title = data?.cluster ? data.cluster.title : "Vidik | 404";
+  const imageUrl = data?.heroImageUrl || fallbackArticleImage;
+  const keywords = data?.uniqueCategories
+    ? data.uniqueCategories.join(", ")
+    : "";
 
-  const description = `${title}: ${data.cluster.articles
-    .slice(0, 3)
-    .map((a) => a.newsProvider.name + " - " + a.title)
-    .join("; ")} in več`;
+  const description = data?.cluster
+    ? `${title}: ${data.cluster.articles
+        .slice(0, 3)
+        .map((a) => a.newsProvider.name + " - " + a.title)
+        .join("; ")} in več`
+    : "Oprostite, članek ni bil najden.";
 
   return getSeoMetas({
     title,
