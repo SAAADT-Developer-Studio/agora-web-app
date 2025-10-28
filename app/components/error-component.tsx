@@ -1,10 +1,12 @@
-import { isRouteErrorResponse } from "react-router";
+import { isRouteErrorResponse, Link, useLocation } from "react-router";
+import { Button } from "~/components/ui/button";
 import { ErrorUI } from "~/components/ui/error-ui";
 
 export function ErrorComponent({ error }: { error: unknown }) {
   let message = "Ups!";
   let details = "Prišlo je do nepričakovane napake.";
   let stack: string | undefined;
+  const showHomeLink = useLocation().pathname !== "/";
 
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? "404" : "Napaka";
@@ -18,12 +20,17 @@ export function ErrorComponent({ error }: { error: unknown }) {
   }
 
   return (
-    <main className="container mx-auto p-4 pt-16">
+    <main className="container mx-auto flex flex-col items-center justify-center p-4 pt-16">
       <ErrorUI message={details} size="large" />
       {import.meta.env.PROD && stack && (
         <pre className="w-full overflow-x-auto p-4">
           <code>{stack}</code>
         </pre>
+      )}
+      {showHomeLink && (
+        <Button asChild className="w-fit">
+          <Link to="/">Nazaj na domačo stran</Link>
+        </Button>
       )}
     </main>
   );

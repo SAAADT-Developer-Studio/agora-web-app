@@ -4,7 +4,6 @@ import { getSeoMetas } from "~/lib/seo";
 import fallbackArticleImage from "~/assets/fallback.png";
 import { cluster as clusterSchema } from "~/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { config } from "~/config";
 import { Info, Newspaper, Calendar, SatelliteDish } from "lucide-react";
 import { resolvePlural } from "~/utils/resolvePlural";
 
@@ -79,7 +78,6 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
 export default function ArticlePage({ loaderData }: Route.ComponentProps) {
   const { cluster, uniqueCategories, heroImageUrl } = loaderData;
-
   const dates = cluster.articles.map((a) => new Date(a.publishedAt));
   const oldestDate = new Date(Math.min(...dates.map((d) => d.getTime())));
   const newestDate = new Date(Math.max(...dates.map((d) => d.getTime())));
