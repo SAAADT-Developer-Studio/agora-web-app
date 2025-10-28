@@ -12,6 +12,7 @@ import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
 import { isSameHour } from "~/utils/isSameHour";
 import { extractHeroImage } from "~/utils/extractHeroImage";
+import { ProviderImage } from "~/components/provider-image";
 
 export function headers({}: Route.HeadersArgs) {
   return {
@@ -167,9 +168,9 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
                       <div className="bg-card ring-border flex h-12 w-12 items-center justify-center overflow-hidden rounded-md ring-1">
-                        <img
-                          src={`${config.imagesUrl}/providers/${article.newsProviderKey}.webp`}
-                          alt={article.newsProviderKey}
+                        <ProviderImage
+                          provider={article.newsProvider}
+                          size={60}
                           className="h-full w-full object-contain p-1"
                         />
                       </div>
