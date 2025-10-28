@@ -35,6 +35,7 @@ async function main() {
   await devDb.transaction(async (tx) => {
     await tx.delete(schema.article);
     await tx.delete(schema.cluster);
+    await tx.delete(schema.vote);
     await tx.delete(schema.newsProvider);
 
     await tx.insert(schema.newsProvider).values(newsProviders);
