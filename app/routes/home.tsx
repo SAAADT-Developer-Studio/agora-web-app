@@ -19,18 +19,17 @@ import { resolvePromises } from "~/utils/resolvePromises";
 import { getEnv } from "~/utils/getEnv";
 import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
-import { TutorialPopup } from "~/components/tutorial-popup";
 import { ErrorComponent } from "~/components/error-component";
 import { VotingCard } from "~/components/voting-card";
 
 export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
-    title: "Vidik",
+    title: "Vidik - Slovenske novice iz vseh vidikov",
     description:
-      "Odkrij, kako različni slovenski mediji poročajo o istih novicah. Naša platforma razkriva medijsko pristranskost in pomaga razumeti zgodbo z vseh političnih vidikov.",
+      "Vidik je platforma, ki združuje novice iz vseh slovenskih medijev. Odkrijte, kako različni mediji poročajo o istih dogodkih in razumejte zgodbo z vseh vidikov. Politika, gospodarstvo, šport, kultura in več.",
     pathname: location.pathname,
     keywords:
-      "vidik, novice, slovenija, aktualno, politika, gospodarstvo, šport, kriminal, kultura, zdravje, okolje, lokalno, news, slovenian news, slovenia news",
+      "vidik, vidik slovenija, slovenske novice, aktualno, novice brez pristranskosti, medijska pristranskost, politika, gospodarstvo, šport, kriminal, kultura, zdravje, okolje, lokalno, slovenski mediji, objektivne novice, news aggregator slovenia",
     ogType: "website",
   });
 }

@@ -1,7 +1,8 @@
 import { Suspense, useEffect, useState } from "react";
 import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
-import logoWhite from "~/assets/logo-white.svg";
+import logoWhiteNoText from "~/assets/logo-no-text-light.svg";
+import logoNoText from "~/assets/logo-no-text.svg";
 import { ThemeSwitch } from "./theme-switch";
 import { Link, NavLink, useNavigation, href } from "react-router";
 import { twMerge } from "tailwind-merge";
@@ -10,12 +11,11 @@ import { config } from "~/config";
 import { Menu, X } from "lucide-react";
 import { Spinner } from "~/components/ui/spinner";
 
-const SIDEPANEL_WIDTH = 280; // px
+const SIDEPANEL_WIDTH = 280;
 
 export function Header() {
   const [open, setOpen] = useState(false);
 
-  // ESC key closes panel
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -42,12 +42,21 @@ export function Header() {
           </button>
           <div className="bg-vidikwhite h-10 w-[1px] opacity-30 xl:hidden" />
           <Link to="/" prefetch="intent">
-            <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
-            <img
-              src={logoWhite}
-              alt="logo"
-              className="block h-6 w-20 dark:hidden"
-            />
+            <div className="flex items-center gap-[5px]">
+              <img
+                src={logoNoText}
+                alt="logo"
+                className="hidden h-6 w-6 dark:block"
+              />
+              <img
+                src={logoWhiteNoText}
+                alt="logo"
+                className="block h-6 w-6 dark:hidden"
+              />
+              <h1 className="font-sarabun text-vidikwhite text-[23px] font-medium tracking-wide lowercase">
+                Vidik
+              </h1>
+            </div>
           </Link>
 
           {isNavigating && <Spinner />}
@@ -59,7 +68,7 @@ export function Header() {
           <ThemeSwitch />
           <Link
             to={href("/mediji")}
-            className="bg-vidikwhite text-vidikdarkgray hover:bg-vidikwhite/90 text-md rounded-lg px-3 py-1 font-medium"
+            className="bg-vidikwhite text-vidikdarkgray hover:bg-vidikwhite/30 text-md rounded-lg px-3 py-1 font-medium"
             prefetch="intent"
           >
             Mediji
