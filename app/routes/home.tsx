@@ -1,6 +1,6 @@
 import type { Route } from "./+types/home";
 import { sql } from "drizzle-orm";
-import { lazy, Suspense } from "react";
+import { lazy } from "react";
 
 import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
