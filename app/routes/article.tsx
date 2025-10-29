@@ -4,9 +4,15 @@ import { getSeoMetas } from "~/lib/seo";
 import fallbackArticleImage from "~/assets/fallback.png";
 import { cluster as clusterSchema } from "~/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { Info, Newspaper, Calendar, SatelliteDish } from "lucide-react";
+import {
+  Info,
+  Newspaper,
+  Calendar,
+  SatelliteDish,
+  Clock,
+  NotebookPen,
+} from "lucide-react";
 import { resolvePlural } from "~/utils/resolvePlural";
-
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
 import { isSameHour } from "~/utils/isSameHour";
@@ -14,6 +20,7 @@ import { extractHeroImage } from "~/utils/extractHeroImage";
 import { ProviderImage } from "~/components/provider-image";
 import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
+import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";
 
 export function headers({}: Route.HeadersArgs) {
   return {
@@ -103,7 +110,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
     <div className="bg-background min-h-screen">
       <article className="mx-auto max-w-5xl px-1 py-1 md:py-6">
         <div className="text-muted-foreground mb-6 flex max-h-5 flex-wrap items-center gap-3 overflow-clip text-sm">
-          <span className="font-mono tracking-wider">VIDIK</span>
+          <span className="tracking-wider">VIDIK</span>
           {uniqueCategories.slice(0, 4).map((category) => (
             <span className="flex gap-3">
               <span>•</span>
@@ -154,93 +161,154 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
             })}
           </h2>
 
-          <div className="space-y-1">
+          <div className="space-y-3 md:space-y-5">
             {cluster.articles.map((article, index) => {
               const publishDate = new Date(article.publishedAt);
               return (
-                <a
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  key={article.id}
-                  className="group hover:bg-muted/50 border-primary/30 block border-b py-6 transition-colors last:border-b-0"
-                >
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0">
-                      <div className="bg-card ring-border flex h-12 w-12 items-center justify-center overflow-hidden rounded-md ring-1">
+                <>
+                  <a
+                    href={article.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    key={`${article.id}-desktop`}
+                    className="group bg-primary/5 border-primary/10 hover:bg-primary/9 relative hidden rounded-lg border p-4 transition-colors duration-200 md:block"
+                  >
+                    <div className="flex gap-4">
+                      <div className="flex-shrink-0">
                         <ProviderImage
                           provider={article.newsProvider}
-                          size={60}
-                          className="h-full w-full object-contain p-1"
+                          size={160}
+                          className="border-primary/10 h-[60px] w-[60px] rounded-lg border md:h-[160px] md:w-[160px]"
                         />
                       </div>
-                    </div>
 
-                    <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-3 flex items-center justify-between">
+                          <div className="text-muted-foreground flex flex-wrap items-center gap-2 overflow-hidden text-xs">
+                            <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex items-center gap-1.5 rounded-sm border-2 px-3 py-1 text-[10px] font-medium tracking-wider uppercase">
+                              <Newspaper className="size-3" />
+                              {article.newsProvider.name}
+                            </span>
+                            <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex items-center gap-1.5 rounded-sm border-2 px-3 py-1 text-[10px] font-medium tracking-wider uppercase">
+                              <Clock className="size-3" />
+                              {timeDiffInSlovenian(publishDate)}
+                            </span>
+                            {article.author && (
+                              <>
+                                <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex items-center gap-1.5 rounded-sm border-2 px-3 py-1 text-[10px] font-medium tracking-wider uppercase">
+                                  <NotebookPen className="size-3" />
+                                  {article.author}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          <div
+                            className={`flex h-[25.33px] items-center justify-center rounded-sm px-3 py-1 text-xs font-medium whitespace-nowrap uppercase ${biasKeyToColor(article.newsProvider.biasRating ?? "", true)}`}
+                          >
+                            {biasKeyToLabel(
+                              article.newsProvider.biasRating ?? "",
+                            )}
+                          </div>
+                        </div>
+
+                        <h3 className="text-primary group-hover:text-accent text-md mb-2 line-clamp-1 leading-snug font-semibold text-pretty transition-colors md:text-lg">
+                          {article.title}
+                        </h3>
+
+                        {article.summary && (
+                          <p className="text-muted-foreground text-primary/70 line-clamp-3 text-xs leading-relaxed text-pretty md:text-sm">
+                            {article.summary}
+                          </p>
+                        )}
+                        <time
+                          dateTime={article.publishedAt}
+                          className="text-primary/70 absolute right-4 bottom-4 text-[10px]"
+                        >
+                          {publishDate.toLocaleDateString("sl-SI", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}{" "}
+                          ob{" "}
+                          {publishDate.toLocaleTimeString("sl-SI", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </time>
+                      </div>
+                    </div>
+                  </a>
+                  <a
+                    href={article.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    key={`${article.id}-mobile`}
+                    className="bg-primary/5 border-primary/10 relative block rounded-lg border p-2 md:hidden"
+                  >
+                    <div className="flex flex-col gap-2">
                       <div className="mb-2 flex items-center justify-between">
-                        <div className="text-muted-foreground flex max-h-[12px] flex-wrap items-center gap-2 overflow-hidden text-xs">
-                          <span className="font-mono tracking-wider uppercase">
+                        <div className="text-muted-foreground flex max-h-[22px] flex-wrap items-center gap-1 overflow-hidden text-xs">
+                          <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex h-[22px] items-center gap-1.5 rounded-sm border px-1 py-1 text-[8px] font-medium tracking-wider uppercase">
+                            <Newspaper className="size-2" />
                             {article.newsProvider.name}
                           </span>
-                          <span>
-                            •&nbsp;&nbsp;
-                            <time dateTime={article.publishedAt}>
-                              {publishDate.toLocaleDateString("sl-SI", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}{" "}
-                              ob{" "}
-                              {publishDate.toLocaleTimeString("sl-SI", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </time>
+                          <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex h-[22px] items-center gap-1.5 rounded-sm border px-1 py-1 text-[8px] font-medium tracking-wider uppercase">
+                            <Clock className="size-2" />
+                            {timeDiffInSlovenian(publishDate)}
                           </span>
                           {article.author && (
                             <>
-                              <span>•&nbsp;&nbsp;{article.author}</span>
+                              <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex h-[22px] items-center gap-1.5 rounded-sm border px-1 py-1 text-[8px] font-medium tracking-wider uppercase">
+                                <NotebookPen className="size-2" />
+                                {article.author}
+                              </span>
                             </>
                           )}
                         </div>
                         <div
-                          className={`flex items-center justify-center rounded-lg px-2 py-1 text-xs font-semibold whitespace-nowrap uppercase ${biasKeyToColor(article.newsProvider.biasRating ?? "")}`}
+                          className={`flex items-center justify-center rounded-sm px-1 py-1 text-[8px] font-medium whitespace-nowrap uppercase ${biasKeyToColor(article.newsProvider.biasRating ?? "", true)}`}
                         >
                           {biasKeyToLabel(
                             article.newsProvider.biasRating ?? "",
                           )}
                         </div>
                       </div>
+                      <div className="flex gap-4">
+                        <ProviderImage
+                          provider={article.newsProvider}
+                          size={160}
+                          className="border-primary/10 h-[70px] w-[70px] rounded-lg border"
+                        />
+                        <h3 className="text-primary text-md line-clamp-3 leading-snug font-semibold text-pretty transition-colors md:text-lg">
+                          {article.title}
+                        </h3>
+                      </div>
 
-                      <h3 className="text-primary group-hover:text-accent text-md mb-2 leading-snug font-semibold text-pretty transition-colors md:text-2xl">
-                        {article.title}
-                      </h3>
-
-                      {article.summary && (
-                        <p className="text-muted-foreground line-clamp-3 text-xs leading-relaxed text-pretty md:text-base">
-                          {article.summary}
-                        </p>
-                      )}
-
-                      <div className="text-accent mt-3 hidden items-center gap-2 text-sm font-medium opacity-0 transition-opacity group-hover:opacity-100 md:flex">
-                        <span>Preberi cel članek</span>
-                        <svg
-                          className="h-4 w-4 transition-transform group-hover:translate-x-1"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                      <div className="mb-8 w-full">
+                        {article.summary && (
+                          <p className="text-muted-foreground text-primary/70 line-clamp-3 text-xs leading-relaxed text-pretty md:text-sm">
+                            {article.summary}
+                          </p>
+                        )}
+                        <time
+                          dateTime={article.publishedAt}
+                          className="text-primary/70 absolute right-2 bottom-2 text-[10px]"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
+                          {publishDate.toLocaleDateString("sl-SI", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}{" "}
+                          ob{" "}
+                          {publishDate.toLocaleTimeString("sl-SI", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </time>
                       </div>
                     </div>
-                  </div>
-                </a>
+                  </a>
+                </>
               );
             })}
           </div>
