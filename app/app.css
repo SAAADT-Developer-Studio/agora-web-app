@@ -24,6 +24,7 @@
   --color-vidikblack: oklch(0.258 0 0);
   --color-vidikdarkgray: oklch(0.374 0 0);
   --color-vidiklightgray: oklch(0.925 0 0);
+  --color-vidikgreen: oklch(0.6548 0.211 140.04);
 }
 
 .dark {
@@ -33,6 +34,7 @@
   --color-primary: oklch(0.978 0.009 247.5);
   --color-electricblue: oklch(0.6 0.18 248.1);
   --color-electricblue-light: oklch(0.651 0.206 271.2);
+  --color-vidikgreen: oklch(0.4995 0.16 139.63);
 }
 
 html,
