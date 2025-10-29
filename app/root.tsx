@@ -35,12 +35,9 @@ export const links: Route.LinksFunction = () => [
 function initTheme() {
   let theme = localStorage.getItem("theme");
   if (!theme) {
-    // TODO: maybe go back to system theme detection when light mode is not ugly
-    // const systemTheme = window.matchMedia(`(prefers-color-scheme: dark)`)
-    //   .matches
-    //   ? `dark`
-    //   : `light`;
-    theme = "dark";
+    theme = window.matchMedia(`(prefers-color-scheme: dark)`).matches
+      ? `dark`
+      : `light`;
   } else {
     theme = JSON.parse(theme) as string;
   }

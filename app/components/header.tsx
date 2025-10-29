@@ -43,23 +43,14 @@ export function Header() {
           <div className="bg-vidikwhite h-10 w-[1px] opacity-30 xl:hidden" />
           <Link to="/" prefetch="intent">
             <div className="flex items-center gap-[5px]">
-              <img
-                src={logoNoText}
-                alt="logo"
-                className="hidden h-6 w-6 dark:block"
-              />
-              <img
-                src={logoWhiteNoText}
-                alt="logo"
-                className="block h-6 w-6 dark:hidden"
-              />
+              <img src={logoNoText} alt="logo" className="h-6 w-6" />
               <h1 className="font-sarabun text-vidikwhite text-[23px] font-medium tracking-wide lowercase">
                 Vidik
               </h1>
             </div>
           </Link>
 
-          {isNavigating && <Spinner />}
+          {isNavigating && <Spinner className="text-white" />}
         </div>
         <div className="flex items-center gap-5">
           <span className="text-vidikwhite hidden text-xs md:block">
@@ -68,7 +59,7 @@ export function Header() {
           <ThemeSwitch />
           <Link
             to={href("/mediji")}
-            className="bg-vidikwhite text-vidikdarkgray hover:bg-vidikwhite/90 text-md rounded-lg px-3 py-1 font-medium"
+            className="bg-vidikwhite dark:text-vidikdarkgray hover:bg-vidikwhite/90 text-md rounded-lg px-3 py-1 font-medium text-black"
             prefetch="intent"
           >
             Mediji
@@ -76,7 +67,7 @@ export function Header() {
         </div>
       </div>
 
-      <nav className="bg-foreground border-primary/10 hidden w-full justify-center border-b xl:flex">
+      <nav className="dark:bg-foreground border-primary/10 hidden w-full justify-center border-b bg-white xl:flex">
         <div className="flex overflow-hidden">
           {config.navigation.map((item) => (
             <NavLink

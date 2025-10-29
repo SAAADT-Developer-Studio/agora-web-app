@@ -1,5 +1,6 @@
 import type { Route } from "./+types/home";
 import { sql } from "drizzle-orm";
+import { lazy } from "react";
 
 import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
@@ -9,12 +10,17 @@ import {
   fetchSloveniaGDP,
 } from "~/lib/services/external";
 import { getCategoryArticles, getHomeArticles } from "~/lib/services/ranking";
-import { EconomyCard } from "~/components/economy-card";
 import { getProviderStats } from "~/lib/services/homePageProviderStats";
 import { ProviderStatsCard } from "~/components/provider-stats-card";
 import { config, CategoryKey, type CategoryKeyValue } from "~/config";
 import type { ArticleType } from "~/lib/services/ranking";
 import type { Database } from "~/lib/db";
+
+const EconomyCard = lazy(() =>
+  import("~/components/economy-card").then((module) => ({
+    default: module.EconomyCard,
+  })),
+);
 import { resolvePromises } from "~/utils/resolvePromises";
 import { getEnv } from "~/utils/getEnv";
 import { data } from "react-router";
