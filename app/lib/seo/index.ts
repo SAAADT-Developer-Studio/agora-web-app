@@ -25,7 +25,7 @@ export function getSeoMetas({
   ogType = "website",
   keywords = "vidik, vidik slovenija, politika, novice, slovenska politika, pristranskost medijev, objektivne novice, news aggregator slovenia",
   noindex = false,
-  locale = "sl_SI",
+  locale = "sl-SI",
   siteName = "Vidik",
   twitterHandle = "@VidikSLO",
   alternates = [],

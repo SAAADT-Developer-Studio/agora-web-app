@@ -68,7 +68,7 @@ export function Header() {
           <ThemeSwitch />
           <Link
             to={href("/mediji")}
-            className="bg-vidikwhite text-vidikdarkgray hover:bg-vidikwhite/30 text-md rounded-lg px-3 py-1 font-medium"
+            className="bg-vidikwhite text-vidikdarkgray hover:bg-vidikwhite/90 text-md rounded-lg px-3 py-1 font-medium"
             prefetch="intent"
           >
             Mediji

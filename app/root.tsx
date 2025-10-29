@@ -28,7 +28,7 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Sarabun:wght@500;600;700;&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Sarabun:wght@500;600;700&display=swap",
   },
 ];
 
@@ -64,7 +64,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#FFFFFF" />
-        
+
         {/* Additional SEO meta tags */}
         <meta name="format-detection" content="telephone=no" />
         <meta httpEquiv="x-ua-compatible" content="ie=edge" />
