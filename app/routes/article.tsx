@@ -12,6 +12,8 @@ import { BiasDistribution } from "~/components/bias-distribution";
 import { isSameHour } from "~/utils/isSameHour";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 import { ProviderImage } from "~/components/provider-image";
+import { biasKeyToColor } from "~/utils/biasKeyToColor";
+import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 
 export function headers({}: Route.HeadersArgs) {
   return {
@@ -175,30 +177,39 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="text-muted-foreground mb-3 flex max-h-[12px] flex-wrap items-center gap-2 overflow-hidden text-xs">
-                        <span className="font-mono tracking-wider uppercase">
-                          {article.newsProvider.name}
-                        </span>
-                        <span>
-                          •&nbsp;&nbsp;
-                          <time dateTime={article.publishedAt}>
-                            {publishDate.toLocaleDateString("sl-SI", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}{" "}
-                            ob{" "}
-                            {publishDate.toLocaleTimeString("sl-SI", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </time>
-                        </span>
-                        {article.author && (
-                          <>
-                            <span>•&nbsp;&nbsp;{article.author}</span>
-                          </>
-                        )}
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="text-muted-foreground flex max-h-[12px] flex-wrap items-center gap-2 overflow-hidden text-xs">
+                          <span className="font-mono tracking-wider uppercase">
+                            {article.newsProvider.name}
+                          </span>
+                          <span>
+                            •&nbsp;&nbsp;
+                            <time dateTime={article.publishedAt}>
+                              {publishDate.toLocaleDateString("sl-SI", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}{" "}
+                              ob{" "}
+                              {publishDate.toLocaleTimeString("sl-SI", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </time>
+                          </span>
+                          {article.author && (
+                            <>
+                              <span>•&nbsp;&nbsp;{article.author}</span>
+                            </>
+                          )}
+                        </div>
+                        <div
+                          className={`flex items-center justify-center rounded-lg px-2 py-1 text-xs font-semibold whitespace-nowrap uppercase ${biasKeyToColor(article.newsProvider.biasRating ?? "")}`}
+                        >
+                          {biasKeyToLabel(
+                            article.newsProvider.biasRating ?? "",
+                          )}
+                        </div>
                       </div>
 
                       <h3 className="text-primary group-hover:text-accent text-md mb-2 leading-snug font-semibold text-pretty transition-colors md:text-2xl">
