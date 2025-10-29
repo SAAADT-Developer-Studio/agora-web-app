@@ -414,7 +414,7 @@ export function meta({
   data,
   location,
 }: Route.MetaArgs): Route.MetaDescriptors {
-  const title = data?.cluster ? data.cluster.title : "Vidik | 404";
+  const title = data?.cluster ? data.cluster.title : "404 | Vidik";
   const imageUrl = data?.heroImageUrl || fallbackArticleImage;
   const keywords = data?.uniqueCategories
     ? data.uniqueCategories.join(", ")

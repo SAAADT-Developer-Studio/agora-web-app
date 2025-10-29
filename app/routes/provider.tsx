@@ -143,16 +143,16 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
               {biasKeyToLabel(provider.biasRating ?? "")}
             </div>
           </div>
-          <h1 className="text-[30px] font-bold sm:text-[40px] md:text-[100px]">
+          <h2 className="text-[30px] font-bold sm:text-[40px] md:text-[100px]">
             {provider.name}
-          </h1>
+          </h2>
         </div>
       </div>
       <div>
-        <h2 className="text-primary mt-4 text-lg font-bold md:text-2xl">
+        <h3 className="text-primary mt-4 text-lg font-bold md:text-2xl">
           Se ne strinjaš da {provider.name} spada pod{" "}
           {biasKeyToLabel(provider.biasRating ?? "")}?
-        </h2>
+        </h3>
         <p className="text-primary/50 text-sm md:text-lg">
           Glasuj kam spada na političnem spektru
         </p>
@@ -190,9 +190,9 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
       </div>
       {voteValue && !voteSuggestions.isError && (
         <div className="animate-in slide-in-from-top-4 fade-in mt-12 duration-500">
-          <h2 className="text-primary text-lg font-bold md:text-2xl">
+          <h3 className="text-primary text-lg font-bold md:text-2xl">
             Glasuj še za druge medije!
-          </h2>
+          </h3>
           <div className="mt-6 grid w-full grid-cols-2 items-center gap-4 sm:grid-cols-3 md:grid-cols-5">
             {voteSuggestions.isLoading && (
               <Spinner className="col-span-5 m-auto size-8" />
@@ -278,9 +278,9 @@ function ProviderStatsCards({
             <Newspaper className="text-primary h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-primary text-7xl font-bold">
+            <h3 className="text-primary text-7xl font-bold">
               {stats.today.count}
-            </h2>
+            </h3>
           </div>
 
           <div className="space-y-1">
@@ -298,9 +298,9 @@ function ProviderStatsCards({
             <Newspaper className="text-primary h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-primary text-7xl font-bold">
+            <h3 className="text-primary text-7xl font-bold">
               {stats.week.count}
-            </h2>
+            </h3>
           </div>
 
           <div className="space-y-1">
@@ -318,9 +318,9 @@ function ProviderStatsCards({
             <Newspaper className="text-primary h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-primary text-7xl font-bold">
+            <h3 className="text-primary text-7xl font-bold">
               {stats.month.count}
-            </h2>
+            </h3>
           </div>
 
           <div className="space-y-1">
