@@ -25,7 +25,7 @@ export function Article({
       prefetch="intent"
       className="contents w-full"
     >
-      <article className="group border-vidikdarkgray/10 relative flex h-[240px] w-full cursor-pointer flex-col gap-4 overflow-hidden rounded-md border-1 dark:border-0">
+      <article className="group relative flex h-[240px] w-full cursor-pointer flex-col gap-4 overflow-hidden rounded-md">
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-400 group-hover:scale-103"
           style={{
@@ -34,7 +34,7 @@ export function Article({
         />
         <div className="text-vidikwhite relative z-10 flex h-full w-full flex-col items-center justify-between rounded-md [background-image:linear-gradient(to_top,rgba(0,0,0,0.8)_0%,rgba(0,0,0,0.6)_37%,rgba(0,0,0,0)_100%)] text-2xl font-bold">
           <div className="flex h-8 w-full items-center justify-between p-2">
-            <div className="flex max-h-[21px] flex-wrap gap-2 overflow-hidden">
+            <div className="flex max-h-[23px] flex-wrap gap-2 overflow-hidden">
               {tags.map((tag) => (
                 <Tag key={tag} text={tag} big />
               ))}

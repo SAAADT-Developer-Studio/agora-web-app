@@ -110,7 +110,7 @@ export function EconomyCard({
                   className="hover:underline"
                   target="_blank"
                   referrerPolicy="no-referrer"
-                  href="https://www.stat.si/StatWeb/en/Field/Index/2"
+                  href="https://en.wikipedia.org/wiki/Harmonised_Index_of_Consumer_Prices"
                 >
                   HICP
                 </a>

@@ -14,6 +14,9 @@ import { extractHeroImage } from "~/utils/extractHeroImage";
 import { ProviderImage } from "~/components/provider-image";
 import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
+import { Link } from "react-router";
+import { cn } from "~/lib/utils";
+import { InfoCard } from "~/components/ui/info-card";
 
 export function headers({}: Route.HeadersArgs) {
   return {
@@ -103,7 +106,9 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
     <div className="bg-background min-h-screen">
       <article className="mx-auto max-w-5xl px-1 py-1 md:py-6">
         <div className="text-muted-foreground mb-6 flex max-h-5 flex-wrap items-center gap-3 overflow-clip text-sm">
-          <span className="font-mono tracking-wider">VIDIK</span>
+          <Link to="/" className="font-mono tracking-wider">
+            VIDIK
+          </Link>
           {uniqueCategories.slice(0, 4).map((category) => (
             <span className="flex gap-3">
               <span>•</span>
@@ -213,7 +218,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                       </div>
 
                       <h3 className="text-primary group-hover:text-accent text-md mb-2 leading-snug font-semibold text-pretty transition-colors md:text-2xl">
-                        {article.title}
+                        {article.title.replaceAll("&quot;", '"')}
                       </h3>
 
                       {article.summary && (
@@ -267,7 +272,7 @@ function ArticleInfoBanner({
   newestDate: Date;
 }) {
   return (
-    <div className="bg-primary/5 border-primary/10 mb-12 rounded-lg border p-6">
+    <InfoCard className="mb-12">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div className="flex items-start gap-3">
           <Info className="text-accent mt-1 h-5 w-5 flex-shrink-0" />
@@ -323,7 +328,7 @@ function ArticleInfoBanner({
           <div className="flex items-center gap-3"></div>
         </div>
       </div>
-    </div>
+    </InfoCard>
   );
 }
 
@@ -387,7 +392,7 @@ function ArticleBottomBanner({
   newestDate: Date;
 }) {
   return (
-    <div className="bg-primary/5 border-primary/10 mt-12 rounded-lg border p-6 text-center">
+    <InfoCard className="mt-12 text-center">
       <p className="text-muted-foreground text-sm leading-relaxed">
         Ta sklop je bil avtomatsko generiran z analizo{" "}
         <strong className="text-primary font-semibold">
@@ -417,7 +422,7 @@ function ArticleBottomBanner({
         })}
         .
       </p>
-    </div>
+    </InfoCard>
   );
 }
 

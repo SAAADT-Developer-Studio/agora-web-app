@@ -308,7 +308,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
 
       {filteredAndSortedProviders.map((provider) => (
         <Link
-          className="hover:bg-foreground/30 mt-6 flex flex-col items-start justify-between gap-4 rounded-lg p-0 transition-all md:flex-row md:gap-0 md:p-4"
+          className="mt-6 flex flex-col items-start justify-between gap-4 rounded-lg p-0 transition-all hover:bg-current/5 md:flex-row md:gap-0 md:p-4"
           to={href("/medij/:providerKey", { providerKey: provider.key })}
           key={provider.key}
         >
@@ -320,7 +320,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
             />
             <div className="@container ml-3 flex w-full flex-col justify-between md:ml-6">
               <div className="flex flex-wrap gap-2">
-                <div className="bg-foreground/70 hover:bg-foreground text-primary flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold">
+                <div className="bg-foreground/70 hover:bg-foreground text-primary flex items-center justify-center gap-1 rounded-lg border border-current/10 px-2 py-1 text-xs font-semibold">
                   <Globe className="size-3" />
                   {removeUrlProtocol(provider.url)}
                 </div>

@@ -23,7 +23,6 @@ export async function fetchSloveniaGDP() {
 
   const url =
     "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/nama_10_gdp?freq=A&unit=CP_MEUR&na_item=B1GQ&geo=SI&format=JSON";
-
   const data = await get<JSONStat>(url);
 
   const timeKey =
