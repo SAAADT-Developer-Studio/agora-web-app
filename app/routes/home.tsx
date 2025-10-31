@@ -30,6 +30,7 @@ import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { ErrorComponent } from "~/components/error-component";
 import { VotingCard } from "~/components/voting-card";
+import { HOME_CACHE_KEY } from "~/lib/kvCache/keys";
 
 export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
@@ -111,7 +112,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   const articles = await kvCache.cached(
     async () => await fetchHomeArticlesData({ db }),
     {
-      key: "data:home",
+      key: HOME_CACHE_KEY,
       expirationTtl: 10 * 60,
     },
   );

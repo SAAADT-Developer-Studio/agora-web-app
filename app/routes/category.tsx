@@ -10,6 +10,7 @@ import { Loader } from "lucide-react";
 import type { Database } from "~/lib/db";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { getCategoryArticles, type ArticleType } from "~/lib/services/ranking";
+import { getCategoryCacheKey } from "~/lib/kvCache/keys";
 
 const categorySet = new Set<string>(config.categories.map((c) => c.key));
 
@@ -58,7 +59,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const articles = await kvCache.cached(
     async () => await fetchCategoryArticlesData({ db, category }),
     {
-      key: `data:category:${category}`,
+      key: getCategoryCacheKey(category),
       expirationTtl: 10 * 60,
     },
   );
