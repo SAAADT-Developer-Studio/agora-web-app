@@ -287,7 +287,9 @@ function ProviderStatsCards({
             <p className="text-primary text-lg leading-tight font-medium">
               Objavljenih člankov danes
             </p>
-            <p className="text-primary/70 text-sm">Rank: #{stats.today.rank}</p>
+            <p className="text-primary/70 text-sm">
+              Rank: {stats.today.rank ? "#" + stats.today.rank : "N/A"}
+            </p>
           </div>
         </div>
       </Card>
@@ -307,7 +309,9 @@ function ProviderStatsCards({
             <p className="text-primary text-lg leading-tight font-medium">
               Objavljenih člankov ta teden
             </p>
-            <p className="text-primary/70 text-sm">Rank: #{stats.week.rank}</p>
+            <p className="text-primary/70 text-sm">
+              Rank: {stats.week.rank ? "#" + stats.week.rank : "N/A"}
+            </p>
           </div>
         </div>
       </Card>
@@ -327,7 +331,9 @@ function ProviderStatsCards({
             <p className="text-primary text-lg leading-tight font-medium">
               Objavljenih člankov ta mesec
             </p>
-            <p className="text-primary/70 text-sm">Rank: #{stats.month.rank}</p>
+            <p className="text-primary/70 text-sm">
+              Rank: {stats.month.rank ? "#" + stats.month.rank : "N/A"}
+            </p>
           </div>
         </div>
       </Card>

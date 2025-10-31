@@ -45,15 +45,39 @@ export interface ProviderStats {
 
 async function getAllProviderStats(db: any): Promise<ProviderStats[]> {
   const now = new Date();
+
   const startOfToday = new Date(
     now.getFullYear(),
     now.getMonth(),
     now.getDate(),
+    0,
+    0,
+    0,
+    0,
   );
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const currentDay = now.getDay();
+  const daysToSubtract = currentDay === 0 ? 6 : currentDay - 1;
+
+  const startOfWeek = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - daysToSubtract,
+    0,
+    0,
+    0,
+    0,
+  );
+
+  const startOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1,
+    0,
+    0,
+    0,
+    0,
+  );
 
   function buildDenseRankMap(
     rows: Array<{ providerKey: string; count: number }>,
@@ -358,7 +382,10 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
                     Objavljenih člankov danes
                   </p>
                   <p className="text-xs text-gray-400 md:text-sm">
-                    Rank: #{providerStatsMap.get(provider.key)?.today.rank}
+                    Rank:{" "}
+                    {providerStatsMap.get(provider.key)?.today.rank
+                      ? "#" + providerStatsMap.get(provider.key)?.today.rank
+                      : "N/A"}
                   </p>
                 </div>
               </div>
@@ -378,7 +405,10 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
                     Objavljenih člankov ta teden
                   </p>
                   <p className="text-xs text-gray-400 md:text-sm">
-                    Rank: #{providerStatsMap.get(provider.key)?.week.rank}
+                    Rank:{" "}
+                    {providerStatsMap.get(provider.key)?.week.rank
+                      ? "#" + providerStatsMap.get(provider.key)?.week.rank
+                      : "N/A"}
                   </p>
                 </div>
               </div>
@@ -398,7 +428,10 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
                     Objavljenih člankov ta mesec
                   </p>
                   <p className="text-xs text-gray-400 md:text-sm">
-                    Rank: #{providerStatsMap.get(provider.key)?.month.rank}
+                    Rank:{" "}
+                    {providerStatsMap.get(provider.key)?.month.rank
+                      ? "#" + providerStatsMap.get(provider.key)?.month.rank
+                      : "N/A"}
                   </p>
                 </div>
               </div>

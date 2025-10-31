@@ -9,13 +9,35 @@ export async function getProviderStats(db: Database, providerKey: string) {
     now.getFullYear(),
     now.getMonth(),
     now.getDate(),
+    0,
+    0,
+    0,
+    0,
   );
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  // Parallelize all queries for better performance
+  const currentDay = now.getDay();
+  const daysToSubtract = currentDay === 0 ? 6 : currentDay - 1;
+
+  const startOfWeek = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - daysToSubtract,
+    0,
+    0,
+    0,
+    0,
+  );
+
+  const startOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1,
+    0,
+    0,
+    0,
+    0,
+  );
+
   const [
     [todayCount],
     [weekCount],
