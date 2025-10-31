@@ -29,11 +29,6 @@ const tutorialSteps: TutorialStep[] = [
       "Vsak članek prikazuje politično usmerjenost virov, ki poročajo o zgodbi. Vidite lahko, koliko virov je levo, sredinskih ali desno usmerjenih, kar vam pomaga razumeti različne perspektive.",
     biasDistribution: true,
   },
-  {
-    title: "Začnite raziskovati",
-    description:
-      "Zdaj ste pripravljeni uporabljati platformo! Kliknite na katerokoli zgodbo za več podrobnosti in različne perspektive.",
-  },
 ];
 
 const TUTORIAL_STORAGE_KEY = "vidik-tutorial-completed";
