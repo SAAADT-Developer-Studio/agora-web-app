@@ -57,7 +57,6 @@ export default function BiasMethodologyPage({}: Route.ComponentProps) {
   return (
     <div className="bg-background min-h-screen">
       <div className="mx-auto max-w-5xl px-1 py-6 sm:px-4 md:px-6 md:py-8">
-        {/* Header */}
         <div className="text mb-10">
           <LastUpdatedBadge date={LAST_UPDATED} className="mb-3" />
           <h1 className="text-primary mb-4 text-4xl font-bold tracking-tight md:text-4xl">
@@ -71,14 +70,12 @@ export default function BiasMethodologyPage({}: Route.ComponentProps) {
 
         <BiasRatingsLegend />
 
-        {/* Methodology Section */}
         <section className="mb-10">
           <h2 className="text-primary mb-4 text-2xl font-bold">
             Kako Določamo Ocene
           </h2>
 
           <div className="space-y-4">
-            {/* Research Papers */}
             <div className="rounded-lg">
               <div className="mb-3 flex items-center gap-2">
                 <BookOpen className="text-primary h-5 w-5" />

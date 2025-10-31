@@ -108,7 +108,7 @@ export default function CategoryPage({
           Domov
         </Link>
         <span className="text-primary">·</span>
-        <span className="text-primary uppercase">{params.category}</span>
+        <h1 className="text-primary uppercase">{params.category}</h1>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
         <HeroArticles articles={data.pages[0].articles.slice(0, sliceEnd)} />

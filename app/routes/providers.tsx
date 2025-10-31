@@ -237,7 +237,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
   return (
     <section>
       <div className="mt-0 flex flex-wrap items-center justify-between p-0 md:mt-8 md:p-4">
-        <h2 className="text-primary text-2xl font-bold md:text-5xl">Mediji</h2>
+        <h1 className="text-primary text-2xl font-bold md:text-5xl">Mediji</h1>
 
         <div className="mt-4 flex flex-wrap items-start justify-start gap-3 md:mt-0">
           <DropdownMenu>
@@ -331,14 +331,14 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
                   {biasKeyToLabel(provider.biasRating ?? "")}
                 </div>
               </div>
-              <h1
+              <h2
                 className={cn(
                   "text-[20px] leading-6 font-bold @min-[180px]:text-[35px] @min-[180px]:leading-8 @min-[400px]:text-[40px] @min-[400px]:leading-10",
                   provider.key === "necenzurirano" && "truncate", // not ideal, but works for now
                 )}
               >
                 {provider.name}
-              </h1>
+              </h2>
             </div>
           </div>
           <div

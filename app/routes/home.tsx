@@ -32,10 +32,10 @@ export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
     title: "Vidik - Slovenske novice iz vseh vidikov",
     description:
-      "Vidik je platforma, ki združuje novice iz vseh slovenskih medijev. Odkrijte, kako različni mediji poročajo o istih dogodkih in razumejte zgodbo z vseh vidikov. Politika, gospodarstvo, šport, kultura in več.",
+      "Vidik je platforma, ki združuje novice iz vseh slovenskih medijev. Odkrijte, kako različni mediji poročajo o istih dogodkih in razumejte zgodbo z vseh vidikov.",
     pathname: location.pathname,
     keywords:
-      "vidik, vidik slovenija, slovenske novice, aktualno, novice brez pristranskosti, medijska pristranskost, politika, gospodarstvo, šport, kriminal, kultura, zdravje, okolje, lokalno, slovenski mediji, objektivne novice, news aggregator slovenia",
+      "vidik, vidik slovenija, slovenske novice, ground news slovenia, ground news slovenija, aktualno, novice brez pristranskosti, medijska pristranskost, politika, gospodarstvo, šport, kriminal, kultura, zdravje, okolje, lokalno, slovenski mediji, objektivne novice, news aggregator slovenia",
     ogType: "website",
   });
 }

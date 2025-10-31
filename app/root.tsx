@@ -62,7 +62,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <link rel="manifest" href="/site.webmanifest" />
         <meta name="theme-color" content="#FFFFFF" />
 
-        {/* Additional SEO meta tags */}
         <meta name="format-detection" content="telephone=no" />
         <meta httpEquiv="x-ua-compatible" content="ie=edge" />
       </head>
