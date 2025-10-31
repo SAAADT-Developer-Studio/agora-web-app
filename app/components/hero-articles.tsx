@@ -1,6 +1,6 @@
+import type { ArticleType } from "~/lib/services/ranking";
 import { Article } from "./article";
 import ArticleBig from "./article-big";
-import type { ArticleType } from "~/lib/services/ranking";
 
 export default function HeroArticles({
   articles,

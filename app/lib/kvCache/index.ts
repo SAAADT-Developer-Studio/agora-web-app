@@ -1,3 +1,4 @@
+import type { CacheKey } from "~/lib/kvCache/keys";
 import { getEnv } from "~/utils/getEnv";
 
 export class KVCache {
@@ -12,7 +13,7 @@ export class KVCache {
       key,
       expirationTtl,
     }: {
-      key: string;
+      key: CacheKey;
       expirationTtl: number;
     },
   ): Promise<T> {
@@ -28,7 +29,7 @@ export class KVCache {
     return response;
   }
 
-  async get<T>(key: string): Promise<T | null> {
+  async get<T>(key: CacheKey): Promise<T | null> {
     const fullKey = this.getFullKey(key);
     const serializedValue = await this.cfCache.get(fullKey);
     if (serializedValue !== null) {
@@ -37,12 +38,12 @@ export class KVCache {
     return null;
   }
 
-  async put<T>(key: string, value: T, options?: KVNamespacePutOptions) {
+  async put<T>(key: CacheKey, value: T, options?: KVNamespacePutOptions) {
     const fullKey = this.getFullKey(key);
     await this.cfCache.put(fullKey, JSON.stringify(value), options);
   }
 
-  putDeferred<T>(key: string, value: T, options?: KVNamespacePutOptions) {
+  putDeferred<T>(key: CacheKey, value: T, options?: KVNamespacePutOptions) {
     const fullKey = this.getFullKey(key);
     this.ctx.waitUntil(
       this.cfCache.put(fullKey, JSON.stringify(value), options),

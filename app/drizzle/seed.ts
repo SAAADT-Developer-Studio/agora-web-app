@@ -21,10 +21,36 @@ async function main() {
     process.env.WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE!,
   );
 
+  const clusterRun = await prodDb.query.clusterRun.findFirst({
+    orderBy: desc(schema.clusterRun.createdAt),
+  });
+  if (!clusterRun) {
+    throw new Error(
+      "No cluster run found in production database. Something is horribly wrong.",
+    );
+  }
+  const clustersV2 = await prodDb.query.clusterV2.findMany({
+    where: (cluster, { eq }) => eq(cluster.runId, clusterRun.id),
+  });
+  const articleClusters = await prodDb.query.articleCluster.findMany({
+    where: (articleCluster, { eq }) => eq(articleCluster.runId, clusterRun.id),
+  });
+
+  // Get article IDs from the new cluster system
+  const articleIdsFromClusters = new Set(
+    articleClusters.map((ac) => ac.articleId),
+  );
+
   const newsProviders = await prodDb.query.newsProvider.findMany();
   const clusters = await prodDb.query.cluster.findMany();
+
+  // Fetch articles from both old and new cluster systems
   const articles = await prodDb.query.article.findMany({
-    where: (article, { isNotNull }) => isNotNull(article.clusterId),
+    where: (article, { isNotNull, inArray, or }) =>
+      or(
+        isNotNull(article.clusterId),
+        inArray(article.id, Array.from(articleIdsFromClusters)),
+      ),
   });
 
   const votes = await prodDb.query.vote.findMany({
@@ -33,14 +59,24 @@ async function main() {
   });
 
   await devDb.transaction(async (tx) => {
-    await tx.delete(schema.article);
-    await tx.delete(schema.cluster);
+    // Delete in order: child tables first, then parent tables
+    await tx.delete(schema.articleCluster);
     await tx.delete(schema.vote);
+    await tx.delete(schema.article);
+    await tx.delete(schema.clusterV2);
+    await tx.delete(schema.clusterRun);
+    await tx.delete(schema.cluster);
     await tx.delete(schema.newsProvider);
 
+    // Insert in order: parent tables first, then child tables
     await tx.insert(schema.newsProvider).values(newsProviders);
     await tx.insert(schema.cluster).values(clusters);
+    await tx.insert(schema.clusterRun).values(clusterRun);
+    await tx.insert(schema.clusterV2).values(clustersV2);
     await tx.insert(schema.article).values(articles);
+    if (articleClusters.length > 0) {
+      await tx.insert(schema.articleCluster).values(articleClusters);
+    }
     if (votes.length > 0) {
       await tx.insert(schema.vote).values(votes);
     }

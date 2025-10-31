@@ -9,11 +9,14 @@ import {
   fetchInflationMonthlyYoY_SI,
   fetchSloveniaGDP,
 } from "~/lib/services/external";
-import { getCategoryArticles, getHomeArticles } from "~/lib/services/ranking";
+import {
+  getCategoryArticles,
+  getHomeArticles,
+  type ArticleType,
+} from "~/lib/services/ranking";
 import { getProviderStats } from "~/lib/services/homePageProviderStats";
 import { ProviderStatsCard } from "~/components/provider-stats-card";
 import { config, CategoryKey, type CategoryKeyValue } from "~/config";
-import type { ArticleType } from "~/lib/services/ranking";
 import type { Database } from "~/lib/db";
 
 const EconomyCard = lazy(() =>
@@ -27,6 +30,7 @@ import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { ErrorComponent } from "~/components/error-component";
 import { VotingCard } from "~/components/voting-card";
+import { HOME_CACHE_KEY } from "~/lib/kvCache/keys";
 
 export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
@@ -108,7 +112,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   const articles = await kvCache.cached(
     async () => await fetchHomeArticlesData({ db }),
     {
-      key: "data:home",
+      key: HOME_CACHE_KEY,
       expirationTtl: 10 * 60,
     },
   );

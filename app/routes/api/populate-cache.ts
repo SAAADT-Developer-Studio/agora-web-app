@@ -2,6 +2,11 @@ import { fetchCategoryArticlesData } from "~/routes/category";
 import type { Route } from "./+types/populate-cache";
 import { fetchHomeArticlesData } from "~/routes/home";
 import { config } from "~/config";
+import {
+  getCategoryCacheKey,
+  HOME_CACHE_KEY,
+  META_CACHE_KEY,
+} from "~/lib/kvCache/keys";
 
 export type CacheMeta = {
   lastUpdated: number;
@@ -17,7 +22,7 @@ export async function action({ context }: Route.ActionArgs) {
 
   const articles = await fetchHomeArticlesData({ db });
 
-  kvCache.putDeferred("data:home", articles, { expirationTtl: 30 * 60 });
+  kvCache.putDeferred(HOME_CACHE_KEY, articles, { expirationTtl: 30 * 60 });
 
   const categoryResults = await Promise.allSettled(
     config.categories.map((c) =>
@@ -28,7 +33,7 @@ export async function action({ context }: Route.ActionArgs) {
   categoryResults.forEach((result, index) => {
     if (result.status === "fulfilled") {
       const category = config.categories[index].key;
-      kvCache.putDeferred(`data:category:${category}`, result.value, {
+      kvCache.putDeferred(getCategoryCacheKey(category), result.value, {
         expirationTtl: 30 * 60,
       });
     } else {
@@ -40,7 +45,7 @@ export async function action({ context }: Route.ActionArgs) {
 
   const nextMeta = { lastUpdated: Date.now() } satisfies CacheMeta;
 
-  await kvCache.put("meta", nextMeta);
+  await kvCache.put(META_CACHE_KEY, nextMeta);
 
   console.log(
     "Cache populated at ",

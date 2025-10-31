@@ -2,8 +2,6 @@ import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/article";
 import { getSeoMetas } from "~/lib/seo";
 import fallbackArticleImage from "~/assets/fallback.png";
-import { cluster as clusterSchema } from "~/drizzle/schema";
-import { eq } from "drizzle-orm";
 import {
   Info,
   Newspaper,
@@ -21,7 +19,6 @@ import { ProviderImage } from "~/components/provider-image";
 import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import { Link } from "react-router";
-import { cn } from "~/lib/utils";
 import { InfoCard } from "~/components/ui/info-card";
 import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";
 
@@ -31,31 +28,54 @@ export function headers({}: Route.HeadersArgs) {
   };
 }
 
+type ArticlePageData = {
+  cluster: {
+    id: number;
+    title: string;
+    articles: {
+      id: number;
+      title: string;
+      url: string;
+      publishedAt: string;
+      summary: string | null;
+      newsProviderKey: string;
+      author: string | null;
+      imageUrls: string[] | null;
+    }[];
+  };
+  uniqueCategories: string[];
+  heroImageUrl: string;
+};
+
 export async function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
   const db = context.db;
 
-  let condition = eq(clusterSchema.slug, articleId);
-  if (Number.isInteger(Number.parseInt(articleId))) {
-    condition = eq(clusterSchema.id, Number.parseInt(articleId));
-  }
-
-  const cluster = await db.query.cluster.findFirst({
-    where: condition,
+  const cluster = await db.query.clusterV2.findFirst({
+    where: (clusterV2, { eq }) => {
+      if (Number.isInteger(Number.parseInt(articleId))) {
+        return eq(clusterV2.id, Number.parseInt(articleId));
+      }
+      return eq(clusterV2.slug, articleId);
+    },
     with: {
-      articles: {
-        columns: {
-          id: true,
-          title: true,
-          url: true,
-          publishedAt: true,
-          summary: true,
-          categories: true,
-          newsProviderKey: true,
-          imageUrls: true,
-          author: true,
+      articleClusters: {
+        with: {
+          article: {
+            columns: {
+              id: true,
+              title: true,
+              url: true,
+              publishedAt: true,
+              summary: true,
+              categories: true,
+              newsProviderKey: true,
+              imageUrls: true,
+              author: true,
+            },
+            with: { newsProvider: true },
+          },
         },
-        with: { newsProvider: true },
       },
     },
   });
@@ -64,8 +84,10 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     throw new Response("Article Not Found", { status: 404 });
   }
 
+  const articles = cluster.articleClusters.map((ac) => ac.article);
+
   const heroImageUrl = extractHeroImage(
-    cluster.articles.map((a) => {
+    articles.map((a) => {
       return {
         url: a.imageUrls ? a.imageUrls[0] : fallbackArticleImage,
         providerKey: a.newsProviderKey,
@@ -74,18 +96,22 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     }),
   );
 
-  cluster.articles.sort(
+  articles.sort(
     (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
   );
 
-  const allCategories = cluster.articles.flatMap((a) => a.categories || []);
+  const allCategories = articles.flatMap((a) => a.categories || []);
   const uniqueCategories = Array.from(new Set(allCategories));
 
   return {
-    cluster,
+    cluster: {
+      id: cluster.id,
+      title: cluster.title,
+      articles,
+    },
     uniqueCategories,
     heroImageUrl,
-  };
+  } satisfies ArticlePageData;
 }
 
 export default function ArticlePage({ loaderData }: Route.ComponentProps) {

@@ -1,9 +1,9 @@
-import type { ArticleType } from "~/lib/services/ranking";
 import CoverageBar from "./coverage-bar";
 import Tag from "./ui/tag";
 import { href, Link } from "react-router";
 import { Newspaper } from "lucide-react";
 import { cn } from "~/lib/utils";
+import type { ArticleType } from "~/lib/services/ranking";
 
 export function Article({
   id,
