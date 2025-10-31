@@ -1,7 +1,6 @@
-import { getCategoryArticlesWithOffset } from "~/lib/services/ranking";
-
 import type { Route } from "./+types/category";
 import { config } from "~/config";
+import { getCategoryArticles } from "~/lib/services/ranking";
 
 const categorySet = new Set<string>(config.categories.map((c) => c.key));
 
@@ -26,7 +25,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   if (!categorySet.has(category)) {
     throw new Response("Category Not Found", { status: 404 });
   }
-  const articles = await getCategoryArticlesWithOffset({
+  const articles = await getCategoryArticles({
     db: context.db,
     category,
     count: Number(count),

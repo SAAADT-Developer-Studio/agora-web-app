@@ -1,7 +1,11 @@
 import type { Database } from "~/lib/db";
-import { article, cluster } from "~/drizzle/schema";
-import { inArray, sql } from "drizzle-orm";
-import fallbackArticleImage from "~/assets/fallback.png";
+import {
+  article,
+  clusterV2,
+  articleCluster,
+  clusterRun,
+} from "~/drizzle/schema";
+import { sql } from "drizzle-orm";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 
@@ -83,17 +87,27 @@ export async function getHomeArticles({
   db: Database;
   count: number;
 }): Promise<ArticleType[]> {
+  // TODO: maybe pass in clusterRunId as param?
   const topClusterIds = await db.execute(sql`
-    WITH cluster_scores AS (
+    WITH latest_run AS (
+      SELECT ${clusterRun.id} as id
+      FROM ${clusterRun}
+      WHERE ${clusterRun.isProduction} = true
+      ORDER BY ${clusterRun.createdAt} DESC
+      LIMIT 1
+    ),
+    cluster_scores AS (
       SELECT
-        ${cluster.id} as id,
+        ${clusterV2.id} as id,
         count(${article.id}) as article_count,
         sum(${article.llmRank}) as sum_llm_rank,
         ${recencyScoreExpr} as recency_score,
         ${categoryScoreExpr} as category_score
-      FROM ${cluster}
-      INNER JOIN ${article} ON ${cluster.id} = ${article.clusterId}
-      GROUP BY ${cluster.id}
+      FROM ${clusterV2}
+      INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
+      INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
+      WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
+      GROUP BY ${clusterV2.id}
       HAVING count(${article.id}) > 0
     ),
     normalized_scores AS (
@@ -131,81 +145,34 @@ export async function getCategoryArticles({
   db,
   category,
   count,
-}: {
-  db: Database;
-  category: string;
-  count: number;
-}): Promise<ArticleType[]> {
-  // First, get the normalized scores using a subquery
-  const topClusterIds = await db.execute(sql`
-    WITH cluster_scores AS (
-      SELECT
-        ${cluster.id} as id,
-        count(${article.id}) as article_count,
-        sum(${article.llmRank}) as sum_llm_rank,
-        ${recencyScoreExpr} as recency_score,
-        ${categoryScoreExpr} as category_score
-      FROM ${cluster}
-      INNER JOIN ${article} ON ${cluster.id} = ${article.clusterId}
-      WHERE ${category} = ${article.categories}[1]
-      GROUP BY ${cluster.id}
-      HAVING count(${article.id}) > 0
-    ),
-    normalized_scores AS (
-      SELECT
-        id,
-        article_count,
-        recency_score,
-        category_score,
-        CASE
-          WHEN MAX(sum_llm_rank) OVER () > 0
-          THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
-          ELSE 0
-        END as cluster_llm_rank_score
-      FROM cluster_scores
-    )
-    SELECT
-      id,
-      article_count,
-      cluster_llm_rank_score,
-      recency_score,
-      category_score,
-      (cluster_llm_rank_score * 0.5 + recency_score * 0.3 + category_score * 0.2) as combined_score
-    FROM normalized_scores
-    ORDER BY combined_score DESC
-    LIMIT ${count}
-  `);
-
-  return await common(
-    db,
-    topClusterIds.rows as { id: number; article_count: number }[],
-  );
-}
-
-export async function getCategoryArticlesWithOffset({
-  db,
-  category,
-  count,
   offset,
 }: {
   db: Database;
   category: string;
   count: number;
-  offset: number;
+  offset?: number;
 }): Promise<ArticleType[]> {
-  // First, get the normalized scores using a subquery
   const topClusterIds = await db.execute(sql`
-    WITH cluster_scores AS (
+    WITH latest_run AS (
+      SELECT ${clusterRun.id} as id
+      FROM ${clusterRun}
+      WHERE ${clusterRun.isProduction} = true
+      ORDER BY ${clusterRun.createdAt} DESC
+      LIMIT 1
+    ),
+    cluster_scores AS (
       SELECT
-        ${cluster.id} as id,
+        ${clusterV2.id} as id,
         count(${article.id}) as article_count,
         sum(${article.llmRank}) as sum_llm_rank,
         ${recencyScoreExpr} as recency_score,
         ${categoryScoreExpr} as category_score
-      FROM ${cluster}
-      INNER JOIN ${article} ON ${cluster.id} = ${article.clusterId}
-      WHERE ${category} = ${article.categories}[1]
-      GROUP BY ${cluster.id}
+      FROM ${clusterV2}
+      INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
+      INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
+      WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
+        AND ${category} = ANY(${article.categories})
+      GROUP BY ${clusterV2.id}
       HAVING count(${article.id}) > 0
     ),
     normalized_scores AS (
@@ -231,7 +198,7 @@ export async function getCategoryArticlesWithOffset({
     FROM normalized_scores
     ORDER BY combined_score DESC
     LIMIT ${count}
-    OFFSET ${offset}
+    OFFSET ${offset ?? 0}
   `);
 
   return await common(
@@ -243,19 +210,27 @@ export async function getCategoryArticlesWithOffset({
 async function common(
   db: Database,
   clusterIds: { id: number; article_count: number }[],
-) {
-  const topClusters = await db.query.cluster.findMany({
-    where: inArray(
-      cluster.id,
-      clusterIds.map((c) => c.id),
-    ),
+): Promise<ArticleType[]> {
+  const topClusters = await db.query.clusterV2.findMany({
+    where: (cluster, { and, inArray }) =>
+      and(
+        inArray(
+          cluster.id,
+          clusterIds.map((c) => c.id),
+        ),
+      ),
     with: {
-      articles: {
-        columns: { imageUrls: true, categories: true },
-        with: { newsProvider: true },
+      articleClusters: {
+        with: {
+          article: {
+            columns: { imageUrls: true, categories: true },
+            with: { newsProvider: true },
+          },
+        },
       },
     },
   });
+
   topClusters.sort((a, b) => {
     const aCount = clusterIds.find((c) => c.id === a.id)?.article_count ?? 0;
     const bCount = clusterIds.find((c) => c.id === b.id)?.article_count ?? 0;
@@ -263,8 +238,10 @@ async function common(
   });
 
   const articles: ArticleType[] = topClusters.map((c) => {
+    const clusterArticles = c.articleClusters.map((ac) => ac.article);
+
     const imgSrc = extractHeroImage(
-      c.articles
+      clusterArticles
         .filter((a) => a.imageUrls && a.imageUrls.length > 0)
         .map((a) => {
           return {
@@ -276,15 +253,17 @@ async function common(
     );
 
     const tags = new Set(
-      c.articles
+      clusterArticles
         .map((a) => a.categories)
         .filter((c) => c !== null)
         .flat(),
     );
 
-    const biasDistribution = getBiasDistribution(c.articles);
+    const biasDistribution = getBiasDistribution(clusterArticles);
 
-    const providerKeys = new Set(c.articles.map((a) => a.newsProvider.key));
+    const providerKeys = new Set(
+      clusterArticles.map((a) => a.newsProvider.key),
+    );
 
     return {
       id: c.id.toString(),
@@ -292,12 +271,12 @@ async function common(
       title: c.title,
       image: {
         src: imgSrc,
-        alt: "Placeholder Image 1",
+        alt: "Placeholder Image 1", // TODO: fix this or get rid of it
       },
-      tags: Array.from(tags).slice(0, 3), // this is majorly fucked, so fix it later
+      tags: Array.from(tags).slice(0, 3),
       biasDistribution,
       showTags: true,
-      numberOfArticles: c.articles.length,
+      numberOfArticles: clusterArticles.length,
       providerKeys: Array.from(providerKeys),
     };
   });

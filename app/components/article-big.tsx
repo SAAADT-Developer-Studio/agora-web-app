@@ -2,8 +2,8 @@ import Tag from "./ui/tag";
 import CoverageBarBig from "./coverage-bar big";
 import { Sources } from "./sources";
 import { href, Link } from "react-router";
-import type { ArticleType } from "~/lib/services/ranking";
 import { useMediaQuery } from "~/hooks/use-media-query";
+import type { ArticleType } from "~/lib/services/ranking";
 
 export default function ArticleBig({
   id,

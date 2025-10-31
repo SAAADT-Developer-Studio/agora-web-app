@@ -4,13 +4,12 @@ import { config } from "~/config";
 import { data, Link } from "react-router";
 import { useMediaQuery } from "~/hooks/use-media-query";
 import HeroArticles from "~/components/hero-articles";
-import type { ArticleType } from "~/lib/services/ranking";
 import { Article } from "~/components/article";
-import { getCategoryArticlesWithOffset } from "~/lib/services/ranking";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader } from "lucide-react";
 import type { Database } from "~/lib/db";
 import { getMaxAge } from "~/utils/getMaxAge";
+import { getCategoryArticles, type ArticleType } from "~/lib/services/ranking";
 
 const categorySet = new Set<string>(config.categories.map((c) => c.key));
 
@@ -36,7 +35,7 @@ export async function fetchCategoryArticlesData({
   db: Database;
   category: string;
 }) {
-  const articles = await getCategoryArticlesWithOffset({
+  const articles = await getCategoryArticles({
     db,
     category,
     count: 21,

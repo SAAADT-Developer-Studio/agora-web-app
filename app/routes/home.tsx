@@ -9,11 +9,14 @@ import {
   fetchInflationMonthlyYoY_SI,
   fetchSloveniaGDP,
 } from "~/lib/services/external";
-import { getCategoryArticles, getHomeArticles } from "~/lib/services/ranking";
+import {
+  getCategoryArticles,
+  getHomeArticles,
+  type ArticleType,
+} from "~/lib/services/ranking";
 import { getProviderStats } from "~/lib/services/homePageProviderStats";
 import { ProviderStatsCard } from "~/components/provider-stats-card";
 import { config, CategoryKey, type CategoryKeyValue } from "~/config";
-import type { ArticleType } from "~/lib/services/ranking";
 import type { Database } from "~/lib/db";
 
 const EconomyCard = lazy(() =>
