@@ -217,7 +217,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
                         </div>
 
                         <h3 className="text-primary group-hover:text-accent text-md mb-2 line-clamp-1 leading-snug font-semibold text-pretty transition-colors md:text-lg">
-                          {article.title}
+                          {article.title.replaceAll("&quot;", '"')}
                         </h3>
 
                         {article.summary && (
