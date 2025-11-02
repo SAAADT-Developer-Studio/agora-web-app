@@ -35,16 +35,12 @@ async function main() {
   const articleClusters = await prodDb.query.articleCluster.findMany({
     where: (articleCluster, { eq }) => eq(articleCluster.runId, clusterRun.id),
   });
-
   // Get article IDs from the new cluster system
   const articleIdsFromClusters = new Set(
     articleClusters.map((ac) => ac.articleId),
   );
-
   const newsProviders = await prodDb.query.newsProvider.findMany();
   const clusters = await prodDb.query.cluster.findMany();
-
-  // Fetch articles from both old and new cluster systems
   const articles = await prodDb.query.article.findMany({
     where: (article, { isNotNull, inArray, or }) =>
       or(
@@ -52,17 +48,20 @@ async function main() {
         inArray(article.id, Array.from(articleIdsFromClusters)),
       ),
   });
-
   const votes = await prodDb.query.vote.findMany({
     limit: 10000,
     orderBy: [desc(schema.vote.createdAt)],
   });
+  const socialPosts = await prodDb.query.socialPost.findMany();
+  const articleSocialPosts = await prodDb.query.articleSocialPost.findMany();
 
   await devDb.transaction(async (tx) => {
     // Delete in order: child tables first, then parent tables
+    await tx.delete(schema.articleSocialPost);
     await tx.delete(schema.articleCluster);
     await tx.delete(schema.vote);
     await tx.delete(schema.article);
+    await tx.delete(schema.socialPost);
     await tx.delete(schema.clusterV2);
     await tx.delete(schema.clusterRun);
     await tx.delete(schema.cluster);
@@ -73,9 +72,15 @@ async function main() {
     await tx.insert(schema.cluster).values(clusters);
     await tx.insert(schema.clusterRun).values(clusterRun);
     await tx.insert(schema.clusterV2).values(clustersV2);
+    if (socialPosts.length > 0) {
+      await tx.insert(schema.socialPost).values(socialPosts);
+    }
     await tx.insert(schema.article).values(articles);
     if (articleClusters.length > 0) {
       await tx.insert(schema.articleCluster).values(articleClusters);
+    }
+    if (articleSocialPosts.length > 0) {
+      await tx.insert(schema.articleSocialPost).values(articleSocialPosts);
     }
     if (votes.length > 0) {
       await tx.insert(schema.vote).values(votes);
