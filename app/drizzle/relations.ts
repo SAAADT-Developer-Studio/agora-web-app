@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { article, articleCluster, clusterV2, clusterRun, cluster, newsProvider, vote } from "./schema";
+import { article, articleCluster, clusterV2, clusterRun, cluster, newsProvider, articleSocialPost, socialPost, vote } from "./schema";
 
 export const articleClusterRelations = relations(articleCluster, ({one}) => ({
 	article: one(article, {
@@ -26,6 +26,7 @@ export const articleRelations = relations(article, ({one, many}) => ({
 		fields: [article.newsProviderKey],
 		references: [newsProvider.key]
 	}),
+	articleSocialPosts: many(articleSocialPost),
 }));
 
 export const clusterV2Relations = relations(clusterV2, ({one, many}) => ({
@@ -48,6 +49,21 @@ export const clusterRelations = relations(cluster, ({many}) => ({
 export const newsProviderRelations = relations(newsProvider, ({many}) => ({
 	articles: many(article),
 	votes: many(vote),
+}));
+
+export const articleSocialPostRelations = relations(articleSocialPost, ({one}) => ({
+	article: one(article, {
+		fields: [articleSocialPost.articleId],
+		references: [article.id]
+	}),
+	socialPost: one(socialPost, {
+		fields: [articleSocialPost.socialPostId],
+		references: [socialPost.id]
+	}),
+}));
+
+export const socialPostRelations = relations(socialPost, ({many}) => ({
+	articleSocialPosts: many(articleSocialPost),
 }));
 
 export const voteRelations = relations(vote, ({one}) => ({
