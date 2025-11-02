@@ -13,7 +13,8 @@ export function biasKeyToColor(biasKey: string, withOpacity = false): string {
     left: "bg-[#FA2D36]/70 border-1 md:border-2 border-[#FA2D36] text-vidikwhite",
     "center-left":
       "bg-[#FF6166]/70 border-1 md:border-2 border-[#FF6166] text-vidikwhite",
-    center: "bg-[#FEFFFF]/90 border-1 md:border-2 border-[#FEFFFF] text-black",
+    center:
+      "bg-[#FEFFFF]/90 border-1 md:border-2 dark:border-[#FEFFFF] border-vidikblack/10 text-black",
     "center-right":
       "bg-[#52A1FF]/70 border md:border-2 border-[#52A1FF] text-vidikwhite",
     right:

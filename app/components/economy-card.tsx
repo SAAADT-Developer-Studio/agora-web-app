@@ -174,7 +174,6 @@ function GDPChart({ gdpData }: { gdpData: { year: string; gdp: number }[] }) {
           content={
             <ChartTooltipContent
               className="border-none"
-              nameKey="gdp"
               labelFormatter={(label, payload) => {
                 const value = payload && payload[0]?.value;
                 return `${label} — ${Intl.NumberFormat("sl-SI").format(Number(value))} mio €`;
@@ -228,10 +227,10 @@ function InflationChart({
           />
 
           <ChartTooltip
-            cursor={{ fill: "black" }}
+            cursor={{ fill: "#5a5a5a" }}
             content={
               <ChartTooltipContent
-                nameKey="hicp"
+                className="border-none"
                 labelFormatter={(v: string, payload: any) => {
                   const [y, m] = v.split("-");
                   const value = payload && payload[0]?.value;
