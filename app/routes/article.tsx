@@ -150,7 +150,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
           ))}
         </div>
 
-        <h1 className="text-primary mb-8 text-xl leading-normal font-bold tracking-tight text-balance md:text-3xl md:leading-tight lg:text-4xl">
+        <h1 className="text-primary mb-8 line-clamp-3 text-xl leading-normal font-bold tracking-tight text-balance md:text-3xl md:leading-tight lg:text-4xl">
           {cluster.title}
         </h1>
 

@@ -35,14 +35,14 @@ const categories = [
   { key: CategoryKey.kriminal, name: "KRIMINAL", path: "/kriminal" },
   { key: CategoryKey.lokalno, name: "LOKALNO", path: "/lokalno" },
   { key: CategoryKey.sport, name: "ŠPORT", path: "/sport" },
-  { key: CategoryKey.kultura, name: "KULTURA", path: "/kultura" },
-  { key: CategoryKey.zdravje, name: "ZDRAVJE", path: "/zdravje" },
-  { key: CategoryKey.okolje, name: "OKOLJE", path: "/okolje" },
   {
     key: CategoryKey.tehnologijaZnanost,
     name: "TEHNOLOGIJA & ZNANOST",
     path: "/tehnologija-znanost",
   },
+  { key: CategoryKey.kultura, name: "KULTURA", path: "/kultura" },
+  { key: CategoryKey.zdravje, name: "ZDRAVJE", path: "/zdravje" },
+  { key: CategoryKey.okolje, name: "OKOLJE", path: "/okolje" },
 ];
 
 export const config = {

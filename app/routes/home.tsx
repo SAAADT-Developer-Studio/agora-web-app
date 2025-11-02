@@ -68,11 +68,28 @@ export async function fetchHomeArticlesData({ db }: { db: Database }) {
   return await resolvePromises(promiseMap);
 }
 export async function fetchRandomProviders({ db }: { db: Database }) {
+  const now = new Date();
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    0,
+    0,
+    0,
+    0,
+  );
+
   const rank0 = await db.query.newsProvider.findMany({
     orderBy: sql`RANDOM()`,
     where: (newsProvider) =>
       sql`${newsProvider.rank} = 0 AND ${newsProvider.biasRating} IS NOT NULL`,
-    limit: 2,
+    limit: 1,
+    with: {
+      articles: {
+        where: (article) =>
+          sql`${article.publishedAt} >= ${startOfToday.toISOString()}`,
+      },
+    },
   });
 
   const rank1 = await db.query.newsProvider.findMany({
@@ -80,6 +97,12 @@ export async function fetchRandomProviders({ db }: { db: Database }) {
     where: (newsProvider) =>
       sql`${newsProvider.rank} = 1 AND ${newsProvider.biasRating} IS NOT NULL`,
     limit: 1,
+    with: {
+      articles: {
+        where: (article) =>
+          sql`${article.publishedAt} >= ${startOfToday.toISOString()}`,
+      },
+    },
   });
 
   const rank2 = await db.query.newsProvider.findMany({
@@ -87,23 +110,37 @@ export async function fetchRandomProviders({ db }: { db: Database }) {
     where: (newsProvider) =>
       sql`${newsProvider.rank} = 2 AND ${newsProvider.biasRating} IS NOT NULL`,
     limit: 1,
+    with: {
+      articles: {
+        where: (article) =>
+          sql`${article.publishedAt} >= ${startOfToday.toISOString()}`,
+      },
+    },
   });
 
   const rank3 = await db.query.newsProvider.findMany({
     orderBy: sql`RANDOM()`,
     where: (newsProvider) =>
-      sql`${newsProvider.rank} = 3 AND ${newsProvider.biasRating} IS NOT NULL`,
+      sql`(${newsProvider.rank} = 3 OR ${newsProvider.rank} = 4) AND ${newsProvider.biasRating} IS NOT NULL`,
     limit: 1,
+    with: {
+      articles: {
+        where: (article) =>
+          sql`${article.publishedAt} >= ${startOfToday.toISOString()}`,
+      },
+    },
   });
 
-  const rank4 = await db.query.newsProvider.findMany({
-    orderBy: sql`RANDOM()`,
-    where: (newsProvider) =>
-      sql`${newsProvider.rank} = 4 AND ${newsProvider.biasRating} IS NOT NULL`,
-    limit: 1,
-  });
+  const allProviders = [...rank0, ...rank1, ...rank2, ...rank3];
 
-  return [...rank0, ...rank1, ...rank2, ...rank3, ...rank4];
+  return allProviders.map((provider) => ({
+    name: provider.name,
+    key: provider.key,
+    url: provider.url,
+    rank: provider.rank,
+    biasRating: provider.biasRating,
+    articleCountToday: provider.articles?.length ?? 0,
+  }));
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
