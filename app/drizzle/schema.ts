@@ -90,6 +90,35 @@ export const clusterV2 = pgTable("cluster_v2", {
 	unique("cluster_v2_slug_key").on(table.slug),
 ]);
 
+export const articleSocialPost = pgTable("article_social_post", {
+	id: serial().primaryKey().notNull(),
+	articleId: integer("article_id").notNull(),
+	socialPostId: integer("social_post_id").notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.articleId],
+			foreignColumns: [article.id],
+			name: "article_social_post_article_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.socialPostId],
+			foreignColumns: [socialPost.id],
+			name: "article_social_post_social_post_id_fkey"
+		}).onDelete("cascade"),
+	unique("uq_article_social_post").on(table.articleId, table.socialPostId),
+]);
+
+export const socialPost = pgTable("social_post", {
+	id: serial().primaryKey().notNull(),
+	platform: varchar({ length: 6 }).notNull(),
+	url: varchar().notNull(),
+	postedAt: timestamp("posted_at", { withTimezone: true, mode: 'string' }),
+	platformMetadata: jsonb("platform_metadata"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
+}, (table) => [
+	unique("social_post_url_key").on(table.url),
+]);
+
 export const alembicVersion = pgTable("alembic_version", {
 	versionNum: varchar("version_num", { length: 32 }).primaryKey().notNull(),
 });
