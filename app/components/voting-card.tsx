@@ -40,7 +40,7 @@ export function VotingCard({
           </div>
         </div>
       </SideCardHeader>
-      <div className="flex flex-col items-center justify-around gap-2 px-4 pb-4 md:pb-2">
+      <div className="flex flex-1 flex-col items-center justify-around gap-2 px-4 pb-4 md:pb-2">
         <Suspense
           fallback={
             <>
