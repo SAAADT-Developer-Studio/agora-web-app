@@ -21,7 +21,7 @@ export function ProviderStatsCard({
     <SideCardContainer>
       <SideCardHeader>
         <div className="flex items-center gap-2">
-          <div className="rounded-md border border-current/15 p-2">
+          <div className="rounded-md border border-current/15 p-2 dark:bg-current/10">
             <ChartBar className="size-5" />
           </div>
           <div className="flex flex-col">
