@@ -4,6 +4,7 @@ import {
   clusterV2,
   articleCluster,
   clusterRun,
+  articleSocialPost,
 } from "~/drizzle/schema";
 import { sql } from "drizzle-orm";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
@@ -102,10 +103,12 @@ export async function getHomeArticles({
         count(${article.id}) as article_count,
         sum(${article.llmRank}) as sum_llm_rank,
         ${recencyScoreExpr} as recency_score,
-        ${categoryScoreExpr} as category_score
+        ${categoryScoreExpr} as category_score,
+        count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count
       FROM ${clusterV2}
       INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
       INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
+      LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
       WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
       GROUP BY ${clusterV2.id}
       HAVING count(${article.id}) > 0
@@ -116,11 +119,17 @@ export async function getHomeArticles({
         article_count,
         recency_score,
         category_score,
+        social_post_count,
         CASE
           WHEN MAX(sum_llm_rank) OVER () > 0
           THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
           ELSE 0
-        END as cluster_llm_rank_score
+        END as cluster_llm_rank_score,
+        CASE
+          WHEN MAX(social_post_count) OVER () > 0
+          THEN social_post_count::float / MAX(social_post_count) OVER ()
+          ELSE 0
+        END as social_score
       FROM cluster_scores
     )
     SELECT
@@ -129,7 +138,8 @@ export async function getHomeArticles({
       cluster_llm_rank_score,
       recency_score,
       category_score,
-      (cluster_llm_rank_score * 0.4 + recency_score * 0.2 + category_score * 0.3) as combined_score
+      social_score,
+      (cluster_llm_rank_score * 0.40 + recency_score * 0.2 + category_score * 0.25 + social_score * 0.15) as combined_score
     FROM normalized_scores
     ORDER BY combined_score DESC
     LIMIT ${count}
@@ -137,7 +147,7 @@ export async function getHomeArticles({
 
   return await common(
     db,
-    topClusterIds.rows as { id: number; article_count: number }[],
+    topClusterIds.rows as { id: number; combined_score: number }[],
   );
 }
 
@@ -166,12 +176,13 @@ export async function getCategoryArticles({
         count(${article.id}) as article_count,
         sum(${article.llmRank}) as sum_llm_rank,
         ${recencyScoreExpr} as recency_score,
-        ${categoryScoreExpr} as category_score
+        count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count
       FROM ${clusterV2}
       INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
       INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
+      LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
       WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
-        AND ${category} = ANY(${article.categories})
+        AND (${category} = ANY(ARRAY[${article.categories}[1], ${article.categories}[2]]))
       GROUP BY ${clusterV2.id}
       HAVING count(${article.id}) > 0
     ),
@@ -180,12 +191,17 @@ export async function getCategoryArticles({
         id,
         article_count,
         recency_score,
-        category_score,
+        social_post_count,
         CASE
           WHEN MAX(sum_llm_rank) OVER () > 0
           THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
           ELSE 0
-        END as cluster_llm_rank_score
+        END as cluster_llm_rank_score,
+        CASE
+          WHEN MAX(social_post_count) OVER () > 0
+          THEN social_post_count::float / MAX(social_post_count) OVER ()
+          ELSE 0
+        END as social_score
       FROM cluster_scores
     )
     SELECT
@@ -193,8 +209,8 @@ export async function getCategoryArticles({
       article_count,
       cluster_llm_rank_score,
       recency_score,
-      category_score,
-      (cluster_llm_rank_score * 0.5 + recency_score * 0.3 + category_score * 0.2) as combined_score
+      social_score,
+      (cluster_llm_rank_score * 0.5 + recency_score * 0.30 + social_score * 0.2) as combined_score
     FROM normalized_scores
     ORDER BY combined_score DESC
     LIMIT ${count}
@@ -203,13 +219,13 @@ export async function getCategoryArticles({
 
   return await common(
     db,
-    topClusterIds.rows as { id: number; article_count: number }[],
+    topClusterIds.rows as { id: number; combined_score: number }[],
   );
 }
 
 async function common(
   db: Database,
-  clusterIds: { id: number; article_count: number }[],
+  clusterIds: { id: number; combined_score: number }[],
 ): Promise<ArticleType[]> {
   const topClusters = await db.query.clusterV2.findMany({
     where: (cluster, { and, inArray }) =>
@@ -232,9 +248,9 @@ async function common(
   });
 
   topClusters.sort((a, b) => {
-    const aCount = clusterIds.find((c) => c.id === a.id)?.article_count ?? 0;
-    const bCount = clusterIds.find((c) => c.id === b.id)?.article_count ?? 0;
-    return bCount - aCount;
+    const aScore = clusterIds.find((c) => c.id === a.id)?.combined_score ?? 0;
+    const bScore = clusterIds.find((c) => c.id === b.id)?.combined_score ?? 0;
+    return bScore - aScore;
   });
 
   const articles: ArticleType[] = topClusters.map((c) => {
