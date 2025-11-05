@@ -79,7 +79,7 @@ export async function fetchRandomProviders({ db }: { db: Database }) {
     0,
   );
 
-  const rank0 = await db.query.newsProvider.findMany({
+  const rank0Promise = db.query.newsProvider.findMany({
     orderBy: sql`RANDOM()`,
     where: (newsProvider) =>
       sql`${newsProvider.rank} = 0 AND ${newsProvider.biasRating} IS NOT NULL`,
@@ -92,7 +92,7 @@ export async function fetchRandomProviders({ db }: { db: Database }) {
     },
   });
 
-  const rank1 = await db.query.newsProvider.findMany({
+  const rank1Promise = db.query.newsProvider.findMany({
     orderBy: sql`RANDOM()`,
     where: (newsProvider) =>
       sql`${newsProvider.rank} = 1 AND ${newsProvider.biasRating} IS NOT NULL`,
@@ -105,7 +105,7 @@ export async function fetchRandomProviders({ db }: { db: Database }) {
     },
   });
 
-  const rank2 = await db.query.newsProvider.findMany({
+  const rank2Promise = db.query.newsProvider.findMany({
     orderBy: sql`RANDOM()`,
     where: (newsProvider) =>
       sql`${newsProvider.rank} = 2 AND ${newsProvider.biasRating} IS NOT NULL`,
@@ -118,7 +118,7 @@ export async function fetchRandomProviders({ db }: { db: Database }) {
     },
   });
 
-  const rank3 = await db.query.newsProvider.findMany({
+  const rank3Promise = db.query.newsProvider.findMany({
     orderBy: sql`RANDOM()`,
     where: (newsProvider) =>
       sql`(${newsProvider.rank} = 3 OR ${newsProvider.rank} = 4) AND ${newsProvider.biasRating} IS NOT NULL`,
@@ -130,7 +130,12 @@ export async function fetchRandomProviders({ db }: { db: Database }) {
       },
     },
   });
-
+  const [rank0, rank1, rank2, rank3] = await Promise.all([
+    rank0Promise,
+    rank1Promise,
+    rank2Promise,
+    rank3Promise,
+  ]);
   const allProviders = [...rank0, ...rank1, ...rank2, ...rank3];
 
   return allProviders.map((provider) => ({
