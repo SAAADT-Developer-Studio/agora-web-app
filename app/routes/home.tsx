@@ -1,5 +1,5 @@
 import type { Route } from "./+types/home";
-import { sql } from "drizzle-orm";
+import { eq, isNotNull, sql, and, inArray } from "drizzle-orm";
 import { lazy } from "react";
 
 import HeroArticles from "~/components/hero-articles";
@@ -31,6 +31,7 @@ import { getMaxAge } from "~/utils/getMaxAge";
 import { ErrorComponent } from "~/components/error-component";
 import { VotingCard } from "~/components/voting-card";
 import { HOME_CACHE_KEY } from "~/lib/kvCache/keys";
+import { article, newsProvider } from "~/drizzle/schema";
 
 export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
@@ -78,68 +79,71 @@ export async function fetchRandomProviders({ db }: { db: Database }) {
     0,
     0,
   );
+  const cols = {
+    name: newsProvider.name,
+    key: newsProvider.key,
+    url: newsProvider.url,
+    rank: newsProvider.rank,
+    biasRating: newsProvider.biasRating,
+    articlesCountToday: sql<number>`
+      (
+        select count(*)
+        from ${article} a
+        where a.${article.newsProviderKey} = ${newsProvider.key}
+          and a.${article.publishedAt} >= ${startOfToday}
+      )
+    `.as("articles_count_today"),
+  };
 
-  const rank0 = await db.query.newsProvider.findMany({
-    orderBy: sql`RANDOM()`,
-    where: (newsProvider) =>
-      sql`${newsProvider.rank} = 0 AND ${newsProvider.biasRating} IS NOT NULL`,
-    limit: 1,
-    with: {
-      articles: {
-        where: (article) =>
-          sql`${article.publishedAt} >= ${startOfToday.toISOString()}`,
-      },
-    },
-  });
+  const rank0Promise = db
+    .select(cols)
+    .from(newsProvider)
+    .where(and(eq(newsProvider.rank, 0), isNotNull(newsProvider.biasRating)))
+    .orderBy(sql`RANDOM()`)
+    .limit(1);
 
-  const rank1 = await db.query.newsProvider.findMany({
-    orderBy: sql`RANDOM()`,
-    where: (newsProvider) =>
-      sql`${newsProvider.rank} = 1 AND ${newsProvider.biasRating} IS NOT NULL`,
-    limit: 1,
-    with: {
-      articles: {
-        where: (article) =>
-          sql`${article.publishedAt} >= ${startOfToday.toISOString()}`,
-      },
-    },
-  });
+  const rank1Promise = db
+    .select(cols)
+    .from(newsProvider)
+    .where(and(eq(newsProvider.rank, 1), isNotNull(newsProvider.biasRating)))
+    .orderBy(sql`RANDOM()`)
+    .limit(1);
 
-  const rank2 = await db.query.newsProvider.findMany({
-    orderBy: sql`RANDOM()`,
-    where: (newsProvider) =>
-      sql`${newsProvider.rank} = 2 AND ${newsProvider.biasRating} IS NOT NULL`,
-    limit: 1,
-    with: {
-      articles: {
-        where: (article) =>
-          sql`${article.publishedAt} >= ${startOfToday.toISOString()}`,
-      },
-    },
-  });
+  const rank2Promise = db
+    .select(cols)
+    .from(newsProvider)
+    .where(and(eq(newsProvider.rank, 2), isNotNull(newsProvider.biasRating)))
+    .orderBy(sql`RANDOM()`)
+    .limit(1);
 
-  const rank3 = await db.query.newsProvider.findMany({
-    orderBy: sql`RANDOM()`,
-    where: (newsProvider) =>
-      sql`(${newsProvider.rank} = 3 OR ${newsProvider.rank} = 4) AND ${newsProvider.biasRating} IS NOT NULL`,
-    limit: 1,
-    with: {
-      articles: {
-        where: (article) =>
-          sql`${article.publishedAt} >= ${startOfToday.toISOString()}`,
-      },
-    },
-  });
+  const rank3Promise = db
+    .select(cols)
+    .from(newsProvider)
+    .where(
+      and(
+        inArray(newsProvider.rank, [3, 4]),
+        isNotNull(newsProvider.biasRating),
+      ),
+    )
+    .orderBy(sql`RANDOM()`)
+    .limit(1);
+
+  const [rank0, rank1, rank2, rank3] = await Promise.all([
+    rank0Promise,
+    rank1Promise,
+    rank2Promise,
+    rank3Promise,
+  ]);
 
   const allProviders = [...rank0, ...rank1, ...rank2, ...rank3];
 
-  return allProviders.map((provider) => ({
-    name: provider.name,
-    key: provider.key,
-    url: provider.url,
-    rank: provider.rank,
-    biasRating: provider.biasRating,
-    articleCountToday: provider.articles?.length ?? 0,
+  return allProviders.map((p) => ({
+    name: p.name,
+    key: p.key,
+    url: p.url,
+    rank: p.rank,
+    biasRating: p.biasRating,
+    articleCountToday: Number(p.articlesCountToday ?? 0),
   }));
 }
 
