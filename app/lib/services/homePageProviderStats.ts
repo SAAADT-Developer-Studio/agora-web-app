@@ -1,6 +1,6 @@
 import { count, desc, asc, gte, and, eq } from "drizzle-orm";
 import { newsProvider, article } from "~/drizzle/schema";
-import type { Database } from "~/lib/db";
+import { type Database } from "~/lib/db";
 
 export async function getProviderStats({
   count: providerCount,

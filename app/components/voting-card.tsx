@@ -1,14 +1,11 @@
-import { Globe, Vote } from "lucide-react";
+import { Vote } from "lucide-react";
 import { SideCardContainer, SideCardHeader } from "./ui/side-card";
-import { Await, Link } from "react-router";
-import { href } from "react-router";
+import { Await, Link, href } from "react-router";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
-import { getProviderImageUrl, ProviderImage } from "./provider-image";
+import { getProviderImageUrl } from "./provider-image";
 import { ErrorUI } from "./ui/error-ui";
 import { Suspense } from "react";
-import { Spinner } from "./ui/spinner";
 import { biasKeyToColor } from "~/utils/biasKeyToColor";
-import { cn } from "~/lib/utils";
 import { Skeleton } from "./ui/skeleton";
 
 type ProviderType = {

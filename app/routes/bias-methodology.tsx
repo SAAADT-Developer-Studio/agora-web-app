@@ -1,12 +1,6 @@
 import { getSeoMetas } from "~/lib/seo";
 import type { Route } from "./+types/bias-methodology";
-import {
-  ExternalLink,
-  BookOpen,
-  Users,
-  FileSearch,
-  BarChart,
-} from "lucide-react";
+import { ExternalLink, BookOpen } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { LastUpdatedBadge } from "~/components/last-updated-badge";
 import { ErrorComponent } from "~/components/error-component";

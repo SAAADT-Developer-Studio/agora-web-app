@@ -4,7 +4,7 @@ import { getSeoMetas } from "~/lib/seo";
 import { ProviderImage } from "~/components/provider-image";
 import { ArrowLeftRight, Globe, Newspaper } from "lucide-react";
 import { Link, data, href } from "react-router";
-import { sql, and, gte, desc, count } from "drizzle-orm";
+import { gte, desc, count } from "drizzle-orm";
 import { article } from "~/drizzle/schema";
 import { Card } from "~/components/ui/card";
 import { useState, useMemo } from "react";
@@ -191,7 +191,7 @@ export function headers() {
   };
 }
 
-export async function loader({ params, context }: Route.LoaderArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const { db } = context;
 
   const providers = await db.query.newsProvider.findMany({
@@ -443,10 +443,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
   );
 }
 
-export function meta({
-  params,
-  location,
-}: Route.MetaArgs): Route.MetaDescriptors {
+export function meta({ location }: Route.MetaArgs): Route.MetaDescriptors {
   return getSeoMetas({
     title: "Mediji | Vidik",
     description: "Novičarske organizacije, ki jih podpira Vidik",

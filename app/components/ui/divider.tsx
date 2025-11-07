@@ -2,7 +2,6 @@ import { href, Link } from "react-router";
 
 export default function Divider({
   text,
-  reverse,
   categoryKey,
 }: Readonly<{ text?: string; reverse?: boolean; categoryKey: string }>) {
   return (

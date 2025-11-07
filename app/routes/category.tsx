@@ -115,7 +115,7 @@ export default function CategoryPage({
         ))}
         {data.pages
           .slice(1)
-          .map((page, pageIndex) =>
+          .map((page) =>
             page.articles.map((article) => (
               <Article key={article.id} {...article} />
             )),

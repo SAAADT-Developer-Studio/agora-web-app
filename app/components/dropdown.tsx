@@ -1,12 +1,10 @@
-import { DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu";
-import { Grip, Mail, GalleryHorizontalEnd, Book } from "lucide-react";
+import { Grip } from "lucide-react";
 import { Link } from "react-router";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 

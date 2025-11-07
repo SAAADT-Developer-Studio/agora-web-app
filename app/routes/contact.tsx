@@ -3,7 +3,7 @@ import type { Route } from "./+types/contact";
 import { getSeoMetas } from "~/lib/seo";
 import { Mail, MessageSquare } from "lucide-react";
 
-export function loader({ params }: Route.LoaderArgs) {
+export function loader({}: Route.LoaderArgs) {
   return null;
 }
 
@@ -78,10 +78,7 @@ export default function ContactPage({}: Route.ComponentProps) {
   );
 }
 
-export function meta({
-  params,
-  location,
-}: Route.MetaArgs): Route.MetaDescriptors {
+export function meta({ location }: Route.MetaArgs): Route.MetaDescriptors {
   return getSeoMetas({
     title: "Kontakt | Vidik",
     description:
