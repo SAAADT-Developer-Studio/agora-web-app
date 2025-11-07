@@ -153,7 +153,7 @@ export function EconomyCard({
 }
 
 function GDPChart({ gdpData }: { gdpData: { year: string; gdp: number }[] }) {
-  const [theme, setTheme] = useLocalStorage("theme", "light");
+  const [theme] = useLocalStorage("theme", "light");
   return (
     <ChartContainer config={gdpConfig} className="w-full md:w-[80%] lg:w-full">
       <BarChart accessibilityLayer data={gdpData} barCategoryGap={1}>
@@ -192,7 +192,7 @@ function InflationChart({
 }: {
   inflationData: { date: string; hicp: number }[];
 }) {
-  const [theme, setTheme] = useLocalStorage("theme", "light");
+  const [theme] = useLocalStorage("theme", "light");
   return (
     <ChartContainer
       config={inflationConfig}

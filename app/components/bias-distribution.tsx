@@ -71,8 +71,6 @@ export function BiasDistribution({
       }),
   }));
 
-  const providersWithoutBias = providers.filter((p) => !p.biasRating);
-
   return (
     <div
       className={cn(

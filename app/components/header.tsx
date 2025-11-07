@@ -1,7 +1,6 @@
 import { Suspense, useEffect, useState } from "react";
 import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
-import logoWhiteNoText from "~/assets/logo-no-text-light.svg";
 import logoNoText from "~/assets/logo-no-text.svg";
 import { ThemeSwitch } from "./theme-switch";
 import { Link, NavLink, useNavigation, href } from "react-router";

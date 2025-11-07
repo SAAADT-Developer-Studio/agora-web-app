@@ -1,6 +1,5 @@
 import { Newspaper } from "lucide-react";
 import { ProviderImage } from "~/components/provider-image";
-import { resolvePlural } from "~/utils/resolvePlural";
 
 export type SourcesProps = {
   numberOfArticles: number;

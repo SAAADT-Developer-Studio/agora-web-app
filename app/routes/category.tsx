@@ -11,6 +11,7 @@ import type { Database } from "~/lib/db";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { getCategoryArticles, type ArticleType } from "~/lib/services/ranking";
 import { getCategoryCacheKey } from "~/lib/kvCache/keys";
+import { get } from "~/lib/fetcher";
 
 const categorySet = new Set<string>(config.categories.map((c) => c.key));
 
@@ -19,14 +20,9 @@ async function fetchCategoryData(
   offset: number,
   count: number,
 ): Promise<{ articles: ArticleType[] }> {
-  return await fetch(
+  return await get<{ articles: ArticleType[] }>(
     `/api/category/${category}?count=${count}&offset=${offset}`,
-  ).then((res) => {
-    if (!res.ok) {
-      throw new Error(`Failed to fetch category data: ${res.statusText}`);
-    }
-    return res.json();
-  });
+  );
 }
 
 export async function fetchCategoryArticlesData({
@@ -96,6 +92,7 @@ export default function CategoryPage({
       },
       initialPageParam: 0,
       initialData: { pages: [{ articles }], pageParams: [0] },
+      staleTime: 3 * 60 * 1000,
     });
 
   const isLarge = useMediaQuery("(min-width: 64rem)");
@@ -117,7 +114,7 @@ export default function CategoryPage({
         ))}
         {data.pages
           .slice(1)
-          .map((page, pageIndex) =>
+          .map((page) =>
             page.articles.map((article) => (
               <Article key={article.id} {...article} />
             )),

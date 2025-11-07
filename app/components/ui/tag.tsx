@@ -1,6 +1,6 @@
 import { cn } from "~/lib/utils";
 
-export default function Tag({ text, big }: { text: string; big?: boolean }) {
+export default function Tag({ text }: { text: string; big?: boolean }) {
   return (
     <div
       className={cn(

@@ -143,7 +143,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
             VIDIK
           </Link>
           {uniqueCategories.slice(0, 4).map((category) => (
-            <span className="flex gap-3">
+            <span className="flex gap-3" key={category}>
               <span>•</span>
               <span className="capitalize">{category}</span>
             </span>
@@ -193,7 +193,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
           </h2>
 
           <div className="space-y-3 md:space-y-5">
-            {cluster.articles.map((article, index) => {
+            {cluster.articles.map((article) => {
               const publishDate = new Date(article.publishedAt);
               return (
                 <>

@@ -1,7 +1,7 @@
 import type { Route } from "./+types/donate";
 import { ErrorComponent } from "~/components/error-component";
 
-export function loader({ params }: Route.LoaderArgs) {}
+export function loader({}: Route.LoaderArgs) {}
 
 // export function clientLoader({ params }: Route.ClientLoaderArgs) {
 // }
@@ -15,7 +15,7 @@ export default function DonatePage({}: Route.ComponentProps) {
   );
 }
 
-export function meta({ params }: Route.MetaArgs): Route.MetaDescriptors {
+export function meta({}: Route.MetaArgs): Route.MetaDescriptors {
   return [
     {
       title: "Doniraj | Vidik",
