@@ -20,7 +20,6 @@ async function fetchCategoryData(
   offset: number,
   count: number,
 ): Promise<{ articles: ArticleType[] }> {
-  console.log("fetching category data", { category, offset, count });
   return await get<{ articles: ArticleType[] }>(
     `/api/category/${category}?count=${count}&offset=${offset}`,
   );
