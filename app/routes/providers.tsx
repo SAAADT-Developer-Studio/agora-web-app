@@ -194,7 +194,7 @@ export function headers() {
 export async function loader({ context }: Route.LoaderArgs) {
   const { db } = context;
 
-  const providers = await context.measurer.time(
+  const providersPromise = context.measurer.time(
     "fetchAllProviders",
     async () =>
       await db.query.newsProvider.findMany({
@@ -202,10 +202,15 @@ export async function loader({ context }: Route.LoaderArgs) {
       }),
   );
 
-  const providerStats = await context.measurer.time(
+  const providerStatsPromise = context.measurer.time(
     "fetchAllProviderStats",
     async () => await fetchAllProviderStats(db),
   );
+
+  const [providers, providerStats] = await Promise.all([
+    providersPromise,
+    providerStatsPromise,
+  ]);
 
   const providerStatsMap = buildProviderMap(providerStats);
 
