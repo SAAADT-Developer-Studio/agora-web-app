@@ -2,25 +2,15 @@ import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/article";
 import { getSeoMetas } from "~/lib/seo";
 import fallbackArticleImage from "~/assets/fallback.png";
-import {
-  Info,
-  Newspaper,
-  Calendar,
-  SatelliteDish,
-  Clock,
-  NotebookPen,
-} from "lucide-react";
+import { Info, Newspaper, Calendar, SatelliteDish } from "lucide-react";
 import { resolvePlural } from "~/utils/resolvePlural";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
 import { isSameHour } from "~/utils/isSameHour";
 import { extractHeroImage } from "~/utils/extractHeroImage";
-import { ProviderImage } from "~/components/provider-image";
-import { biasKeyToColor } from "~/utils/biasKeyToColor";
-import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import { Link } from "react-router";
 import { InfoCard } from "~/components/ui/info-card";
-import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";
+import { ArticleItem } from "~/components/article-item";
 import type { Database } from "~/lib/db";
 
 export function headers({}: Route.HeadersArgs) {
@@ -29,7 +19,7 @@ export function headers({}: Route.HeadersArgs) {
   };
 }
 
-type ArticlePageData = {
+export type ArticlePageData = {
   cluster: {
     id: number;
     title: string;
@@ -42,6 +32,13 @@ type ArticlePageData = {
       newsProviderKey: string;
       author: string | null;
       imageUrls: string[] | null;
+      isPaywalled: boolean | null;
+      newsProvider: {
+        key: string;
+        name: string;
+        biasRating: string | null;
+        rank: number;
+      };
     }[];
   };
   uniqueCategories: string[];
@@ -76,6 +73,7 @@ async function fetchClusterData({
               newsProviderKey: true,
               imageUrls: true,
               author: true,
+              isPaywalled: true,
             },
             with: { newsProvider: true },
           },
@@ -206,155 +204,9 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
           </h2>
 
           <div className="space-y-3 md:space-y-5">
-            {cluster.articles.map((article) => {
-              const publishDate = new Date(article.publishedAt);
-              return (
-                <>
-                  <a
-                    href={article.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    key={`${article.id}-desktop`}
-                    className="group bg-primary/5 border-primary/10 hover:bg-primary/9 relative hidden rounded-lg border p-4 transition-colors duration-200 md:block"
-                  >
-                    <div className="flex gap-4">
-                      <div className="flex-shrink-0">
-                        <ProviderImage
-                          provider={article.newsProvider}
-                          size={160}
-                          className="border-primary/10 h-[60px] w-[60px] rounded-lg border md:h-[160px] md:w-[160px]"
-                        />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-3 flex items-center justify-between">
-                          <div className="text-muted-foreground flex flex-wrap items-center gap-2 overflow-hidden text-xs">
-                            <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex items-center gap-1.5 rounded-sm border-2 px-3 py-1 text-[10px] font-medium tracking-wider uppercase">
-                              <Newspaper className="size-3" />
-                              {article.newsProvider.name}
-                            </span>
-                            <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex items-center gap-1.5 rounded-sm border-2 px-3 py-1 text-[10px] font-medium tracking-wider uppercase">
-                              <Clock className="size-3" />
-                              {timeDiffInSlovenian(publishDate)}
-                            </span>
-                            {article.author && (
-                              <>
-                                <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex items-center gap-1.5 rounded-sm border-2 px-3 py-1 text-[10px] font-medium tracking-wider uppercase">
-                                  <NotebookPen className="size-3" />
-                                  {article.author}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                          <div
-                            className={`flex h-[25.33px] items-center justify-center rounded-sm px-3 py-1 text-xs font-medium whitespace-nowrap uppercase ${biasKeyToColor(article.newsProvider.biasRating ?? "", true)}`}
-                          >
-                            {biasKeyToLabel(
-                              article.newsProvider.biasRating ?? "",
-                            )}
-                          </div>
-                        </div>
-
-                        <h3 className="text-primary group-hover:text-accent text-md mb-2 line-clamp-1 leading-snug font-semibold text-pretty transition-colors md:text-lg">
-                          {article.title.replaceAll("&quot;", '"')}
-                        </h3>
-
-                        {article.summary && (
-                          <p className="text-muted-foreground text-primary/70 line-clamp-3 text-xs leading-relaxed text-pretty md:text-sm">
-                            {article.summary}
-                          </p>
-                        )}
-                        <time
-                          dateTime={article.publishedAt}
-                          className="text-primary/70 absolute right-4 bottom-4 text-[10px]"
-                        >
-                          {publishDate.toLocaleDateString("sl-SI", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}{" "}
-                          ob{" "}
-                          {publishDate.toLocaleTimeString("sl-SI", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </time>
-                      </div>
-                    </div>
-                  </a>
-                  <a
-                    href={article.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    key={`${article.id}-mobile`}
-                    className="bg-primary/5 border-primary/10 relative block rounded-lg border p-2 md:hidden"
-                  >
-                    <div className="flex flex-col gap-2">
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="text-muted-foreground flex max-h-[22px] flex-wrap items-center gap-1 overflow-hidden text-xs">
-                          <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex h-[22px] items-center gap-1.5 rounded-sm border px-1 py-1 text-[8px] font-medium tracking-wider uppercase">
-                            <Newspaper className="size-2" />
-                            {article.newsProvider.name}
-                          </span>
-                          <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex h-[22px] items-center gap-1.5 rounded-sm border px-1 py-1 text-[8px] font-medium tracking-wider uppercase">
-                            <Clock className="size-2" />
-                            {timeDiffInSlovenian(publishDate)}
-                          </span>
-                          {article.author && (
-                            <>
-                              <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex h-[22px] items-center gap-1.5 rounded-sm border px-1 py-1 text-[8px] font-medium tracking-wider uppercase">
-                                <NotebookPen className="size-2" />
-                                {article.author}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                        <div
-                          className={`flex items-center justify-center rounded-sm px-1 py-1 text-[8px] font-medium whitespace-nowrap uppercase ${biasKeyToColor(article.newsProvider.biasRating ?? "", true)}`}
-                        >
-                          {biasKeyToLabel(
-                            article.newsProvider.biasRating ?? "",
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <ProviderImage
-                          provider={article.newsProvider}
-                          size={160}
-                          className="border-primary/10 h-[70px] w-[70px] rounded-lg border"
-                        />
-                        <h3 className="text-primary text-md line-clamp-3 leading-snug font-semibold text-pretty transition-colors md:text-lg">
-                          {article.title.replaceAll("&quot;", '"')}
-                        </h3>
-                      </div>
-
-                      <div className="mb-8 w-full">
-                        {article.summary && (
-                          <p className="text-muted-foreground text-primary/70 line-clamp-3 text-xs leading-relaxed text-pretty md:text-sm">
-                            {article.summary}
-                          </p>
-                        )}
-                        <time
-                          dateTime={article.publishedAt}
-                          className="text-primary/70 absolute right-2 bottom-2 text-[10px]"
-                        >
-                          {publishDate.toLocaleDateString("sl-SI", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}{" "}
-                          ob{" "}
-                          {publishDate.toLocaleTimeString("sl-SI", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </time>
-                      </div>
-                    </div>
-                  </a>
-                </>
-              );
-            })}
+            {cluster.articles.map((article) => (
+              <ArticleItem key={article.id} article={article} />
+            ))}
           </div>
         </div>
         <ArticleBottomBanner

@@ -1,7 +1,17 @@
-import { pgTable, foreignKey, unique, serial, integer, varchar, timestamp, doublePrecision, jsonb, boolean, primaryKey, uuid } from "drizzle-orm/pg-core"
+import { pgTable, index, serial, varchar, jsonb, boolean, timestamp, foreignKey, unique, integer, doublePrecision, primaryKey, uuid } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 
+
+export const clusterRun = pgTable("cluster_run", {
+	id: serial().primaryKey().notNull(),
+	algoVersion: varchar("algo_version").notNull(),
+	params: jsonb(),
+	isProduction: boolean("is_production").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
+}, (table) => [
+	index("ix_cluster_run_created_at").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops")),
+]);
 
 export const articleCluster = pgTable("article_cluster", {
 	id: serial().primaryKey().notNull(),
@@ -9,6 +19,7 @@ export const articleCluster = pgTable("article_cluster", {
 	clusterId: integer("cluster_id").notNull(),
 	runId: integer("run_id").notNull(),
 }, (table) => [
+	index("ix_article_cluster_cluster_id").using("btree", table.clusterId.asc().nullsLast().op("int4_ops")),
 	foreignKey({
 			columns: [table.articleId],
 			foreignColumns: [article.id],
@@ -27,6 +38,21 @@ export const articleCluster = pgTable("article_cluster", {
 	unique("uq_article_cluster_run").on(table.articleId, table.clusterId, table.runId),
 ]);
 
+export const clusterV2 = pgTable("cluster_v2", {
+	id: serial().primaryKey().notNull(),
+	title: varchar().notNull(),
+	slug: varchar(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
+	runId: integer("run_id").notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.runId],
+			foreignColumns: [clusterRun.id],
+			name: "cluster_v2_run_id_fkey"
+		}).onDelete("cascade"),
+	unique("cluster_v2_slug_key").on(table.slug),
+]);
+
 export const article = pgTable("article", {
 	id: serial().primaryKey().notNull(),
 	url: varchar().notNull(),
@@ -42,7 +68,9 @@ export const article = pgTable("article", {
 	imageUrls: varchar("image_urls").array(),
 	categories: varchar().array(),
 	llmRank: integer("llm_rank"),
+	isPaywalled: boolean("is_paywalled"),
 }, (table) => [
+	index("ix_article_published_at").using("btree", table.publishedAt.asc().nullsLast().op("timestamptz_ops")),
 	foreignKey({
 			columns: [table.clusterId],
 			foreignColumns: [cluster.id],
@@ -65,29 +93,6 @@ export const newsProvider = pgTable("news_provider", {
 }, (table) => [
 	unique("news_provider_name_key").on(table.name),
 	unique("news_provider_url_key").on(table.url),
-]);
-
-export const clusterRun = pgTable("cluster_run", {
-	id: serial().primaryKey().notNull(),
-	algoVersion: varchar("algo_version").notNull(),
-	params: jsonb(),
-	isProduction: boolean("is_production").notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
-});
-
-export const clusterV2 = pgTable("cluster_v2", {
-	id: serial().primaryKey().notNull(),
-	title: varchar().notNull(),
-	slug: varchar(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
-	runId: integer("run_id").notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.runId],
-			foreignColumns: [clusterRun.id],
-			name: "cluster_v2_run_id_fkey"
-		}).onDelete("cascade"),
-	unique("cluster_v2_slug_key").on(table.slug),
 ]);
 
 export const articleSocialPost = pgTable("article_social_post", {
