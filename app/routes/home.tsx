@@ -150,12 +150,13 @@ export async function fetchRandomProviders({ db }: { db: Database }) {
 export async function loader({ context }: Route.LoaderArgs) {
   const { db, kvCache } = context;
 
-  const articles = await kvCache.cached(
-    async () => await fetchHomeArticlesData({ db }),
-    {
-      key: HOME_CACHE_KEY,
-      expirationTtl: 10 * 60,
-    },
+  const articles = await context.measurer.time(
+    "fetchHomeArticlesData",
+    async () =>
+      await kvCache.cached(async () => await fetchHomeArticlesData({ db }), {
+        key: HOME_CACHE_KEY,
+        expirationTtl: 10 * 60,
+      }),
   );
 
   const randomProviders = fetchRandomProviders({ db });

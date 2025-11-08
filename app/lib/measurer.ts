@@ -19,7 +19,7 @@ export class Measurer {
     this.#measures.add({ name, duration, description });
   }
 
-  toHeaders(headers = new Headers()) {
+  appendServerTimingHeaders(headers = new Headers()) {
     for (let { name, duration, description } of this.#measures) {
       let value = `${name};dur=${duration}`;
       if (description) {
