@@ -43,7 +43,7 @@ export interface ProviderStats {
   month: PeriodStats;
 }
 
-async function getAllProviderStats(db: any): Promise<ProviderStats[]> {
+async function fetchAllProviderStats(db: any): Promise<ProviderStats[]> {
   const now = new Date();
 
   const startOfToday = new Date(
@@ -194,11 +194,18 @@ export function headers() {
 export async function loader({ context }: Route.LoaderArgs) {
   const { db } = context;
 
-  const providers = await db.query.newsProvider.findMany({
-    orderBy: (provider, { asc }) => [asc(provider.rank)],
-  });
+  const providers = await context.measurer.time(
+    "fetchAllProviders",
+    async () =>
+      await db.query.newsProvider.findMany({
+        orderBy: (provider, { asc }) => [asc(provider.rank)],
+      }),
+  );
 
-  const providerStats = await getAllProviderStats(db);
+  const providerStats = await context.measurer.time(
+    "fetchAllProviderStats",
+    async () => await fetchAllProviderStats(db),
+  );
 
   const providerStatsMap = buildProviderMap(providerStats);
 

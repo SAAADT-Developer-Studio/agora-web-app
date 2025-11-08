@@ -52,12 +52,16 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     throw new Response("Category Not Found", { status: 404 });
   }
 
-  const articles = await kvCache.cached(
-    async () => await fetchCategoryArticlesData({ db, category }),
-    {
-      key: getCategoryCacheKey(category),
-      expirationTtl: 10 * 60,
-    },
+  const articles = await context.measurer.time(
+    "fetchCategoryArticles",
+    async () =>
+      await kvCache.cached(
+        async () => await fetchCategoryArticlesData({ db, category }),
+        {
+          key: getCategoryCacheKey(category),
+          expirationTtl: 10 * 60,
+        },
+      ),
   );
 
   const maxAge = await getMaxAge(kvCache);

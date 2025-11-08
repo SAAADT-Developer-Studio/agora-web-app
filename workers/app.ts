@@ -42,7 +42,6 @@ export default {
           "public, max-age=0, must-revalidate",
         );
       }
-      measurer.toHeaders(response.headers);
       ctx.waitUntil(cache.put(request, response.clone()));
     }
 

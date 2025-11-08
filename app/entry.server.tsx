@@ -1,4 +1,10 @@
-import { type AppLoadContext, type EntryContext, ServerRouter  } from "react-router";
+import {
+  type ActionFunctionArgs,
+  type AppLoadContext,
+  type EntryContext,
+  type LoaderFunctionArgs,
+  ServerRouter,
+} from "react-router";
 import { isbot } from "isbot";
 import { renderToReadableStream } from "react-dom/server";
 
@@ -37,10 +43,19 @@ export default async function handleRequest(
   }
 
   responseHeaders.set("X-App-Version", routerContext.manifest.version);
-
   responseHeaders.set("Content-Type", "text/html; charset=utf-8");
+  _loadContext.measurer.appendServerTimingHeaders(responseHeaders);
+
   return new Response(body, {
     headers: responseHeaders,
     status: responseStatusCode,
   });
+}
+
+export function handleDataRequest(
+  response: Response,
+  { context }: LoaderFunctionArgs | ActionFunctionArgs,
+) {
+  context.measurer.appendServerTimingHeaders(response.headers);
+  return response;
 }

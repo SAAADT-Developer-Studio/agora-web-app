@@ -21,6 +21,7 @@ import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import { Link } from "react-router";
 import { InfoCard } from "~/components/ui/info-card";
 import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";
+import type { Database } from "~/lib/db";
 
 export function headers({}: Route.HeadersArgs) {
   return {
@@ -47,11 +48,14 @@ type ArticlePageData = {
   heroImageUrl: string;
 };
 
-export async function loader({ params, context }: Route.LoaderArgs) {
-  const articleId = params.articleId;
-  const db = context.db;
-
-  const cluster = await db.query.clusterV2.findFirst({
+async function fetchClusterData({
+  db,
+  articleId,
+}: {
+  db: Database;
+  articleId: string;
+}) {
+  return await db.query.clusterV2.findFirst({
     where: (clusterV2, { eq }) => {
       if (Number.isInteger(Number.parseInt(articleId))) {
         return eq(clusterV2.id, Number.parseInt(articleId));
@@ -79,6 +83,15 @@ export async function loader({ params, context }: Route.LoaderArgs) {
       },
     },
   });
+}
+
+export async function loader({ params, context }: Route.LoaderArgs) {
+  const articleId = params.articleId;
+  const db = context.db;
+
+  const cluster = await context.measurer.time("fetchClusterData", () =>
+    fetchClusterData({ db, articleId }),
+  );
 
   if (!cluster) {
     throw new Response("Article Not Found", { status: 404 });
