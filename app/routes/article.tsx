@@ -2,7 +2,14 @@ import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/article";
 import { getSeoMetas } from "~/lib/seo";
 import fallbackArticleImage from "~/assets/fallback.png";
-import { Info, Newspaper, Calendar, SatelliteDish } from "lucide-react";
+import {
+  Info,
+  Newspaper,
+  Calendar,
+  SatelliteDish,
+  Copy,
+  Share,
+} from "lucide-react";
 import { resolvePlural } from "~/utils/resolvePlural";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
@@ -12,6 +19,10 @@ import { Link } from "react-router";
 import { InfoCard } from "~/components/ui/info-card";
 import { ArticleItem } from "~/components/article-item";
 import type { Database } from "~/lib/db";
+import { Tooltip, TooltipContent } from "~/components/ui/tooltip";
+import { TooltipTrigger } from "@radix-ui/react-tooltip";
+import { useState } from "react";
+import { cn } from "~/lib/utils";
 
 export function headers({}: Route.HeadersArgs) {
   return {
@@ -149,16 +160,20 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
   return (
     <div className="bg-background min-h-screen">
       <article className="mx-auto max-w-5xl px-1 py-1 md:py-6">
-        <div className="text-muted-foreground mb-6 flex max-h-5 flex-wrap items-center gap-3 overflow-clip text-sm">
+        <div className="text-muted-foreground mb-6 flex items-center gap-3 text-sm">
           <Link to="/" className="tracking-wider">
             VIDIK
           </Link>
-          {uniqueCategories.slice(0, 4).map((category) => (
-            <span className="flex gap-3" key={category}>
-              <span>•</span>
-              <span className="capitalize">{category}</span>
-            </span>
-          ))}
+          <div className="flex max-h-5 flex-wrap gap-3 overflow-clip">
+            {uniqueCategories.slice(0, 4).map((category) => (
+              <span className="flex gap-3" key={category}>
+                <span>•</span>
+                <span className="capitalize">{category}</span>
+              </span>
+            ))}
+          </div>
+
+          <ShareButtons />
         </div>
 
         <h1 className="text-primary mb-8 line-clamp-3 text-xl leading-normal font-bold tracking-tight text-balance md:text-3xl md:leading-tight lg:text-4xl">
@@ -382,6 +397,69 @@ function ArticleBottomBanner({
         .
       </p>
     </InfoCard>
+  );
+}
+
+function ShareButtons() {
+  const [hasCopied, setHasCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard
+      .writeText(window.location.href)
+      .then(() => {
+        setHasCopied(true);
+        setTimeout(() => setHasCopied(false), 3000);
+      })
+      .catch((e) => {
+        console.error("Failed to copy: ", e);
+      });
+  };
+
+  const handleShare = () => {
+    navigator
+      .share({
+        title: document.title,
+        url: window.location.href,
+      })
+      .then(() => {
+        console.log("Shared!");
+      })
+      .catch((e) => {
+        console.error("Failed to share: ", e);
+      });
+  };
+
+  return (
+    <div className="ml-auto flex items-center gap-1.5">
+      <div className="relative flex flex-col items-center">
+        <Tooltip>
+          <TooltipTrigger
+            className="rounded-md border border-current/20 bg-current/10 p-2 transition-colors hover:bg-current/15 focus:ring-2 focus:ring-current/50 focus:ring-offset-1 focus:outline-none active:bg-current/20"
+            onClick={handleCopy}
+          >
+            <Copy className="size-3" />
+          </TooltipTrigger>
+          <TooltipContent>Kopiraj povezavo</TooltipContent>
+        </Tooltip>
+        <span
+          className={cn(
+            "text-muted-foreground pointer-events-none absolute top-full mt-1.5 text-xs transition-opacity duration-200",
+            hasCopied ? "opacity-100" : "opacity-0",
+          )}
+        >
+          Kopirano!
+        </span>
+      </div>
+      <Tooltip>
+        <TooltipTrigger
+          onClick={handleShare}
+          className="rounded-md border border-current/20 bg-current/10 p-2 transition-colors hover:bg-current/15 focus:ring-2 focus:ring-current/50 focus:ring-offset-1 focus:outline-none active:bg-current/20"
+        >
+          <Share className="size-3" />
+        </TooltipTrigger>
+        <TooltipContent>Deli</TooltipContent>
+      </Tooltip>
+    </div>
   );
 }
 

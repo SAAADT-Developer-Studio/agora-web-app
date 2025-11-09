@@ -1,4 +1,10 @@
-import { Newspaper, Clock, NotebookPen, DollarSign } from "lucide-react";
+import {
+  Newspaper,
+  Clock,
+  NotebookPen,
+  DollarSign,
+  type LucideIcon,
+} from "lucide-react";
 import { ProviderImage } from "~/components/provider-image";
 import {
   Tooltip,
@@ -14,10 +20,20 @@ import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";
 type Article = ArticlePageData["cluster"]["articles"][number];
 
 export function ArticleItem({ article }: { article: Article }) {
+  const formattedArticle = {
+    ...article,
+    title: article.title.replaceAll("&quot;", '"'),
+  };
   return (
     <>
-      <ArticleItemDesktop article={article} className="hidden md:block" />
-      <ArticleItemMobile article={article} className="block md:hidden" />
+      <ArticleItemDesktop
+        article={formattedArticle}
+        className="hidden md:block"
+      />
+      <ArticleItemMobile
+        article={formattedArticle}
+        className="block md:hidden"
+      />
     </>
   );
 }
@@ -53,25 +69,20 @@ function ArticleItemDesktop({
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex items-center justify-between">
             <div className="text-muted-foreground flex flex-wrap items-center gap-2 overflow-hidden text-xs">
-              <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex items-center gap-1.5 rounded-sm border-2 px-3 py-1 text-[10px] font-medium tracking-wider uppercase">
-                <Newspaper className="size-3" />
+              <ArticleMetadataBadge icon={Newspaper}>
                 {article.newsProvider.name}
-              </span>
-              <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex items-center gap-1.5 rounded-sm border-2 px-3 py-1 text-[10px] font-medium tracking-wider uppercase">
-                <Clock className="size-3" />
+              </ArticleMetadataBadge>
+              <ArticleMetadataBadge icon={Clock}>
                 {timeDiffInSlovenian(publishDate)}
-              </span>
+              </ArticleMetadataBadge>
               {article.author && (
-                <>
-                  <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex items-center gap-1.5 rounded-sm border-2 px-3 py-1 text-[10px] font-medium tracking-wider uppercase">
-                    <NotebookPen className="size-3" />
-                    {article.author}
-                  </span>
-                </>
+                <ArticleMetadataBadge icon={NotebookPen}>
+                  {article.author}
+                </ArticleMetadataBadge>
               )}
             </div>
             <div className="flex items-center gap-2">
-              {article.isPaywalled && <PaywallIcon triggerClassName="size-4" />}
+              {article.isPaywalled && <PaywallIcon className="size-4" />}
               <div
                 className={`flex h-[25.33px] items-center justify-center rounded-sm px-3 py-1 text-xs font-medium whitespace-nowrap uppercase ${biasKeyToColor(article.newsProvider.biasRating ?? "", true)}`}
               >
@@ -80,8 +91,11 @@ function ArticleItemDesktop({
             </div>
           </div>
 
-          <h3 className="text-primary group-hover:text-accent text-md mb-2 line-clamp-1 leading-snug font-semibold text-pretty transition-colors md:text-lg">
-            {article.title.replaceAll("&quot;", '"')}
+          <h3
+            className="text-primary group-hover:text-accent text-md mb-2 line-clamp-1 leading-snug font-semibold text-pretty transition-colors md:text-lg"
+            title={article.title}
+          >
+            {article.title}
           </h3>
 
           {article.summary && (
@@ -93,16 +107,7 @@ function ArticleItemDesktop({
             dateTime={article.publishedAt}
             className="text-primary/70 absolute right-4 bottom-4 text-[10px]"
           >
-            {publishDate.toLocaleDateString("sl-SI", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}{" "}
-            ob{" "}
-            {publishDate.toLocaleTimeString("sl-SI", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatArticleDate(publishDate)}
           </time>
         </div>
       </div>
@@ -118,6 +123,7 @@ function ArticleItemMobile({
   className: string;
 }) {
   const publishDate = new Date(article.publishedAt);
+
   return (
     <a
       href={article.url}
@@ -131,25 +137,32 @@ function ArticleItemMobile({
       <div className="flex flex-col gap-2">
         <div className="mb-2 flex items-center justify-between">
           <div className="text-muted-foreground flex max-h-[22px] flex-wrap items-center gap-1 overflow-hidden text-xs">
-            <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex h-[22px] items-center gap-1.5 rounded-sm border px-1 py-1 text-[8px] font-medium tracking-wider uppercase">
-              <Newspaper className="size-2" />
+            <ArticleMetadataBadge
+              icon={Newspaper}
+              className="h-[22px] border px-1 py-1 text-[8px]"
+              iconClassName="size-2"
+            >
               {article.newsProvider.name}
-            </span>
-            <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex h-[22px] items-center gap-1.5 rounded-sm border px-1 py-1 text-[8px] font-medium tracking-wider uppercase">
-              <Clock className="size-2" />
+            </ArticleMetadataBadge>
+            <ArticleMetadataBadge
+              icon={Clock}
+              className="h-[22px] border px-1 py-1 text-[8px]"
+              iconClassName="size-2"
+            >
               {timeDiffInSlovenian(publishDate)}
-            </span>
+            </ArticleMetadataBadge>
             {article.author && (
-              <>
-                <span className="bg-vidikgreen/60 border-vidikgreen text-primary flex h-[22px] items-center gap-1.5 rounded-sm border px-1 py-1 text-[8px] font-medium tracking-wider uppercase">
-                  <NotebookPen className="size-2" />
-                  {article.author}
-                </span>
-              </>
+              <ArticleMetadataBadge
+                icon={NotebookPen}
+                className="h-[22px] border px-1 py-1 text-[8px]"
+                iconClassName="size-2"
+              >
+                {article.author}
+              </ArticleMetadataBadge>
             )}
           </div>
           <div className="flex gap-1">
-            {article.isPaywalled && <PaywallIcon triggerClassName="size-3" />}
+            {article.isPaywalled && <PaywallIcon className="size-3" />}
             <div
               className={`flex items-center justify-center rounded-sm px-1 py-1 text-[8px] font-medium whitespace-nowrap uppercase ${biasKeyToColor(article.newsProvider.biasRating ?? "", true)}`}
             >
@@ -163,8 +176,11 @@ function ArticleItemMobile({
             size={160}
             className="border-primary/10 h-[70px] w-[70px] rounded-lg border"
           />
-          <h3 className="text-primary text-md line-clamp-3 leading-snug font-semibold text-pretty transition-colors md:text-lg">
-            {article.title.replaceAll("&quot;", '"')}
+          <h3
+            className="text-primary text-md line-clamp-3 leading-snug font-semibold text-pretty transition-colors md:text-lg"
+            title={article.title}
+          >
+            {article.title}
           </h3>
         </div>
 
@@ -178,16 +194,7 @@ function ArticleItemMobile({
             dateTime={article.publishedAt}
             className="text-primary/70 absolute right-2 bottom-2 text-[10px]"
           >
-            {publishDate.toLocaleDateString("sl-SI", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}{" "}
-            ob{" "}
-            {publishDate.toLocaleTimeString("sl-SI", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatArticleDate(publishDate)}
           </time>
         </div>
       </div>
@@ -195,15 +202,50 @@ function ArticleItemMobile({
   );
 }
 
-function PaywallIcon({ triggerClassName }: { triggerClassName?: string }) {
+function ArticleMetadataBadge({
+  icon: Icon,
+  children,
+  className,
+  iconClassName,
+}: {
+  icon: LucideIcon;
+  children: React.ReactNode;
+  className?: string;
+  iconClassName?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "bg-vidikgreen/60 border-vidikgreen text-primary flex items-center gap-1.5 rounded-sm border-2 px-3 py-1 text-[10px] font-medium tracking-wider uppercase",
+        className,
+      )}
+    >
+      <Icon className={cn("size-3", iconClassName)} />
+      {children}
+    </span>
+  );
+}
+
+function PaywallIcon({ className }: { className?: string }) {
   return (
     <Tooltip>
       <TooltipTrigger>
-        <DollarSign className={triggerClassName} />
+        <DollarSign className={className} />
       </TooltipTrigger>
       <TooltipContent>
         <span>Članek je plačljiv</span>
       </TooltipContent>
     </Tooltip>
   );
+}
+
+function formatArticleDate(date: Date): string {
+  return `${date.toLocaleDateString("sl-SI", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })} ob ${date.toLocaleTimeString("sl-SI", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
 }
