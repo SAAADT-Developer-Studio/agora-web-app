@@ -239,7 +239,7 @@ async function common(
       articleClusters: {
         with: {
           article: {
-            columns: { imageUrls: true, categories: true },
+            columns: { id: true, imageUrls: true, categories: true },
             with: { newsProvider: true },
           },
         },
@@ -256,17 +256,7 @@ async function common(
   const articles: ArticleType[] = topClusters.map((c) => {
     const clusterArticles = c.articleClusters.map((ac) => ac.article);
 
-    const imgSrc = extractHeroImage(
-      clusterArticles
-        .filter((a) => a.imageUrls && a.imageUrls.length > 0)
-        .map((a) => {
-          return {
-            url: a.imageUrls![0],
-            providerKey: a.newsProvider.key,
-            providerRank: a.newsProvider.rank,
-          };
-        }),
-    );
+    const imgSrc = extractHeroImage(clusterArticles);
 
     const tags = new Set(
       clusterArticles
