@@ -40,20 +40,22 @@ async function main() {
     articleClusters.map((ac) => ac.articleId),
   );
   const newsProviders = await prodDb.query.newsProvider.findMany();
-  const clusters = await prodDb.query.cluster.findMany();
-  const articles = await prodDb.query.article.findMany({
-    where: (article, { isNotNull, inArray, or }) =>
-      or(
-        isNotNull(article.clusterId),
-        inArray(article.id, Array.from(articleIdsFromClusters)),
-      ),
+  let articles = await prodDb.query.article.findMany({
+    where: (article, { inArray }) =>
+      inArray(article.id, Array.from(articleIdsFromClusters)),
   });
+  articles = articles.map((a) => ({ ...a, clusterId: null }));
   const votes = await prodDb.query.vote.findMany({
     limit: 10000,
     orderBy: [desc(schema.vote.createdAt)],
   });
   const socialPosts = await prodDb.query.socialPost.findMany();
-  const articleSocialPosts = await prodDb.query.articleSocialPost.findMany();
+  let articleSocialPosts = await prodDb.query.articleSocialPost.findMany();
+  // Filter to only include social posts for articles that are being seeded
+  const articleIds = new Set(articles.map((a) => a.id));
+  articleSocialPosts = articleSocialPosts.filter((asp) =>
+    articleIds.has(asp.articleId),
+  );
 
   await devDb.transaction(async (tx) => {
     // Delete in order: child tables first, then parent tables
@@ -69,7 +71,6 @@ async function main() {
 
     // Insert in order: parent tables first, then child tables
     await tx.insert(schema.newsProvider).values(newsProviders);
-    await tx.insert(schema.cluster).values(clusters);
     await tx.insert(schema.clusterRun).values(clusterRun);
     await tx.insert(schema.clusterV2).values(clustersV2);
     if (socialPosts.length > 0) {

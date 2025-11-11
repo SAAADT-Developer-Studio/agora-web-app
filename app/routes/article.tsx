@@ -14,15 +14,17 @@ import { resolvePlural } from "~/utils/resolvePlural";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
 import { isSameHour } from "~/utils/isSameHour";
-import { extractHeroImage } from "~/utils/extractHeroImage";
 import { Link } from "react-router";
 import { InfoCard } from "~/components/ui/info-card";
 import { ArticleItem } from "~/components/article-item";
 import type { Database } from "~/lib/db";
 import { Tooltip, TooltipContent } from "~/components/ui/tooltip";
 import { TooltipTrigger } from "@radix-ui/react-tooltip";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "~/lib/utils";
+import { getCarouselArticleIds } from "~/utils/getCarouselArticleIds";
+import { ProviderImage } from "~/components/provider-image";
+import { extractHeroImage } from "~/utils/extractHeroImage";
 
 export function headers({}: Route.HeadersArgs) {
   return {
@@ -108,22 +110,13 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   const articles = cluster.articleClusters.map((ac) => ac.article);
 
-  const heroImageUrl = extractHeroImage(
-    articles.map((a) => {
-      return {
-        url: a.imageUrls ? a.imageUrls[0] : fallbackArticleImage,
-        providerKey: a.newsProviderKey,
-        providerRank: a.newsProvider.rank,
-      };
-    }),
-  );
-
   articles.sort(
     (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
   );
 
   const allCategories = articles.flatMap((a) => a.categories || []);
   const uniqueCategories = Array.from(new Set(allCategories));
+  const heroImageUrl = extractHeroImage(articles);
 
   return {
     cluster: {
@@ -137,7 +130,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 }
 
 export default function ArticlePage({ loaderData }: Route.ComponentProps) {
-  const { cluster, uniqueCategories, heroImageUrl } = loaderData;
+  const { cluster, uniqueCategories } = loaderData;
   const dates = cluster.articles.map((a) => new Date(a.publishedAt));
   const oldestDate = new Date(Math.min(...dates.map((d) => d.getTime())));
   const newestDate = new Date(Math.max(...dates.map((d) => d.getTime())));
@@ -181,19 +174,12 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
         </h1>
 
         <div className="mb-12 grid gap-6 md:grid-cols-3">
-          <figure className="md:col-span-2">
-            <div className="bg-muted border-primary/20 overflow-hidden rounded-lg border">
-              <img
-                src={heroImageUrl}
-                alt={cluster.title}
-                className="h-auto w-full object-cover"
-                style={{
-                  aspectRatio: "16/9",
-                  viewTransitionName: `article-image-${cluster.id}`,
-                }}
-              />
-            </div>
-          </figure>
+          <HeroImageCarousel
+            articles={cluster.articles}
+            title={cluster.title}
+            clusterId={cluster.id}
+            className="md:col-span-2"
+          />
           <BiasDistribution
             biasDistribution={biasDistribution}
             providers={providers}
@@ -463,12 +449,114 @@ function ShareButtons() {
   );
 }
 
+function HeroImageCarousel({
+  articles,
+  title,
+  clusterId,
+  className,
+}: {
+  articles: ArticlePageData["cluster"]["articles"];
+  title: string;
+  clusterId: number;
+  className?: string;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const carouselArticleIds = getCarouselArticleIds(articles);
+
+  const carouselItems = carouselArticleIds
+    .map((id) => {
+      const article = articles.find((a) => a.id === id);
+      if (!article) return null;
+      return {
+        id: article.id,
+        title: article.title,
+        newsProviderKey: article.newsProvider.key,
+        newsProviderName: article.newsProvider.name,
+        imageUrl: article.imageUrls?.[0] || fallbackArticleImage,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  useEffect(() => {
+    if (carouselItems.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % carouselItems.length);
+    }, 5500);
+
+    return () => clearInterval(interval);
+  }, [carouselItems.length]);
+
+  return (
+    <figure className={className}>
+      <div
+        className="bg-muted border-primary/20 relative overflow-hidden rounded-lg border"
+        style={{ aspectRatio: "16/9" }}
+      >
+        {carouselItems.map((item, index) => (
+          <img
+            key={item.id}
+            src={item.imageUrl}
+            alt={title}
+            className="h-full w-full object-cover transition-opacity duration-1800 ease-in-out"
+            style={{
+              viewTransitionName: `article-image-${clusterId}`,
+              opacity: index === currentIndex ? 1 : 0,
+              position: index === currentIndex ? "relative" : "absolute",
+              top: 0,
+              left: 0,
+            }}
+          />
+        ))}
+        {carouselItems.length > 1 && (
+          <div className="absolute inset-0 flex items-end [background-image:linear-gradient(to_top,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.55)_15%,rgba(0,0,0,0)_50%)]">
+            <div
+              className="relative w-full overflow-hidden"
+              style={{ minHeight: "3.5rem" }}
+            >
+              {carouselItems.map((item, index) => (
+                <a
+                  href={`#article-${item.id}`}
+                  key={item.id}
+                  // TODO: use container query to show/hide caption
+                  className="absolute inset-x-0 bottom-0 hidden items-center gap-2 px-3 py-1.5 text-sm font-semibold text-white transition-all duration-700 ease-in-out sm:flex"
+                  style={{
+                    opacity: index === currentIndex ? 1 : 0,
+                    transform:
+                      index === currentIndex
+                        ? "translateY(0)"
+                        : "translateY(0.5rem)",
+                    padding: "1rem",
+                    pointerEvents: index === currentIndex ? "auto" : "none",
+                  }}
+                >
+                  <ProviderImage
+                    className="size-6 rounded-full border-2 border-current"
+                    provider={{
+                      key: item.newsProviderKey,
+                      name: item.newsProviderName,
+                    }}
+                  />
+                  {item.title}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </figure>
+  );
+}
+
 export function meta({
   data,
   location,
 }: Route.MetaArgs): Route.MetaDescriptors {
   const title = data?.cluster ? data.cluster.title : "404 | Vidik";
-  const imageUrl = data?.heroImageUrl || fallbackArticleImage;
+
+  const imageUrl = data.heroImageUrl;
+
   const keywords = data?.uniqueCategories
     ? data.uniqueCategories.join(", ")
     : "";

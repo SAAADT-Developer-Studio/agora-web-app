@@ -28,7 +28,7 @@ export function ArticleItem({ article }: { article: Article }) {
     <>
       <ArticleItemDesktop
         article={formattedArticle}
-        className="hidden md:block"
+        className="hidden scroll-mt-32 md:block"
       />
       <ArticleItemMobile
         article={formattedArticle}
@@ -52,6 +52,7 @@ function ArticleItemDesktop({
       href={article.url}
       target="_blank"
       rel="noopener noreferrer"
+      id={`article-${article.id}`}
       className={cn(
         "group bg-primary/5 border-primary/10 hover:bg-primary/9 relative rounded-lg border p-4 transition-colors duration-200",
         className,

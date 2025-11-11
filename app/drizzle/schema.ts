@@ -70,7 +70,7 @@ export const article = pgTable("article", {
 	llmRank: integer("llm_rank"),
 	isPaywalled: boolean("is_paywalled"),
 }, (table) => [
-	index("ix_article_published_at").using("btree", table.publishedAt.asc().nullsLast().op("timestamptz_ops")),
+	index("ix_article_published_at_news_provider_key").using("btree", table.publishedAt.asc().nullsLast().op("text_ops"), table.newsProviderKey.asc().nullsLast().op("text_ops")),
 	foreignKey({
 			columns: [table.clusterId],
 			foreignColumns: [cluster.id],
