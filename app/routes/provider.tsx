@@ -245,8 +245,15 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
   );
 }
 
-export function meta({ data, location }: Route.MetaArgs) {
-  const { provider } = data;
+export function meta({ loaderData, location }: Route.MetaArgs) {
+  if (!loaderData) {
+    return getSeoMetas({
+      title: "404 | Vidik",
+      description: "Medij ni bil najden.",
+      pathname: location.pathname,
+    });
+  }
+  const { provider } = loaderData;
 
   return getSeoMetas({
     title: provider.name,

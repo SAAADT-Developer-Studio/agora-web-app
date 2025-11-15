@@ -501,7 +501,10 @@ function HeroImageCarousel({
             alt={title}
             className="h-full w-full object-cover transition-opacity duration-1800 ease-in-out"
             style={{
-              viewTransitionName: `article-image-${clusterId}`,
+              viewTransitionName:
+                index === currentIndex
+                  ? `article-image-${clusterId}`
+                  : undefined,
               opacity: index === currentIndex ? 1 : 0,
               position: index === currentIndex ? "relative" : "absolute",
               top: 0,
@@ -550,19 +553,19 @@ function HeroImageCarousel({
 }
 
 export function meta({
-  data,
+  loaderData,
   location,
 }: Route.MetaArgs): Route.MetaDescriptors {
-  const title = data?.cluster ? data.cluster.title : "404 | Vidik";
+  const title = loaderData?.cluster ? loaderData.cluster.title : "404 | Vidik";
 
-  const imageUrl = data.heroImageUrl;
+  const imageUrl = loaderData?.heroImageUrl;
 
-  const keywords = data?.uniqueCategories
-    ? data.uniqueCategories.join(", ")
+  const keywords = loaderData?.uniqueCategories
+    ? loaderData.uniqueCategories.join(", ")
     : "";
 
-  const description = data?.cluster
-    ? `${title}: ${data.cluster.articles
+  const description = loaderData?.cluster
+    ? `${title}: ${loaderData.cluster.articles
         .slice(0, 3)
         .map((a) => a.newsProvider.name + " - " + a.title)
         .join("; ")} in več`
