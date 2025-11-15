@@ -7,19 +7,14 @@
 @theme {
   --font-sans: "Source Sans Pro", "Inter", system-ui, sans-serif;
   --color-background: oklch(0.96 0 0);
-  /* --color-foreground: oklch(1 0 0); */
   --color-foreground: oklch(0.98 0 0 / 1);
   --color-primary: oklch(0.258 0 0);
   --color-secondary: oklch(0% 0 0);
   --color-rightblue: oklch(0.906 0.074 234.5);
   --color-leftred: oklch(0.756 0.203 23.7);
-  --color-deepblue: oklch(0.368 0.229 278.2);
   --color-centerwhite: oklch(1 0 0);
-  --color-darkdeepblue: oklch(0.582 0.222 268.4);
-  --color-darkleftred: oklch(0.347 0.106 18.9);
-  --color-darkrightblue: oklch(0.34 0.11 254.6);
-  --color-salmon: oklch(0.753 0.196 26.3);
   --color-electricblue: oklch(0.6 0.18 248.1);
+
   --color-vidikwhite: oklch(0.978 0.009 247.5);
   --color-vidikblack: oklch(0.258 0 0);
   --color-vidikdarkgray: oklch(0.374 0 0);
@@ -53,67 +48,6 @@ body {
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
-}
-
-@utility p-xl-light {
-  font-size: 30px;
-  font-weight: 200;
-}
-@utility p-lg-light {
-  font-size: 25px;
-  font-weight: 200;
-}
-@utility p-md-light {
-  font-size: 20px;
-  font-weight: 200;
-}
-@utility p-sm-light {
-  font-size: 15px;
-  font-weight: 200;
-}
-@utility p-xs-light {
-  font-size: 10px;
-  font-weight: 200;
-}
-@utility p-xl-regular {
-  font-size: 30px;
-  font-weight: 400;
-}
-@utility p-lg-regular {
-  font-size: 25px;
-  font-weight: 400;
-}
-@utility p-md-regular {
-  font-size: 20px;
-  font-weight: 400;
-}
-@utility p-sm-regular {
-  font-size: 15px;
-  font-weight: 400;
-}
-@utility p-xs-regular {
-  font-size: 10px;
-  font-weight: 400;
-}
-@utility p-xl {
-  font-size: 30px;
-  font-weight: 600;
-}
-@utility p-lg {
-  font-size: 25px;
-  font-weight: 600;
-}
-@utility p-md {
-  font-size: 20px;
-  font-weight: 600;
-}
-@utility p-sm {
-  font-size: 15px;
-  font-weight: 600;
-}
-@utility p-xs {
-  font-size: 10px;
-  font-weight: 600;
 }
 
 @theme {

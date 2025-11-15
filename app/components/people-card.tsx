@@ -30,7 +30,7 @@ export function PeopleCard({ items, heading }: Readonly<PeopleCardProps>) {
             className="h-10 w-10 rounded-full"
           />
           <div className="flex flex-col">
-            <p className="p-sm">{item.name}</p>
+            <p className="font-semibold">{item.name}</p>
             <div className="text-xs">{item.description}</div>
           </div>
         </div>
