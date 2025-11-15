@@ -10,7 +10,6 @@ export default [
   layout("./routes/layout.tsx", [
     index("./routes/home.tsx"),
     route("kontakt", "./routes/contact.tsx"),
-    route("donate", "./routes/donate.tsx"),
     route("politika-zasebnosti", "./routes/privacy-policy.tsx"),
     route("metodologija", "./routes/bias-methodology.tsx"),
     route("mediji", "./routes/providers.tsx"),
