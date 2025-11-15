@@ -483,7 +483,7 @@ function HeroImageCarousel({
 
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % carouselItems.length);
-    }, 5500);
+    }, 4500);
 
     return () => clearInterval(interval);
   }, [carouselItems.length]);
