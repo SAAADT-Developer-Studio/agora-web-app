@@ -1,6 +1,5 @@
 import { Suspense, useEffect, useState } from "react";
 import { Link, NavLink, useNavigation, href } from "react-router";
-import { twMerge } from "tailwind-merge";
 import { formatSlovenianDateTime } from "~/lib/date";
 import { config } from "~/config";
 import { Menu, X } from "lucide-react";
@@ -9,6 +8,7 @@ import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
 import logoNoText from "~/assets/logo-no-text.svg";
 import { ThemeSwitch } from "./theme-switch";
+import { cn } from "~/lib/utils";
 
 const SIDEPANEL_WIDTH = 280;
 
@@ -69,10 +69,11 @@ export function Header() {
               to={item.path}
               key={item.path}
               prefetch="intent"
+              end
               className={({ isActive, isPending }) =>
-                twMerge(
+                cn(
                   "text-primary/70 hover:text-primary px-4 py-3.5 text-sm font-medium text-nowrap transition-colors",
-                  isPending && "animate-pulse",
+                  isPending && "border-primary/30 animate-pulse border-b",
                   isActive && "text-primary border-primary border-b",
                 )
               }
@@ -85,7 +86,7 @@ export function Header() {
 
       <aside
         aria-hidden={!open}
-        className={twMerge(
+        className={cn(
           "bg-foreground border-primary/10 fixed top-0 left-0 z-40 h-full w-[280px] border-r xl:hidden",
           "transition-transform duration-200 ease-out",
           open ? "translate-x-0" : "-translate-x-full",
@@ -123,7 +124,7 @@ export function Header() {
               key={item.path}
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
-                twMerge(
+                cn(
                   "block rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-primary/10 text-primary"
@@ -141,7 +142,7 @@ export function Header() {
         aria-hidden={!open}
         tabIndex={-1}
         onClick={() => setOpen(false)}
-        className={twMerge(
+        className={cn(
           "fixed inset-0 z-30 bg-black/30 backdrop-blur-sm xl:hidden",
           "transition-opacity duration-200",
           open ? "opacity-100" : "pointer-events-none opacity-0",
