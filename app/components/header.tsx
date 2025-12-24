@@ -1,14 +1,14 @@
 import { Suspense, useEffect, useState } from "react";
-import logo from "~/assets/logo.svg";
-import logoLight from "~/assets/logo-light.svg";
-import logoNoText from "~/assets/logo-no-text.svg";
-import { ThemeSwitch } from "./theme-switch";
 import { Link, NavLink, useNavigation, href } from "react-router";
 import { twMerge } from "tailwind-merge";
 import { formatSlovenianDateTime } from "~/lib/date";
 import { config } from "~/config";
 import { Menu, X } from "lucide-react";
-import { Spinner } from "~/components/ui/spinner";
+import { useLoadingIndicator } from "~/hooks/use-loading-indicator";
+import logo from "~/assets/logo.svg";
+import logoLight from "~/assets/logo-light.svg";
+import logoNoText from "~/assets/logo-no-text.svg";
+import { ThemeSwitch } from "./theme-switch";
 
 const SIDEPANEL_WIDTH = 280;
 
@@ -23,11 +23,9 @@ export function Header() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const navigation = useNavigation();
-  const isNavigating = Boolean(navigation.location);
-
   return (
-    <header className="bg-secondary sticky top-0 z-30">
+    <header className="bg-surface-dark sticky top-0 z-30">
+      <LoadingBar />
       <div className="flex h-[62px] items-center justify-between pr-4 pl-6 sm:pr-8">
         <div className="flex items-center justify-between gap-4">
           <button
@@ -48,8 +46,6 @@ export function Header() {
               </h1>
             </div>
           </Link>
-
-          {isNavigating && <Spinner className="text-white" />}
         </div>
         <div className="flex items-center gap-5">
           <span className="text-vidikwhite hidden text-xs md:block">
@@ -152,5 +148,51 @@ export function Header() {
         )}
       />
     </header>
+  );
+}
+
+function LoadingBar({
+  height = 3,
+  color = "repeating-linear-gradient(to right, #00dc82 0%, #34cdfe 50%, #0047e1 100%)",
+}: {
+  height?: number;
+  color?: string;
+}) {
+  const navigation = useNavigation();
+  const isNavigating = Boolean(navigation.location);
+  const { progress, start, finish, isLoading } = useLoadingIndicator();
+
+  useEffect(() => {
+    if (isNavigating) {
+      start({ force: true });
+    } else {
+      finish();
+    }
+  }, [isNavigating, start, finish]);
+
+  return (
+    <div
+      role="progressbar"
+      aria-hidden={!isLoading}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(progress)}
+      style={{
+        position: "fixed",
+        top: 0,
+        right: 0,
+        left: 0,
+        pointerEvents: "none",
+        width: "auto",
+        height: `${height}px`,
+        opacity: isLoading ? 1 : 0,
+        background: color,
+        backgroundSize: `${progress > 0 ? (100 / progress) * 100 : 0}% auto`,
+        transform: `scaleX(${progress / 100})`,
+        transformOrigin: "left",
+        transition: "transform 0.1s, height 0.4s, opacity 0.4s",
+        zIndex: 999999,
+      }}
+    />
   );
 }
