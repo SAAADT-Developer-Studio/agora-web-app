@@ -42,7 +42,9 @@ export function Article({
             <ArticleCount count={numberOfArticles} />
           </div>
           <div className="flex w-full flex-col items-start justify-center p-2">
-            <p className="p-sm my-2 line-clamp-2 overflow-clip">{title}</p>
+            <p className="my-2 line-clamp-2 overflow-clip text-[15px] font-semibold">
+              {title}
+            </p>
             <CoverageBar {...biasDistribution} />
           </div>
         </div>

@@ -8,7 +8,13 @@ import {
 } from "~/components/provider-image";
 import { ErrorComponent } from "~/components/error-component";
 
-import { Card } from "~/components/ui/card";
+import {
+  Card,
+  CardAction,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, post } from "~/lib/fetcher";
 import type { VoteInput } from "~/routes/api/post-vote";
@@ -128,7 +134,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
             <a
               href={provider.url}
               target="_blank"
-              className="bg-foreground/70 hover:bg-foreground text-primary flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold md:gap-2 md:px-3 md:py-2 md:text-lg"
+              className="bg-surface-light/70 hover:bg-surface-light text-surface-light-text flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold md:gap-2 md:px-3 md:py-2 md:text-lg"
             >
               <Globe className="size-3 md:size-5" />
               {removeUrlProtocol(provider.url)}
@@ -149,11 +155,11 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
       <div>
-        <h2 className="text-primary mt-4 text-lg font-bold md:text-2xl">
+        <h2 className="text-surface-text mt-4 text-lg font-bold md:text-2xl">
           Se ne strinjaš da {provider.name} spada pod{" "}
           {biasKeyToLabel(provider.biasRating ?? "")}?
         </h2>
-        <p className="text-primary/50 text-sm md:text-lg">
+        <p className="text-surface-text/50 text-sm md:text-lg">
           Glasuj kam spada na političnem spektru
         </p>
       </div>
@@ -190,7 +196,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
       </div>
       {voteValue && !voteSuggestions.isError && (
         <div className="animate-in slide-in-from-top-4 fade-in mt-12 duration-500">
-          <h2 className="text-primary text-lg font-bold md:text-2xl">
+          <h2 className="text-surface-text text-lg font-bold md:text-2xl">
             Glasuj še za druge medije!
           </h2>
           <div className="mt-6 grid w-full grid-cols-2 items-center gap-4 sm:grid-cols-3 md:grid-cols-5">
@@ -245,8 +251,15 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
   );
 }
 
-export function meta({ data, location }: Route.MetaArgs) {
-  const { provider } = data;
+export function meta({ loaderData, location }: Route.MetaArgs) {
+  if (!loaderData) {
+    return getSeoMetas({
+      title: "404 | Vidik",
+      description: "Medij ni bil najden.",
+      pathname: location.pathname,
+    });
+  }
+  const { provider } = loaderData;
 
   return getSeoMetas({
     title: provider.name,
@@ -272,70 +285,55 @@ function ProviderStatsCards({
 }) {
   return (
     <>
-      <Card className="bg-foreground border-none !py-0">
-        <div className="space-y-4 p-8">
-          <div className="flex justify-end">
-            <Newspaper className="text-primary h-6 w-6" />
-          </div>
-          <div>
-            <h3 className="text-primary text-7xl font-bold">
-              {stats.today.count}
-            </h3>
-          </div>
-
-          <div className="space-y-1">
-            <p className="text-primary text-lg leading-tight font-medium">
-              Objavljenih člankov danes
-            </p>
-            <p className="text-primary/70 text-sm">
-              Rank: {stats.today.rank ? "#" + stats.today.rank : "N/A"}
-            </p>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardAction>
+            <Newspaper className="h-6 w-6" />
+          </CardAction>
+          <CardTitle className="text-7xl font-bold">
+            {stats.today.count}
+          </CardTitle>
+          <CardDescription className="text-lg leading-tight font-medium">
+            Objavljenih člankov danes
+          </CardDescription>
+          <CardDescription className="text-sm opacity-70">
+            Rank: {stats.today.rank ? "#" + stats.today.rank : "N/A"}
+          </CardDescription>
+        </CardHeader>
       </Card>
 
-      <Card className="bg-foreground border-none !py-0">
-        <div className="space-y-4 p-8">
-          <div className="flex justify-end">
-            <Newspaper className="text-primary h-6 w-6" />
-          </div>
-          <div>
-            <h3 className="text-primary text-7xl font-bold">
-              {stats.week.count}
-            </h3>
-          </div>
-
-          <div className="space-y-1">
-            <p className="text-primary text-lg leading-tight font-medium">
-              Objavljenih člankov ta teden
-            </p>
-            <p className="text-primary/70 text-sm">
-              Rank: {stats.week.rank ? "#" + stats.week.rank : "N/A"}
-            </p>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardAction>
+            <Newspaper className="h-6 w-6" />
+          </CardAction>
+          <CardTitle className="text-7xl font-bold">
+            {stats.week.count}
+          </CardTitle>
+          <CardDescription className="text-lg leading-tight font-medium">
+            Objavljenih člankov ta teden
+          </CardDescription>
+          <CardDescription className="text-surface-light-text/70 text-sm">
+            Rank: {stats.week.rank ? "#" + stats.week.rank : "N/A"}
+          </CardDescription>
+        </CardHeader>
       </Card>
 
-      <Card className="bg-foreground border-none !py-0">
-        <div className="space-y-4 p-8">
-          <div className="flex justify-end">
-            <Newspaper className="text-primary h-6 w-6" />
-          </div>
-          <div>
-            <h3 className="text-primary text-7xl font-bold">
-              {stats.month.count}
-            </h3>
-          </div>
-
-          <div className="space-y-1">
-            <p className="text-primary text-lg leading-tight font-medium">
-              Objavljenih člankov ta mesec
-            </p>
-            <p className="text-primary/70 text-sm">
-              Rank: {stats.month.rank ? "#" + stats.month.rank : "N/A"}
-            </p>
-          </div>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardAction>
+            <Newspaper className="h-6 w-6" />
+          </CardAction>
+          <CardTitle className="text-7xl font-bold">
+            {stats.month.count}
+          </CardTitle>
+          <CardDescription className="text-lg leading-tight font-medium">
+            Objavljenih člankov ta mesec
+          </CardDescription>
+          <CardDescription className="text-surface-light-text/70 text-sm">
+            Rank: {stats.month.rank ? "#" + stats.month.rank : "N/A"}
+          </CardDescription>
+        </CardHeader>
       </Card>
     </>
   );

@@ -74,7 +74,7 @@ export function BiasDistribution({
   return (
     <div
       className={cn(
-        "bg-foreground text-primary flex flex-col overflow-hidden rounded-lg border border-current/10 p-4 shadow-xs md:col-span-1",
+        "bg-surface-light text-surface-light-text flex flex-col overflow-hidden rounded-lg border border-current/10 p-4 shadow-xs md:col-span-1",
         className,
       )}
     >
@@ -108,7 +108,7 @@ export function BiasDistribution({
         {providersByBias.map((category) => (
           <div
             key={category.key}
-            className="bg-vidikblack/[0.07] dark:bg-background/50 flex flex-col overflow-hidden rounded-lg pb-2"
+            className="bg-vidikblack/[0.07] dark:bg-surface/50 flex flex-col overflow-hidden rounded-lg pb-2"
           >
             <div className={`h-2 ${category.barColor}`} />
             <div className="px-2 pt-4">

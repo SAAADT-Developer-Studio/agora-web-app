@@ -221,7 +221,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           categoryKey={CategoryKey.kriminal}
           dividerText="KRIMINAL"
           sideSection={
-            // <PeopleCard items={dummyPeople} heading="Izpostavljene Osebe" />
             <ProviderStatsCard providerStatsPromise={providerStats} />
           }
         />

@@ -69,7 +69,7 @@ function ArticleItemDesktop({
 
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex items-center justify-between">
-            <div className="text-muted-foreground flex flex-wrap items-center gap-2 overflow-hidden text-xs">
+            <div className="flex flex-wrap items-center gap-2 overflow-hidden text-xs">
               <ArticleMetadataBadge icon={Newspaper}>
                 {article.newsProvider.name}
               </ArticleMetadataBadge>
@@ -100,7 +100,7 @@ function ArticleItemDesktop({
           </h3>
 
           {article.summary && (
-            <p className="text-muted-foreground text-primary/70 line-clamp-3 text-xs leading-relaxed text-pretty md:text-sm">
+            <p className="text-primary/70 line-clamp-3 text-xs leading-relaxed text-pretty md:text-sm">
               {article.summary}
             </p>
           )}
@@ -137,7 +137,7 @@ function ArticleItemMobile({
     >
       <div className="flex flex-col gap-2">
         <div className="mb-2 flex items-center justify-between">
-          <div className="text-muted-foreground flex max-h-[22px] flex-wrap items-center gap-1 overflow-hidden text-xs">
+          <div className="flex max-h-[22px] flex-wrap items-center gap-1 overflow-hidden text-xs">
             <ArticleMetadataBadge
               icon={Newspaper}
               className="h-[22px] border px-1 py-1 text-[8px]"
@@ -187,7 +187,7 @@ function ArticleItemMobile({
 
         <div className="mb-8 w-full">
           {article.summary && (
-            <p className="text-muted-foreground text-primary/70 line-clamp-3 text-xs leading-relaxed text-pretty md:text-sm">
+            <p className="text-primary/70 line-clamp-3 text-xs leading-relaxed text-pretty md:text-sm">
               {article.summary}
             </p>
           )}

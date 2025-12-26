@@ -105,11 +105,11 @@ export default function CategoryPage({
   return (
     <div className="">
       <div className="mb-6 flex items-center gap-2 text-sm text-gray-400">
-        <Link to="/" className="hover:text-primary uppercase">
+        <Link to="/" className="hover:text-surface-text uppercase">
           Domov
         </Link>
-        <span className="text-primary">·</span>
-        <h1 className="text-primary uppercase">{params.category}</h1>
+        <span className="text-surface-text">·</span>
+        <h1 className="text-surface-text uppercase">{params.category}</h1>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
         <HeroArticles articles={data.pages[0].articles.slice(0, sliceEnd)} />
@@ -126,7 +126,7 @@ export default function CategoryPage({
       </div>
       {hasNextPage && (
         <button
-          className="bg-primary hover:bg-primary/80 text-background mt-4 flex w-full cursor-pointer items-center justify-center rounded-md py-2"
+          className="bg-primary hover:bg-primary/80 text-primary-text mt-4 flex w-full cursor-pointer items-center justify-center rounded-md py-2"
           onClick={() => fetchNextPage()}
           disabled={isFetchingNextPage}
         >

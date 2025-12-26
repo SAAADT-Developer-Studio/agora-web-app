@@ -24,8 +24,8 @@ export function biasKeyToColor(biasKey: string, withOpacity = false): string {
   const biasMap = withOpacity ? biasMapWithOpacity : biasMapOpaque;
 
   const defaultClass = withOpacity
-    ? "bg-foreground/70 border-1 md:border-2 border-foreground text-primary"
-    : "bg-foreground text-primary border border-current/10";
+    ? "bg-surface-light/70 border-1 md:border-2 border-surface-light text-surface-light-text"
+    : "bg-surface-light text-surface-light-text border border-current/10";
 
   return biasMap[biasKey as BiasRating] ?? defaultClass;
 }

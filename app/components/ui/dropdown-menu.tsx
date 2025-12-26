@@ -29,6 +29,8 @@ function DropdownMenuTrigger({
   );
 }
 
+// TODO: css vars for colors are not defined
+
 function DropdownMenuContent({
   className,
   sideOffset = 4,

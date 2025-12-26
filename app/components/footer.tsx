@@ -14,12 +14,12 @@ const XIcon = createLucideIcon("X", [
 
 export default function Footer() {
   return (
-    <footer className="bg-foreground text-primary mt-20 flex items-center justify-center">
+    <footer className="bg-surface-light text-surface-light-text mt-20 flex items-center justify-center">
       <div className="w-[1200px] px-4 py-12">
         <div className="flex flex-col items-start justify-around gap-8 md:flex-row md:justify-between md:gap-0">
           <div className="w-full md:w-1/2">
             <h3 className="pb-2 text-lg font-semibold tracking-wide">Vidik</h3>
-            <p className="text-primary w-full pb-2 text-sm leading-6 md:w-2/3">
+            <p className="text-surface-light-text w-full pb-2 text-sm leading-6 md:w-2/3">
               Odkrij, kako različni slovenski mediji poročajo o istih novicah.
               Naša platforma razkriva medijsko pristranskost in pomaga razumeti
               zgodbo z vseh političnih <b>vidikov</b>.
@@ -28,7 +28,7 @@ export default function Footer() {
               <a
                 href="https://www.facebook.com/share/1BHYtu1oJB/?mibextid=wwXIfr"
                 target="_blank"
-                className="text-primary/70 hover:text-primary transition-colors"
+                className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
               >
                 <Facebook size={20} />
                 <span className="sr-only">Facebook</span>
@@ -36,7 +36,7 @@ export default function Footer() {
               <a
                 href="https://www.instagram.com/vidikslo?igsh=MTNnMW1vYXQyYXpvMQ%3D%3D&utm_source=qr"
                 target="_blank"
-                className="text-primary/70 hover:text-primary transition-colors"
+                className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
               >
                 <Instagram size={20} />
                 <span className="sr-only">Instagram</span>
@@ -44,14 +44,14 @@ export default function Footer() {
               <a
                 href="https://x.com/VidikSlo"
                 target="_blank"
-                className="text-primary/70 hover:text-primary transition-colors"
+                className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
               >
                 <XIcon size={20} />
                 <span className="sr-only">X</span>
               </a>
               <a
                 href="mailto:info@vidik.si"
-                className="text-primary/70 hover:text-primary transition-colors"
+                className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
               >
                 <Mail size={20} />
                 <span className="sr-only">Email</span>
@@ -63,11 +63,11 @@ export default function Footer() {
             <h3 className="pb-2 text-lg font-semibold tracking-wide">
               Hitre Povezave
             </h3>
-            <ul className="text-primary space-y-2 text-sm">
+            <ul className="text-surface-light-text space-y-2 text-sm">
               <li>
                 <Link
                   to={href("/metodologija")}
-                  className="text-primary/70 hover:text-primary transition-colors"
+                  className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
                 >
                   Kako smo klasificirali medije?
                 </Link>
@@ -76,11 +76,11 @@ export default function Footer() {
           </div>
           <div className="w-full md:w-1/3">
             <h3 className="pb-2 text-lg font-semibold tracking-wide">Drugo</h3>
-            <ul className="text-primary space-y-2 text-sm">
+            <ul className="text-surface-light-text space-y-2 text-sm">
               <li>
                 <Link
                   to={href("/kontakt")}
-                  className="text-primary/70 hover:text-primary transition-colors"
+                  className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
                 >
                   Kontakt & Podpora
                 </Link>
@@ -88,7 +88,7 @@ export default function Footer() {
               <li>
                 <NavLink
                   to={href("/politika-zasebnosti")}
-                  className="text-primary/70 hover:text-primary transition-colors active:text-black"
+                  className="text-surface-light-text/70 hover:text-surface-light-text transition-colors active:text-black"
                 >
                   Politika zasebnosti
                 </NavLink>
@@ -97,7 +97,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-primary/40 text-primary/40 mt-12 flex flex-col items-center justify-between border-t pt-8 text-sm md:flex-row">
+        <div className="border-text-surface-light-text/40 text-surface-light-text/40 mt-12 flex flex-col items-center justify-between border-t pt-8 text-sm md:flex-row">
           <p>@vidik.si - {new Date().getFullYear()}</p>
           <p className="mt-4 md:mt-0">
             <b>M</b>&<b>B</b> Production{" "}

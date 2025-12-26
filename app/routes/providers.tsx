@@ -273,24 +273,26 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
   return (
     <section>
       <div className="mt-0 flex flex-wrap items-center justify-between p-0 md:mt-8 md:p-4">
-        <h1 className="text-primary text-2xl font-bold md:text-5xl">Mediji</h1>
+        <h1 className="text-surface-text text-2xl font-bold md:text-5xl">
+          Mediji
+        </h1>
 
         <div className="mt-4 flex flex-wrap items-start justify-start gap-3 md:mt-0">
           <DropdownMenu>
             <DropdownMenuTrigger
               asChild
-              className="bg-primary text-background font-semibold !outline-none"
+              className="bg-primary text-primary-text font-semibold !outline-none"
             >
               <Button variant="outline">
                 Pristranskost
                 {selectedBiasRatings.length > 0 && (
-                  <span className="bg-background text-primary ml-2 rounded-full px-2 py-0.5 text-xs">
+                  <span className="bg-surface text-surface-text ml-2 rounded-full px-2 py-0.5 text-xs">
                     {selectedBiasRatings.length}
                   </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-primary text-background w-56">
+            <DropdownMenuContent className="bg-primary text-primary-text w-56">
               <DropdownMenuLabel>Filtriraj po pristranskosti</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {Object.values(BiasRatingKey).map((biasRatingKey) => (
@@ -306,34 +308,46 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
           </DropdownMenu>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="bg-primary text-background w-[120px] font-semibold !outline-none md:w-[240px]">
+            <SelectTrigger className="bg-primary text-primary-text w-[120px] font-semibold !outline-none md:w-[240px]">
               <SelectValue placeholder="Razvrsti po" />
             </SelectTrigger>
-            <SelectContent className="bg-primary text-background border-none">
-              <SelectItem value="rank" className="hover:bg-foreground/10">
+            <SelectContent className="bg-primary text-primary-text border-none">
+              <SelectItem value="rank" className="hover:bg-surface-light/10">
                 Privzeto
               </SelectItem>
-              <SelectItem value="today-most" className="hover:bg-foreground/10">
+              <SelectItem
+                value="today-most"
+                className="hover:bg-surface-light/10"
+              >
                 Danes - Največ člankov
               </SelectItem>
               <SelectItem
                 value="today-least"
-                className="hover:bg-foreground/10"
+                className="hover:bg-surface-light/10"
               >
                 Danes - Najmanj člankov
               </SelectItem>
-              <SelectItem value="week-most" className="hover:bg-foreground/10">
+              <SelectItem
+                value="week-most"
+                className="hover:bg-surface-light/10"
+              >
                 Ta teden - Največ člankov
               </SelectItem>
-              <SelectItem value="week-least" className="hover:bg-foreground/10">
+              <SelectItem
+                value="week-least"
+                className="hover:bg-surface-light/10"
+              >
                 Ta teden - Najmanj člankov
               </SelectItem>
-              <SelectItem value="month-most" className="hover:bg-foreground/10">
+              <SelectItem
+                value="month-most"
+                className="hover:bg-surface-light/10"
+              >
                 Ta mesec - Največ člankov
               </SelectItem>
               <SelectItem
                 value="month-least"
-                className="hover:bg-foreground/10"
+                className="hover:bg-surface-light/10"
               >
                 Ta mesec - Najmanj člankov
               </SelectItem>
@@ -356,7 +370,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
             />
             <div className="@container ml-3 flex w-full flex-col justify-between md:ml-6">
               <div className="flex flex-wrap gap-2">
-                <div className="bg-foreground/70 hover:bg-foreground text-primary flex items-center justify-center gap-1 rounded-lg border border-current/10 px-2 py-1 text-xs font-semibold">
+                <div className="bg-surface-light/70 hover:bg-surface-light text-surface-light-text flex items-center justify-center gap-1 rounded-lg border border-current/10 px-2 py-1 text-xs font-semibold">
                   <Globe className="size-3" />
                   {removeUrlProtocol(provider.url)}
                 </div>
@@ -380,17 +394,17 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
           <div
             className={`grid w-full grid-cols-3 gap-2 md:w-1/2 md:min-w-1/2 ${provider.key === "mladina" ? "hidden" : ""}`}
           >
-            <Card className="bg-foreground border-none !py-0">
+            <Card className="py-0">
               <div className="space-y-4 p-2 md:p-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-primary text-md font-bold md:text-xl">
+                  <h2 className="-primary text-md font-bold md:text-xl">
                     {providerStatsMap.get(provider.key)?.today.count ?? 0}
                   </h2>
-                  <Newspaper className="text-primary size-3 md:size-6" />
+                  <Newspaper className="size-3 md:size-6" />
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-primary text-xs leading-tight font-medium md:text-sm">
+                  <p className="text-xs leading-tight font-medium md:text-sm">
                     Objavljenih člankov danes
                   </p>
                   <p className="text-xs text-gray-400 md:text-sm">
@@ -403,17 +417,17 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
               </div>
             </Card>
 
-            <Card className="bg-foreground border-none !py-0">
+            <Card className="py-0">
               <div className="space-y-4 p-2 md:p-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-primary text-md font-bold md:text-xl">
+                  <h2 className="text-md font-bold md:text-xl">
                     {providerStatsMap.get(provider.key)?.week.count ?? 0}
                   </h2>
-                  <Newspaper className="text-primary size-3 md:size-6" />
+                  <Newspaper className="size-3 md:size-6" />
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-primary text-xs leading-tight font-medium md:text-sm">
+                  <p className="text-xs leading-tight font-medium md:text-sm">
                     Objavljenih člankov ta teden
                   </p>
                   <p className="text-xs text-gray-400 md:text-sm">
@@ -426,17 +440,17 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
               </div>
             </Card>
 
-            <Card className="bg-foreground border-none !py-0">
+            <Card className="py-0">
               <div className="space-y-4 p-2 md:p-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-primary text-md font-bold md:text-xl">
+                  <h2 className="text-md font-bold md:text-xl">
                     {providerStatsMap.get(provider.key)?.month.count ?? 0}
                   </h2>
-                  <Newspaper className="text-primary size-3 md:size-6" />
+                  <Newspaper className="size-3 md:size-6" />
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-primary text-xs leading-tight font-medium md:text-sm">
+                  <p className="text-xs leading-tight font-medium md:text-sm">
                     Objavljenih člankov ta mesec
                   </p>
                   <p className="text-xs text-gray-400 md:text-sm">

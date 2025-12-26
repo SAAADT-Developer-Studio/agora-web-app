@@ -4,6 +4,7 @@ import {
   type EntryContext,
   type LoaderFunctionArgs,
   ServerRouter,
+  type unstable_ServerInstrumentation,
 } from "react-router";
 import { isbot } from "isbot";
 import { renderToReadableStream } from "react-dom/server";
@@ -59,3 +60,26 @@ export function handleDataRequest(
   context.measurer.appendServerTimingHeaders(response.headers);
   return response;
 }
+
+function sanitizeRouteId(id: string): string {
+  return id.replace(/[^a-zA-Z0-9_-]/g, "-");
+}
+
+const logging: unstable_ServerInstrumentation = {
+  route({ instrument, id }) {
+    const sanitizedId = sanitizeRouteId(id);
+    instrument({
+      middleware: async (fn, { context }) => {
+        await context.measurer.time(`middleware-${sanitizedId}`, fn);
+      },
+      loader: async (fn, { context }) => {
+        await context.measurer.time(`loader-${sanitizedId}`, fn);
+      },
+      action: async (fn, { context }) => {
+        await context.measurer.time(`action-${sanitizedId}`, fn);
+      },
+    });
+  },
+};
+
+export const unstable_instrumentations = [logging];

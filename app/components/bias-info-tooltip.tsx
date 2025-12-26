@@ -113,7 +113,7 @@ export function BiasInfoTooltip({ iconClassName }: { iconClassName?: string }) {
                 href="https://www.researchgate.net/publication/388646081_Analysing_Bias_in_Slovenian_News_Media_A_Computational_Comparison_Based_on_Readers'_Political_Orientation"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary/80 hover:text-primary border-primary/10 bg-background/50 flex items-start justify-between gap-2 rounded border p-2 text-xs transition-colors"
+                className="text-primary/80 hover:text-primary border-primary/10 flex items-start justify-between gap-2 rounded border p-2 text-xs transition-colors"
               >
                 <div className="flex-1">
                   <div className="font-medium">
@@ -130,7 +130,7 @@ export function BiasInfoTooltip({ iconClassName }: { iconClassName?: string }) {
                 href="https://www.frontiersin.org/journals/communication/articles/10.3389/fcomm.2023.1143786/full"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary/80 hover:text-primary border-primary/10 bg-background/50 flex items-start justify-between gap-2 rounded border p-2 text-xs transition-colors"
+                className="text-primary/80 hover:text-primary border-primary/10 flex items-start justify-between gap-2 rounded border p-2 text-xs transition-colors"
               >
                 <div className="flex-1">
                   <div className="font-medium">
@@ -149,7 +149,7 @@ export function BiasInfoTooltip({ iconClassName }: { iconClassName?: string }) {
         <DialogFooter>
           <Button
             variant="outline"
-            className="bg-primary text-background"
+            className="bg-primary text-primary-text"
             asChild
           >
             <Link to={href("/metodologija")}>

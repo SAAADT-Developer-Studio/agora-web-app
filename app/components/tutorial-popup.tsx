@@ -170,7 +170,7 @@ export function TutorialPopup() {
             </div>
           )}
 
-          <p className="text-muted-foreground mb-6 text-sm leading-relaxed md:text-base">
+          <p className="mb-6 text-sm leading-relaxed md:text-base">
             {currentStepData.description}
           </p>
 
@@ -191,7 +191,7 @@ export function TutorialPopup() {
                 <Button
                   variant="outline"
                   onClick={handlePrevious}
-                  className="bg-primary text-background"
+                  className="bg-primary text-primary-text"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Nazaj
@@ -200,7 +200,7 @@ export function TutorialPopup() {
 
               <Button
                 onClick={handleNext}
-                className="bg-primary text-background"
+                className="bg-primary text-primary-text"
               >
                 {currentStep === tutorialSteps.length - 1 ? (
                   "Začni"

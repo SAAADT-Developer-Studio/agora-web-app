@@ -10,7 +10,7 @@ export function InfoCard({
   return (
     <div
       className={cn(
-        "bg-foreground dark:bg-primary/5 border-primary/10 rounded-lg border p-4 shadow-xs sm:p-6",
+        "bg-surface-light text-surface-light-text border-primary/10 rounded-lg border p-4 shadow-xs sm:p-6",
         className,
       )}
     >

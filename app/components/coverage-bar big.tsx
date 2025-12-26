@@ -14,7 +14,7 @@ export default function CoverageBarBig({
       <div className="flex w-full items-center justify-between pb-1.5">
         {leftPercent > 0 && (
           <div
-            className="p-sm hidden h-full items-center justify-start gap-1 overflow-hidden whitespace-nowrap md:flex"
+            className="hidden h-full items-center justify-start gap-1 overflow-hidden text-[15px] font-semibold whitespace-nowrap md:flex"
             style={{ width: `${leftPercent}%` }}
           >
             <span className="overflow-hidden text-ellipsis">LEVA:</span>
@@ -23,7 +23,7 @@ export default function CoverageBarBig({
         )}
         {centerPercent > 0 && (
           <div
-            className="p-sm hidden h-full items-center justify-start gap-1 overflow-hidden whitespace-nowrap md:flex"
+            className="hidden h-full items-center justify-start gap-1 overflow-hidden text-[15px] font-semibold whitespace-nowrap md:flex"
             style={{ width: `${centerPercent}%` }}
           >
             <span className="overflow-hidden text-ellipsis">CENTER:</span>
@@ -32,7 +32,7 @@ export default function CoverageBarBig({
         )}
         {rightPercent > 0 && (
           <div
-            className="p-sm hidden h-full items-center justify-start gap-1 overflow-hidden whitespace-nowrap md:flex"
+            className="hidden h-full items-center justify-start gap-1 overflow-hidden text-[15px] font-semibold whitespace-nowrap md:flex"
             style={{ width: `${rightPercent}%` }}
           >
             <span className="overflow-hidden text-ellipsis">DESNA:</span>
