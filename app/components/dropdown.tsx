@@ -21,7 +21,7 @@ export function Dropdown({
         {trigger ?? <Grip size={28} className="cursor-pointer" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent
-        className="bg-background color-primary border-primary/10 translate-x-[10px] border-1"
+        className="bg-surface color-primary border-primary/10 translate-x-[10px] border-1"
         align="end"
         sideOffset={15}
       >
@@ -29,7 +29,7 @@ export function Dropdown({
           {items.map((item) => (
             <DropdownMenuItem
               asChild
-              className="hover:bg-foreground cursor-pointer"
+              className="hover:bg-surface cursor-pointer"
               key={item.to}
             >
               <Link to={item.to}>

@@ -1,14 +1,14 @@
 import { Suspense, useEffect, useState } from "react";
-import { Link, NavLink, useNavigation, href } from "react-router";
+import { Link, NavLink, href } from "react-router";
 import { formatSlovenianDateTime } from "~/lib/date";
 import { config } from "~/config";
 import { Menu, X } from "lucide-react";
-import { useLoadingIndicator } from "~/hooks/use-loading-indicator";
 import logo from "~/assets/logo.svg";
 import logoLight from "~/assets/logo-light.svg";
 import logoNoText from "~/assets/logo-no-text.svg";
 import { ThemeSwitch } from "./theme-switch";
 import { cn } from "~/lib/utils";
+import { LoadingBar } from "~/components/loading-bar";
 
 const SIDEPANEL_WIDTH = 280;
 
@@ -24,7 +24,7 @@ export function Header() {
   }, []);
 
   return (
-    <header className="bg-surface-dark sticky top-0 z-30">
+    <header className="bg-header sticky top-0 z-30">
       <LoadingBar />
       <div className="flex h-[62px] items-center justify-between pr-4 pl-6 sm:pr-8">
         <div className="flex items-center justify-between gap-4">
@@ -62,7 +62,7 @@ export function Header() {
         </div>
       </div>
 
-      <nav className="dark:bg-foreground border-primary/10 hidden w-full justify-center border-b bg-white xl:flex">
+      <nav className="border-primary/10 bg-surface-light hidden w-full justify-center border-b md:flex">
         <div className="flex overflow-hidden">
           {config.navigation.map((item) => (
             <NavLink
@@ -72,9 +72,11 @@ export function Header() {
               end
               className={({ isActive, isPending }) =>
                 cn(
-                  "text-primary/70 hover:text-primary px-4 py-3.5 text-sm font-medium text-nowrap transition-colors",
-                  isPending && "border-primary/30 animate-pulse border-b",
-                  isActive && "text-primary border-primary border-b",
+                  "text-surface-light-text/70 hover:text-surface-light-text px-4 py-3.5 text-sm font-medium text-nowrap transition-colors",
+                  isPending &&
+                    "border-surface-light-text/30 animate-pulse border-b",
+                  isActive &&
+                    "text-surface-light-text border-surface-light-text border-b",
                 )
               }
             >
@@ -87,7 +89,7 @@ export function Header() {
       <aside
         aria-hidden={!open}
         className={cn(
-          "bg-foreground border-primary/10 fixed top-0 left-0 z-40 h-full w-[280px] border-r xl:hidden",
+          "bg-surface border-primary/10 fixed top-0 left-0 z-40 h-full w-[280px] border-r xl:hidden",
           "transition-transform duration-200 ease-out",
           open ? "translate-x-0" : "-translate-x-full",
         )}
@@ -127,8 +129,8 @@ export function Header() {
                 cn(
                   "block rounded-xl px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-primary/80 hover:text-primary hover:bg-primary/5",
+                    ? "bg-primary/10 text-surface-light-text"
+                    : "text-surface-light-text/80 hover:text-surface-light-text hover:bg-primary/5",
                 )
               }
             >
@@ -149,51 +151,5 @@ export function Header() {
         )}
       />
     </header>
-  );
-}
-
-function LoadingBar({
-  height = 3,
-  color = "repeating-linear-gradient(to right, #00dc82 0%, #34cdfe 50%, #0047e1 100%)",
-}: {
-  height?: number;
-  color?: string;
-}) {
-  const navigation = useNavigation();
-  const isNavigating = Boolean(navigation.location);
-  const { progress, start, finish, isLoading } = useLoadingIndicator();
-
-  useEffect(() => {
-    if (isNavigating) {
-      start({ force: true });
-    } else {
-      finish();
-    }
-  }, [isNavigating, start, finish]);
-
-  return (
-    <div
-      role="progressbar"
-      aria-hidden={!isLoading}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(progress)}
-      style={{
-        position: "fixed",
-        top: 0,
-        right: 0,
-        left: 0,
-        pointerEvents: "none",
-        width: "auto",
-        height: `${height}px`,
-        opacity: isLoading ? 1 : 0,
-        background: color,
-        backgroundSize: `${progress > 0 ? (100 / progress) * 100 : 0}% auto`,
-        transform: `scaleX(${progress / 100})`,
-        transformOrigin: "left",
-        transition: "transform 0.1s, height 0.4s, opacity 0.4s",
-        zIndex: 999999,
-      }}
-    />
   );
 }

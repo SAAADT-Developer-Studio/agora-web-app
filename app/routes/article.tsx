@@ -151,72 +151,70 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
   }));
 
   return (
-    <div className="bg-background min-h-screen">
-      <article className="mx-auto max-w-5xl px-1 py-1 md:py-6">
-        <div className="text-muted-foreground mb-6 flex items-center gap-3 text-sm">
-          <Link to="/" className="tracking-wider">
-            VIDIK
-          </Link>
-          <div className="flex max-h-5 flex-wrap gap-3 overflow-clip">
-            {uniqueCategories.slice(0, 4).map((category) => (
-              <span className="flex gap-3" key={category}>
-                <span>•</span>
-                <span className="capitalize">{category}</span>
-              </span>
-            ))}
-          </div>
-
-          <ShareButtons />
+    <article className="mx-auto max-w-5xl px-1 py-1 md:py-6">
+      <div className="mb-6 flex items-center gap-3 text-sm">
+        <Link to="/" className="tracking-wider">
+          VIDIK
+        </Link>
+        <div className="flex max-h-5 flex-wrap gap-3 overflow-clip">
+          {uniqueCategories.slice(0, 4).map((category) => (
+            <span className="flex gap-3" key={category}>
+              <span>•</span>
+              <span className="capitalize">{category}</span>
+            </span>
+          ))}
         </div>
 
-        <h1 className="text-primary mb-8 line-clamp-3 text-xl leading-normal font-bold tracking-tight text-balance md:text-3xl md:leading-tight lg:text-4xl">
-          {cluster.title}
-        </h1>
+        <ShareButtons />
+      </div>
 
-        <div className="mb-12 grid gap-6 md:grid-cols-3">
-          <HeroImageCarousel
-            articles={cluster.articles}
-            title={cluster.title}
-            clusterId={cluster.id}
-            className="md:col-span-2"
-          />
-          <BiasDistribution
-            biasDistribution={biasDistribution}
-            providers={providers}
-          />
-        </div>
+      <h1 className="text-primary mb-8 line-clamp-3 text-xl leading-normal font-bold tracking-tight text-balance md:text-3xl md:leading-tight lg:text-4xl">
+        {cluster.title}
+      </h1>
 
-        <ArticleInfoBanner
-          providerCount={uniqueProviders.length}
-          articleCount={cluster.articles.length}
-          oldestDate={oldestDate}
-          newestDate={newestDate}
+      <div className="mb-12 grid gap-6 md:grid-cols-3">
+        <HeroImageCarousel
+          articles={cluster.articles}
+          title={cluster.title}
+          clusterId={cluster.id}
+          className="md:col-span-2"
         />
-
-        <div className="mb-8">
-          <h2 className="text-primary mb-6 text-xl font-bold md:text-3xl">
-            Pokritje iz {cluster.articles.length}{" "}
-            {resolvePlural({
-              count: cluster.articles.length,
-              singular: "članek",
-              dual: "članka",
-              plural: "člankov",
-            })}
-          </h2>
-
-          <div className="space-y-3 md:space-y-5">
-            {cluster.articles.map((article) => (
-              <ArticleItem key={article.id} article={article} />
-            ))}
-          </div>
-        </div>
-        <ArticleBottomBanner
-          articleCount={cluster.articles.length}
-          providerCount={uniqueProviders.length}
-          newestDate={newestDate}
+        <BiasDistribution
+          biasDistribution={biasDistribution}
+          providers={providers}
         />
-      </article>
-    </div>
+      </div>
+
+      <ArticleInfoBanner
+        providerCount={uniqueProviders.length}
+        articleCount={cluster.articles.length}
+        oldestDate={oldestDate}
+        newestDate={newestDate}
+      />
+
+      <div className="mb-8">
+        <h2 className="text-primary mb-6 text-xl font-bold md:text-3xl">
+          Pokritje iz {cluster.articles.length}{" "}
+          {resolvePlural({
+            count: cluster.articles.length,
+            singular: "članek",
+            dual: "članka",
+            plural: "člankov",
+          })}
+        </h2>
+
+        <div className="space-y-3 md:space-y-5">
+          {cluster.articles.map((article) => (
+            <ArticleItem key={article.id} article={article} />
+          ))}
+        </div>
+      </div>
+      <ArticleBottomBanner
+        articleCount={cluster.articles.length}
+        providerCount={uniqueProviders.length}
+        newestDate={newestDate}
+      />
+    </article>
   );
 }
 
@@ -237,10 +235,8 @@ function ArticleInfoBanner({
         <div className="flex items-start gap-3">
           <Info className="text-accent mt-1 h-5 w-5 flex-shrink-0" />
           <div>
-            <h2 className="text-card-foreground mb-2 font-bold">
-              VEČ POGLEDOV, EN DOGODEK
-            </h2>
-            <p className="text-muted-foreground text-sm leading-relaxed text-pretty">
+            <h2 className="mb-2 font-bold">VEČ POGLEDOV, EN DOGODEK</h2>
+            <p className="text-surface-text/70 text-sm leading-relaxed text-pretty">
               Ta razdelek združuje več člankov iz različnih virov, ki pokrivajo
               isto zgodbo. To vam omogoča celovit pogled na to, kako različni
               mediji poročajo o istem dogodku.
@@ -250,12 +246,10 @@ function ArticleInfoBanner({
 
         <div className="flex flex-wrap gap-6 md:flex-shrink-0">
           <div className="flex items-center gap-3">
-            <Newspaper className="text-muted-foreground h-6 w-6" />
+            <Newspaper className="h-6 w-6" />
             <div>
-              <div className="text-primary text-2xl font-bold">
-                {articleCount}
-              </div>
-              <div className="text-muted-foreground text-xs">
+              <div className="text-2xl font-bold">{articleCount}</div>
+              <div className="text-xs">
                 {resolvePlural({
                   count: articleCount,
                   singular: "Članek",
@@ -266,12 +260,10 @@ function ArticleInfoBanner({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <SatelliteDish className="text-muted-foreground h-6 w-6" />
+            <SatelliteDish className="h-6 w-6" />
             <div>
-              <div className="text-primary text-2xl font-bold">
-                {providerCount}
-              </div>
-              <div className="text-muted-foreground text-xs">
+              <div className="text-2xl font-bold">{providerCount}</div>
+              <div className="text-xs">
                 {resolvePlural({
                   count: providerCount,
                   singular: "Vir",
@@ -282,7 +274,7 @@ function ArticleInfoBanner({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Calendar className="text-muted-foreground h-6 w-6" />
+            <Calendar className="h-6 w-6" />
             <Timespan oldestDate={oldestDate} newestDate={newestDate} />
           </div>
           <div className="flex items-center gap-3"></div>
@@ -301,7 +293,7 @@ function Timespan({
 }) {
   return (
     <div className="flex flex-col items-start space-y-0.5">
-      <div className="text-primary text-sm font-semibold">
+      <div className="text-sm font-semibold">
         {oldestDate.toDateString() === newestDate.toDateString() ? (
           <div>
             <div className="font-bold">
@@ -310,7 +302,7 @@ function Timespan({
                 month: "short",
               })}
             </div>
-            <span className="text-muted-foreground text-xs">
+            <span className="text-xs">
               {oldestDate.toLocaleTimeString("sl-SI", {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -337,7 +329,7 @@ function Timespan({
           </>
         )}
       </div>
-      <div className="text-muted-foreground text-xs">Obdobje</div>
+      <div className="text-xs">Obdobje</div>
     </div>
   );
 }
@@ -353,9 +345,9 @@ function ArticleBottomBanner({
 }) {
   return (
     <InfoCard className="mt-12 text-center">
-      <p className="text-muted-foreground text-sm leading-relaxed">
+      <p className="text-sm leading-relaxed">
         Ta sklop je bil avtomatsko generiran z analizo{" "}
-        <strong className="text-primary font-semibold">
+        <strong className="font-semibold">
           {articleCount}{" "}
           {resolvePlural({
             count: articleCount,
@@ -365,7 +357,7 @@ function ArticleBottomBanner({
           })}
         </strong>{" "}
         iz{" "}
-        <strong className="text-primary font-semibold">
+        <strong className="font-semibold">
           {providerCount}{" "}
           {resolvePlural({
             count: providerCount,
@@ -429,7 +421,7 @@ function ShareButtons() {
         </Tooltip>
         <span
           className={cn(
-            "text-muted-foreground pointer-events-none absolute top-full mt-1.5 text-xs transition-opacity duration-200",
+            "pointer-events-none absolute top-full mt-1.5 text-xs transition-opacity duration-200",
             hasCopied ? "opacity-100" : "opacity-0",
           )}
         >
