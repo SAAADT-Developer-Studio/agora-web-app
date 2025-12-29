@@ -45,7 +45,7 @@ export default function ContactPage({}: Route.ComponentProps) {
             </p>
             <a
               href="mailto:info@vidik.si"
-              className="bg-primary text-surface-text-text hover:bg-primary/90 mt-2 inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 hover:shadow-md"
+              className="bg-primary text-primary-text hover:bg-primary/90 mt-2 inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 hover:shadow-md"
               aria-label="Pošlji e-pošto na info@vidik.si"
             >
               info@vidik.si
@@ -66,7 +66,7 @@ export default function ContactPage({}: Route.ComponentProps) {
             <button
               type="button"
               data-feedback-fish
-              className="bg-primary text-surface-text-text hover:bg-primary/90 mt-2 inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 hover:shadow-md"
+              className="bg-primary text-primary-text hover:bg-primary/90 mt-2 inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 hover:shadow-md"
               aria-label="Odpri obrazec za povratne informacije"
             >
               Pošlji povratne informacije
