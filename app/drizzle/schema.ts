@@ -1,4 +1,4 @@
-import { pgTable, index, serial, varchar, jsonb, boolean, timestamp, foreignKey, unique, integer, doublePrecision, primaryKey, uuid } from "drizzle-orm/pg-core"
+import { pgTable, index, serial, varchar, jsonb, boolean, timestamp, foreignKey, unique, integer, doublePrecision, uuid, primaryKey } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 
@@ -20,6 +20,7 @@ export const articleCluster = pgTable("article_cluster", {
 	runId: integer("run_id").notNull(),
 }, (table) => [
 	index("ix_article_cluster_cluster_id").using("btree", table.clusterId.asc().nullsLast().op("int4_ops")),
+	index("ix_article_cluster_run_id").using("btree", table.runId.asc().nullsLast().op("int4_ops")),
 	foreignKey({
 			columns: [table.articleId],
 			foreignColumns: [article.id],
@@ -45,6 +46,7 @@ export const clusterV2 = pgTable("cluster_v2", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
 	runId: integer("run_id").notNull(),
 }, (table) => [
+	index("ix_cluster_v2_run_id").using("btree", table.runId.asc().nullsLast().op("int4_ops")),
 	foreignKey({
 			columns: [table.runId],
 			foreignColumns: [clusterRun.id],
@@ -122,6 +124,27 @@ export const socialPost = pgTable("social_post", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
 }, (table) => [
 	unique("social_post_url_key").on(table.url),
+]);
+
+export const mossData = pgTable("moss_data", {
+	id: uuid().primaryKey().notNull(),
+	providerKey: varchar("provider_key").notNull(),
+	rank: integer().notNull(),
+	website: varchar().notNull(),
+	publisher: varchar().notNull(),
+	reach: integer().notNull(),
+	reachPercent: doublePrecision("reach_percent").notNull(),
+	avgDailyReach: integer("avg_daily_reach").notNull(),
+	views: integer().notNull(),
+	avgSessionDuration: varchar("avg_session_duration").notNull(),
+	trend: doublePrecision().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.providerKey],
+			foreignColumns: [newsProvider.key],
+			name: "moss_data_provider_key_fkey"
+		}),
 ]);
 
 export const alembicVersion = pgTable("alembic_version", {

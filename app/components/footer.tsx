@@ -26,6 +26,7 @@ export default function Footer() {
             </p>
             <div className="flex space-x-4 pt-2">
               <a
+                key="facebook"
                 href="https://www.facebook.com/share/1BHYtu1oJB/?mibextid=wwXIfr"
                 target="_blank"
                 className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
@@ -34,6 +35,7 @@ export default function Footer() {
                 <span className="sr-only">Facebook</span>
               </a>
               <a
+                key="instagram"
                 href="https://www.instagram.com/vidikslo?igsh=MTNnMW1vYXQyYXpvMQ%3D%3D&utm_source=qr"
                 target="_blank"
                 className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
@@ -42,6 +44,7 @@ export default function Footer() {
                 <span className="sr-only">Instagram</span>
               </a>
               <a
+                key="x"
                 href="https://x.com/VidikSlo"
                 target="_blank"
                 className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
@@ -50,6 +53,7 @@ export default function Footer() {
                 <span className="sr-only">X</span>
               </a>
               <a
+                key="email"
                 href="mailto:info@vidik.si"
                 className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
               >
