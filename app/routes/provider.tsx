@@ -1,4 +1,4 @@
-import { data, Link, href, Await } from "react-router";
+import { data, Link, href, Await, useRevalidator } from "react-router";
 import type { Route } from "./+types/provider";
 import { getSeoMetas } from "~/lib/seo";
 import {
@@ -92,6 +92,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
     loaderData;
   const queryClient = useQueryClient();
   const [userId] = useLocalStorage("user_id", null);
+  const revalidator = useRevalidator();
 
   const queryKey = ["vote", provider.key, userId];
 
@@ -118,6 +119,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
     },
     onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey });
+      await revalidator.revalidate();
     },
     onMutate(ratingValue) {
       queryClient.setQueryData(queryKey, (old: Vote) => ({
