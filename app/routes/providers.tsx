@@ -1,7 +1,10 @@
 import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/providers";
 import { getSeoMetas } from "~/lib/seo";
-import { ProviderImage } from "~/components/provider-image";
+import {
+  getProviderImageUrl,
+  ProviderImage,
+} from "~/components/provider-image";
 import { ArrowLeftRight, Globe, Newspaper } from "lucide-react";
 import { Link, data, href } from "react-router";
 import { gte, desc, count } from "drizzle-orm";
@@ -281,18 +284,18 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
           <DropdownMenu>
             <DropdownMenuTrigger
               asChild
-              className="bg-primary text-primary-text font-semibold !outline-none"
+              className="bg-surface shadow-vidik text-primary font-semibold !outline-none"
             >
               <Button variant="outline">
                 Pristranskost
                 {selectedBiasRatings.length > 0 && (
-                  <span className="bg-surface text-surface-text ml-2 rounded-full px-2 py-0.5 text-xs">
+                  <span className="bg-surface text-primary ml-2 rounded-full px-2 py-0.5 text-xs">
                     {selectedBiasRatings.length}
                   </span>
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-primary text-primary-text w-56">
+            <DropdownMenuContent className="bg-surface text-primary shadow-vidik w-56">
               <DropdownMenuLabel>Filtriraj po pristranskosti</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {Object.values(BiasRatingKey).map((biasRatingKey) => (
@@ -308,163 +311,75 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
           </DropdownMenu>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="bg-primary text-primary-text w-[120px] font-semibold !outline-none md:w-[240px]">
+            <SelectTrigger className="bg-surface text-primary w-[120px] font-semibold !outline-none md:w-[240px]">
               <SelectValue placeholder="Razvrsti po" />
             </SelectTrigger>
-            <SelectContent className="bg-primary text-primary-text border-none">
+            <SelectContent className="bg-surface text-primary shadow-vidik">
               <SelectItem value="rank" className="hover:bg-surface-light/10">
                 Privzeto
-              </SelectItem>
-              <SelectItem
-                value="today-most"
-                className="hover:bg-surface-light/10"
-              >
-                Danes - Največ člankov
-              </SelectItem>
-              <SelectItem
-                value="today-least"
-                className="hover:bg-surface-light/10"
-              >
-                Danes - Najmanj člankov
-              </SelectItem>
-              <SelectItem
-                value="week-most"
-                className="hover:bg-surface-light/10"
-              >
-                Ta teden - Največ člankov
-              </SelectItem>
-              <SelectItem
-                value="week-least"
-                className="hover:bg-surface-light/10"
-              >
-                Ta teden - Najmanj člankov
               </SelectItem>
               <SelectItem
                 value="month-most"
                 className="hover:bg-surface-light/10"
               >
-                Ta mesec - Največ člankov
+                Največ člankov
               </SelectItem>
               <SelectItem
                 value="month-least"
                 className="hover:bg-surface-light/10"
               >
-                Ta mesec - Najmanj člankov
+                Najmanj člankov
               </SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      {filteredAndSortedProviders.map((provider) => (
-        <Link
-          className="mt-6 flex flex-col items-start justify-between gap-4 rounded-lg p-0 transition-all hover:bg-current/5 md:flex-row md:gap-0 md:p-4"
-          to={href("/medij/:providerKey", { providerKey: provider.key })}
-          key={provider.key}
-        >
-          <div className="flex w-full">
-            <ProviderImage
-              size={160}
-              provider={provider}
-              className={`size-[135px] rounded-lg ${provider.key === "zurnal24" ? "border-primary/20 border" : ""}`}
-            />
-            <div className="@container ml-3 flex w-full flex-col justify-between md:ml-6">
-              <div className="flex flex-wrap gap-2">
-                <div className="bg-surface-light/70 hover:bg-surface-light text-surface-light-text flex items-center justify-center gap-1 rounded-lg border border-current/10 px-2 py-1 text-xs font-semibold">
-                  <Globe className="size-3" />
-                  {removeUrlProtocol(provider.url)}
-                </div>
-                <div
-                  className={`${biasKeyToColor(provider.biasRating ?? "")} flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold`}
-                >
-                  <ArrowLeftRight className="size-3" />
-                  {biasKeyToLabel(provider.biasRating ?? "")}
+      <div className="mt-6 grid w-full grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+        {filteredAndSortedProviders.map((provider) => (
+          <Link
+            className="bg-surface-light/50 shadow-vidik flex flex-col items-start justify-between gap-4 rounded-md p-4 transition-all hover:bg-current/5"
+            to={href("/medij/:providerKey", { providerKey: provider.key })}
+            key={provider.key}
+          >
+            <div className="flex w-full flex-col">
+              <div className="flex items-center gap-4">
+                <ProviderImage
+                  className="shadow-vidik size-[60px] rounded-md"
+                  size={160}
+                  provider={provider}
+                ></ProviderImage>
+
+                <div className="flex flex-col gap-2">
+                  <h2
+                    className={cn("mt-4 ml-1 text-[20px] leading-6 font-bold")}
+                  >
+                    {provider.name}
+                  </h2>
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    <div className="bg-surface-light/70 shadow-vidik hover:bg-surface-light text-surface-light-text flex items-center justify-center gap-1 rounded-lg border border-current/10 px-2 py-1 text-xs font-semibold">
+                      <Globe className="size-3" />
+                      {removeUrlProtocol(provider.url)}
+                    </div>
+                    <div
+                      className={`${biasKeyToColor(provider.biasRating ?? "")} shadow-vidik flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold`}
+                    >
+                      <ArrowLeftRight className="size-3" />
+                      {biasKeyToLabel(provider.biasRating ?? "")}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <h2
-                className={cn(
-                  "text-[20px] leading-6 font-bold @min-[180px]:text-[35px] @min-[180px]:leading-8 @min-[400px]:text-[40px] @min-[400px]:leading-10",
-                  provider.key === "necenzurirano" && "truncate", // not ideal, but works for now
-                )}
-              >
-                {provider.name}
+            </div>
+            <div className="flex justify-between">
+              <h2 className="text-primary/50 font-ligh">
+                Članki objavljeni ta mesec:{" "}
+                {providerStatsMap.get(provider.key)?.month.count ?? 0}
               </h2>
             </div>
-          </div>
-          <div
-            className={`grid w-full grid-cols-3 gap-2 md:w-1/2 md:min-w-1/2 ${provider.key === "mladina" ? "hidden" : ""}`}
-          >
-            <Card className="py-0">
-              <div className="space-y-4 p-2 md:p-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="-primary text-md font-bold md:text-xl">
-                    {providerStatsMap.get(provider.key)?.today.count ?? 0}
-                  </h2>
-                  <Newspaper className="size-3 md:size-6" />
-                </div>
-
-                <div className="space-y-1">
-                  <p className="text-xs leading-tight font-medium md:text-sm">
-                    Objavljenih člankov danes
-                  </p>
-                  <p className="text-xs text-gray-400 md:text-sm">
-                    Rank:{" "}
-                    {providerStatsMap.get(provider.key)?.today.rank
-                      ? "#" + providerStatsMap.get(provider.key)?.today.rank
-                      : "N/A"}
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="py-0">
-              <div className="space-y-4 p-2 md:p-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-md font-bold md:text-xl">
-                    {providerStatsMap.get(provider.key)?.week.count ?? 0}
-                  </h2>
-                  <Newspaper className="size-3 md:size-6" />
-                </div>
-
-                <div className="space-y-1">
-                  <p className="text-xs leading-tight font-medium md:text-sm">
-                    Objavljenih člankov ta teden
-                  </p>
-                  <p className="text-xs text-gray-400 md:text-sm">
-                    Rank:{" "}
-                    {providerStatsMap.get(provider.key)?.week.rank
-                      ? "#" + providerStatsMap.get(provider.key)?.week.rank
-                      : "N/A"}
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="py-0">
-              <div className="space-y-4 p-2 md:p-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-md font-bold md:text-xl">
-                    {providerStatsMap.get(provider.key)?.month.count ?? 0}
-                  </h2>
-                  <Newspaper className="size-3 md:size-6" />
-                </div>
-
-                <div className="space-y-1">
-                  <p className="text-xs leading-tight font-medium md:text-sm">
-                    Objavljenih člankov ta mesec
-                  </p>
-                  <p className="text-xs text-gray-400 md:text-sm">
-                    Rank:{" "}
-                    {providerStatsMap.get(provider.key)?.month.rank
-                      ? "#" + providerStatsMap.get(provider.key)?.month.rank
-                      : "N/A"}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </Link>
-      ))}
+          </Link>
+        ))}
+      </div>
     </section>
   );
 }

@@ -163,24 +163,21 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
         <ProviderImage
           size={160}
           provider={provider}
-          className={cn(
-            "h-[120px] min-w-[120px] rounded-lg",
-            provider.key === "zurnal24" && "border border-white/20",
-          )}
+          className={cn("shadow-vidik h-[120px] min-w-[120px] rounded-lg")}
         />
         <div className="ml-3 flex flex-col justify-between md:ml-4">
           <div className="flex flex-wrap gap-2">
             <a
               href={provider.url}
               target="_blank"
-              className="bg-surface-light/70 hover:bg-surface-light text-surface-light-text flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold"
+              className="bg-surface-light/70 shadow-vidik hover:bg-surface-light text-surface-light-text flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold"
             >
               <Globe className="size-3" />
               {removeUrlProtocol(provider.url)}
             </a>
             <div
               className={cn(
-                "bg-surface-light/70 hover:bg-surface-light text-surface-light-text flex items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-semibold",
+                "bg-surface-light/70 hover:bg-surface-light text-surface-light-text shadow-vidik flex items-center justify-center gap-1 rounded-md px-2 py-1 text-xs font-semibold",
                 biasKeyToColor(provider.biasRating ?? ""),
               )}
             >
