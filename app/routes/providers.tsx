@@ -335,7 +335,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
         </div>
       </div>
 
-      <div className="mt-6 grid w-full grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-6 grid w-full grid-cols-1 gap-2 md:grid-cols-2 md:gap-6 xl:grid-cols-3">
         {filteredAndSortedProviders.map((provider) => (
           <Link
             className="bg-surface-light/50 shadow-vidik flex flex-col items-start justify-between gap-4 rounded-md p-4 transition-all hover:bg-current/5"
@@ -352,7 +352,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
 
                 <div className="flex flex-col gap-2">
                   <h2
-                    className={cn("mt-4 ml-1 text-[20px] leading-6 font-bold")}
+                    className={cn("mt-2 ml-1 text-[20px] leading-6 font-bold")}
                   >
                     {provider.name}
                   </h2>
