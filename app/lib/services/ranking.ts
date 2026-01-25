@@ -90,61 +90,83 @@ export async function getHomeArticles({
 }): Promise<ArticleType[]> {
   // TODO: maybe pass in clusterRunId as param?
   const topClusterIds = await db.execute(sql`
-    WITH latest_run AS (
-      SELECT ${clusterRun.id} as id
-      FROM ${clusterRun}
-      WHERE ${clusterRun.isProduction} = true
-      ORDER BY ${clusterRun.createdAt} DESC
-      LIMIT 1
-    ),
-    cluster_scores AS (
-      SELECT
-        ${clusterV2.id} as id,
-        count(${article.id}) as article_count,
-        sum(${article.llmRank}) as sum_llm_rank,
-        ${recencyScoreExpr} as recency_score,
-        ${categoryScoreExpr} as category_score,
-        count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count
-      FROM ${clusterV2}
-      INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
-      INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
-      LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
-      WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
-      GROUP BY ${clusterV2.id}
-      HAVING count(${article.id}) > 0
-    ),
-    normalized_scores AS (
-      SELECT
-        id,
-        article_count,
-        recency_score,
-        category_score,
-        social_post_count,
-        CASE
-          WHEN MAX(sum_llm_rank) OVER () > 0
-          THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
-          ELSE 0
-        END as cluster_llm_rank_score,
-        CASE
-          WHEN MAX(social_post_count) OVER () > 0
-          THEN social_post_count::float / MAX(social_post_count) OVER ()
-          ELSE 0
-        END as social_score
-      FROM cluster_scores
-    )
+  WITH latest_run AS (
+    SELECT ${clusterRun.id} as id
+    FROM ${clusterRun}
+    WHERE ${clusterRun.isProduction} = true
+    ORDER BY ${clusterRun.createdAt} DESC
+    LIMIT 1
+  ),
+
+  provider_counts AS (
+    SELECT
+      ${articleCluster.clusterId} as cluster_id,
+      ${article.newsProviderKey} as provider_key,
+      count(*) as provider_article_count
+    FROM ${articleCluster}
+    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
+    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
+    GROUP BY ${articleCluster.clusterId}, ${article.newsProviderKey}
+  ),
+
+  cluster_scores AS (
+    SELECT
+      ${clusterV2.id} as id,
+      count(${article.id}) as article_count,
+      sum(${article.llmRank}) as sum_llm_rank,
+      ${recencyScoreExpr} as recency_score,
+      ${categoryScoreExpr} as category_score,
+      count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count,
+      max(pc.provider_article_count) as max_provider_articles
+    FROM ${clusterV2}
+    INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
+    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
+    LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
+    LEFT JOIN provider_counts pc ON pc.cluster_id = ${clusterV2.id}
+    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
+    GROUP BY ${clusterV2.id}
+    HAVING count(${article.id}) > 0
+  ),
+
+  normalized_scores AS (
     SELECT
       id,
       article_count,
-      cluster_llm_rank_score,
       recency_score,
       category_score,
-      social_score,
-      (cluster_llm_rank_score * 0.40 + recency_score * 0.2 + category_score * 0.25 + social_score * 0.15) as combined_score
-    FROM normalized_scores
-    ORDER BY combined_score DESC
-    LIMIT ${count}
-  `);
+      social_post_count,
+      max_provider_articles,
+      CASE
+        WHEN MAX(sum_llm_rank) OVER () > 0
+        THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
+        ELSE 0
+      END as cluster_llm_rank_score,
+      CASE
+        WHEN MAX(social_post_count) OVER () > 0
+        THEN social_post_count::float / MAX(social_post_count) OVER ()
+        ELSE 0
+      END as social_score
+    FROM cluster_scores
+  )
 
+  SELECT
+    id,
+    article_count,
+    cluster_llm_rank_score,
+    recency_score,
+    category_score,
+    social_score,
+
+    (max_provider_articles::float / NULLIF(article_count, 0)) as dominance,
+    (cluster_llm_rank_score * 0.4 + recency_score * 0.20 + category_score * 0.20 + social_score * 0.20) as base_score,
+    (
+      (cluster_llm_rank_score * 0.4 + recency_score * 0.20 + category_score * 0.20 + social_score * 0.20)
+      * (1 - GREATEST(0, (max_provider_articles::float / NULLIF(article_count, 0)) - 0.4))
+    ) as combined_score
+  FROM normalized_scores
+  ORDER BY combined_score DESC
+  LIMIT ${count}
+`);
   return await common(
     db,
     topClusterIds.rows as { id: number; combined_score: number }[],
@@ -163,59 +185,84 @@ export async function getCategoryArticles({
   offset?: number;
 }): Promise<ArticleType[]> {
   const topClusterIds = await db.execute(sql`
-    WITH latest_run AS (
-      SELECT ${clusterRun.id} as id
-      FROM ${clusterRun}
-      WHERE ${clusterRun.isProduction} = true
-      ORDER BY ${clusterRun.createdAt} DESC
-      LIMIT 1
-    ),
-    cluster_scores AS (
-      SELECT
-        ${clusterV2.id} as id,
-        count(${article.id}) as article_count,
-        sum(${article.llmRank}) as sum_llm_rank,
-        ${recencyScoreExpr} as recency_score,
-        count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count
-      FROM ${clusterV2}
-      INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
-      INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
-      LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
-      WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
-        AND (${category} = ANY(ARRAY[${article.categories}[1], ${article.categories}[2]]))
-      GROUP BY ${clusterV2.id}
-      HAVING count(${article.id}) > 0
-    ),
-    normalized_scores AS (
-      SELECT
-        id,
-        article_count,
-        recency_score,
-        social_post_count,
-        CASE
-          WHEN MAX(sum_llm_rank) OVER () > 0
-          THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
-          ELSE 0
-        END as cluster_llm_rank_score,
-        CASE
-          WHEN MAX(social_post_count) OVER () > 0
-          THEN social_post_count::float / MAX(social_post_count) OVER ()
-          ELSE 0
-        END as social_score
-      FROM cluster_scores
-    )
+  WITH latest_run AS (
+    SELECT ${clusterRun.id} as id
+    FROM ${clusterRun}
+    WHERE ${clusterRun.isProduction} = true
+    ORDER BY ${clusterRun.createdAt} DESC
+    LIMIT 1
+  ),
+
+  provider_counts AS (
+    SELECT
+      ${articleCluster.clusterId} as cluster_id,
+      ${article.newsProviderKey} as provider_key,
+      count(*) as provider_article_count
+    FROM ${articleCluster}
+    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
+    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
+    GROUP BY ${articleCluster.clusterId}, ${article.newsProviderKey}
+  ),
+
+  cluster_scores AS (
+    SELECT
+      ${clusterV2.id} as id,
+      count(${article.id}) as article_count,
+      sum(${article.llmRank}) as sum_llm_rank,
+      ${recencyScoreExpr} as recency_score,
+      count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count,
+      max(pc.provider_article_count) as max_provider_articles
+    FROM ${clusterV2}
+    INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
+    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
+    LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
+    LEFT JOIN provider_counts pc ON pc.cluster_id = ${clusterV2.id}
+    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
+      AND (${category} = ANY(ARRAY[${article.categories}[1], ${article.categories}[2]]))
+    GROUP BY ${clusterV2.id}
+    HAVING count(${article.id}) > 0
+  ),
+
+  normalized_scores AS (
     SELECT
       id,
       article_count,
-      cluster_llm_rank_score,
       recency_score,
-      social_score,
-      (cluster_llm_rank_score * 0.5 + recency_score * 0.30 + social_score * 0.2) as combined_score
-    FROM normalized_scores
-    ORDER BY combined_score DESC
-    LIMIT ${count}
-    OFFSET ${offset ?? 0}
-  `);
+      social_post_count,
+      max_provider_articles,
+      CASE
+        WHEN MAX(sum_llm_rank) OVER () > 0
+        THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
+        ELSE 0
+      END as cluster_llm_rank_score,
+      CASE
+        WHEN MAX(social_post_count) OVER () > 0
+        THEN social_post_count::float / MAX(social_post_count) OVER ()
+        ELSE 0
+      END as social_score
+    FROM cluster_scores
+  )
+
+  SELECT
+    id,
+    article_count,
+    cluster_llm_rank_score,
+    recency_score,
+    social_score,
+
+    (max_provider_articles::float / NULLIF(article_count, 0)) as dominance,
+
+    (cluster_llm_rank_score * 0.45 + recency_score * 0.3 + social_score * 0.25) as base_score,
+
+    (
+      (cluster_llm_rank_score * 0.45 + recency_score * 0.3 + social_score * 0.25)
+      * (1 - GREATEST(0, (max_provider_articles::float / NULLIF(article_count, 0)) - 0.4))
+    ) as combined_score
+  FROM normalized_scores
+  ORDER BY combined_score DESC
+  LIMIT ${count}
+  OFFSET ${offset ?? 0}
+`);
 
   return await common(
     db,

@@ -153,10 +153,16 @@ export async function loader({ context }: Route.LoaderArgs) {
   const articles = await context.measurer.time(
     "fetchHomeArticlesData",
     async () =>
-      await kvCache.cached(async () => await fetchHomeArticlesData({ db }), {
-        key: HOME_CACHE_KEY,
-        expirationTtl: 10 * 60,
-      }),
+      await kvCache.cached(
+        async () =>
+          await fetchHomeArticlesData({
+            db,
+          }),
+        {
+          key: HOME_CACHE_KEY,
+          expirationTtl: 10 * 60,
+        },
+      ),
   );
 
   const randomProviders = fetchRandomProviders({ db });
@@ -193,75 +199,71 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   } = loaderData;
 
   return (
-    <>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
-        <HeroArticles articles={articles.home} />
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
+      <HeroArticles articles={articles.home} />
 
-        <CategorySection
-          articles={articles[CategoryKey.politika]}
-          categoryKey={CategoryKey.politika}
-          dividerText="POLITIKA"
-          sideSection={<VotingCard randomProviders={randomProviders} />}
-        />
+      <CategorySection
+        articles={articles[CategoryKey.politika]}
+        categoryKey={CategoryKey.politika}
+        dividerText="POLITIKA"
+        sideSection={<VotingCard randomProviders={randomProviders} />}
+      />
 
-        <CategorySection
-          articles={articles[CategoryKey.gospodarstvo]}
-          categoryKey={CategoryKey.gospodarstvo}
-          dividerText="GOSPODARSTVO"
-          sideSection={
-            <EconomyCard
-              gdpSeries={gdpSeries}
-              inflationSeries={inflationSeries}
-            />
-          }
-        />
+      <CategorySection
+        articles={articles[CategoryKey.gospodarstvo]}
+        categoryKey={CategoryKey.gospodarstvo}
+        dividerText="GOSPODARSTVO"
+        sideSection={
+          <EconomyCard
+            gdpSeries={gdpSeries}
+            inflationSeries={inflationSeries}
+          />
+        }
+      />
 
-        <CategorySection
-          articles={articles[CategoryKey.kriminal]}
-          categoryKey={CategoryKey.kriminal}
-          dividerText="KRIMINAL"
-          sideSection={
-            <ProviderStatsCard providerStatsPromise={providerStats} />
-          }
-        />
+      <CategorySection
+        articles={articles[CategoryKey.kriminal]}
+        categoryKey={CategoryKey.kriminal}
+        dividerText="KRIMINAL"
+        sideSection={<ProviderStatsCard providerStatsPromise={providerStats} />}
+      />
 
-        <CategorySection
-          articles={articles[CategoryKey.lokalno]}
-          categoryKey={CategoryKey.lokalno}
-          dividerText="LOKALNO"
-        />
+      <CategorySection
+        articles={articles[CategoryKey.lokalno]}
+        categoryKey={CategoryKey.lokalno}
+        dividerText="LOKALNO"
+      />
 
-        <CategorySection
-          articles={articles[CategoryKey.sport]}
-          categoryKey={CategoryKey.sport}
-          dividerText="ŠPORT"
-        />
+      <CategorySection
+        articles={articles[CategoryKey.sport]}
+        categoryKey={CategoryKey.sport}
+        dividerText="ŠPORT"
+      />
 
-        <CategorySection
-          articles={articles[CategoryKey.tehnologijaZnanost]}
-          categoryKey={CategoryKey.tehnologijaZnanost}
-          dividerText="TEHNOLOGIJA & ZNANOST"
-        />
+      <CategorySection
+        articles={articles[CategoryKey.tehnologijaZnanost]}
+        categoryKey={CategoryKey.tehnologijaZnanost}
+        dividerText="TEHNOLOGIJA & ZNANOST"
+      />
 
-        <CategorySection
-          articles={articles[CategoryKey.kultura]}
-          categoryKey={CategoryKey.kultura}
-          dividerText="KULTURA"
-        />
+      <CategorySection
+        articles={articles[CategoryKey.kultura]}
+        categoryKey={CategoryKey.kultura}
+        dividerText="KULTURA"
+      />
 
-        <CategorySection
-          articles={articles[CategoryKey.zdravje]}
-          categoryKey={CategoryKey.zdravje}
-          dividerText="ZDRAVJE"
-        />
+      <CategorySection
+        articles={articles[CategoryKey.zdravje]}
+        categoryKey={CategoryKey.zdravje}
+        dividerText="ZDRAVJE"
+      />
 
-        <CategorySection
-          articles={articles[CategoryKey.okolje]}
-          categoryKey={CategoryKey.okolje}
-          dividerText="OKOLJE"
-        />
-      </div>
-    </>
+      <CategorySection
+        articles={articles[CategoryKey.okolje]}
+        categoryKey={CategoryKey.okolje}
+        dividerText="OKOLJE"
+      />
+    </div>
   );
 }
 
