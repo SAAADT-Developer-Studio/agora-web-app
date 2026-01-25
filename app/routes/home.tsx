@@ -53,7 +53,7 @@ export async function fetchHomeArticlesData({ db }: { db: Database }) {
   const homeArticles = await getHomeArticles({ db, count: 6 });
   let ignoredClusterIds = homeArticles.map((a) => Number(a.id));
 
-  const promiseMap = {
+  const categoryMap = {
     home: homeArticles,
   } as {
     home: ArticleType[];
@@ -74,10 +74,10 @@ export async function fetchHomeArticlesData({ db }: { db: Database }) {
       ...categoryArticles.map((a) => Number(a.id)),
     ];
 
-    promiseMap[category.key] = categoryArticles;
+    categoryMap[category.key] = categoryArticles;
   }
 
-  return promiseMap;
+  return categoryMap;
 }
 export async function fetchRandomProviders({ db }: { db: Database }) {
   const now = new Date();
