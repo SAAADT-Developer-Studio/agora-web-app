@@ -34,6 +34,7 @@ export async function fetchCategoryArticlesData({
 }) {
   const articles = await getCategoryArticles({
     db,
+    ignoredClusterIds: [],
     category,
     count: 21,
     offset: 0,

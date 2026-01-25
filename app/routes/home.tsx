@@ -54,11 +54,11 @@ export async function fetchHomeArticlesData({ db }: { db: Database }) {
   let ignoredClusterIds = homeArticles.map((a) => Number(a.id));
 
   const promiseMap = {
-    home: Promise.resolve(homeArticles),
+    home: homeArticles,
   } as {
-    home: Promise<ArticleType[]>;
+    home: ArticleType[];
   } & {
-    [K in CategoryKeyValue]: Promise<ArticleType[]>;
+    [K in CategoryKeyValue]: ArticleType[];
   };
 
   for (const category of config.categories) {
@@ -74,10 +74,10 @@ export async function fetchHomeArticlesData({ db }: { db: Database }) {
       ...categoryArticles.map((a) => Number(a.id)),
     ];
 
-    promiseMap[category.key] = Promise.resolve(categoryArticles);
+    promiseMap[category.key] = categoryArticles;
   }
 
-  return await resolvePromises(promiseMap);
+  return promiseMap;
 }
 export async function fetchRandomProviders({ db }: { db: Database }) {
   const now = new Date();

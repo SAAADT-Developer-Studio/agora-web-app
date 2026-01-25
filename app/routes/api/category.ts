@@ -27,6 +27,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   }
   const articles = await getCategoryArticles({
     db: context.db,
+    ignoredClusterIds: [],
     category,
     count: Number(count),
     offset: Number(offset) || 0,
