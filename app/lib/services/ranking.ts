@@ -175,11 +175,13 @@ export async function getHomeArticles({
 
 export async function getCategoryArticles({
   db,
+  ignoredClusterIds,
   category,
   count,
   offset,
 }: {
   db: Database;
+  ignoredClusterIds: number[];
   category: string;
   count: number;
   offset?: number;
@@ -219,6 +221,7 @@ export async function getCategoryArticles({
     LEFT JOIN provider_counts pc ON pc.cluster_id = ${clusterV2.id}
     WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
       AND (${category} = ANY(ARRAY[${article.categories}[1], ${article.categories}[2]]))
+      ${ignoredClusterIds.length > 0 ? sql`AND ${clusterV2.id} NOT IN ${ignoredClusterIds}` : sql``}
     GROUP BY ${clusterV2.id}
     HAVING count(${article.id}) > 0
   ),

@@ -50,23 +50,34 @@ export function headers({ loaderHeaders }: Route.HeadersArgs) {
 }
 
 export async function fetchHomeArticlesData({ db }: { db: Database }) {
-  const promiseMap = {
-    home: getHomeArticles({ db, count: 6 }),
+  const homeArticles = await getHomeArticles({ db, count: 6 });
+  let ignoredClusterIds = homeArticles.map((a) => Number(a.id));
+
+  const categoryMap = {
+    home: homeArticles,
   } as {
-    home: Promise<ArticleType[]>;
+    home: ArticleType[];
   } & {
-    [K in CategoryKeyValue]: Promise<ArticleType[]>;
+    [K in CategoryKeyValue]: ArticleType[];
   };
 
-  config.categories.forEach((category) => {
-    promiseMap[category.key] = getCategoryArticles({
+  for (const category of config.categories) {
+    const categoryArticles = await getCategoryArticles({
       db,
+      ignoredClusterIds,
       count: 6,
       category: category.key,
     });
-  });
 
-  return await resolvePromises(promiseMap);
+    ignoredClusterIds = [
+      ...ignoredClusterIds,
+      ...categoryArticles.map((a) => Number(a.id)),
+    ];
+
+    categoryMap[category.key] = categoryArticles;
+  }
+
+  return categoryMap;
 }
 export async function fetchRandomProviders({ db }: { db: Database }) {
   const now = new Date();
