@@ -50,21 +50,32 @@ export function headers({ loaderHeaders }: Route.HeadersArgs) {
 }
 
 export async function fetchHomeArticlesData({ db }: { db: Database }) {
+  const homeArticles = await getHomeArticles({ db, count: 6 });
+  let ignoredClusterIds = homeArticles.map((a) => Number(a.id));
+
   const promiseMap = {
-    home: getHomeArticles({ db, count: 6 }),
+    home: Promise.resolve(homeArticles),
   } as {
     home: Promise<ArticleType[]>;
   } & {
     [K in CategoryKeyValue]: Promise<ArticleType[]>;
   };
 
-  config.categories.forEach((category) => {
-    promiseMap[category.key] = getCategoryArticles({
+  for (const category of config.categories) {
+    const categoryArticles = await getCategoryArticles({
       db,
+      ignoredClusterIds,
       count: 6,
       category: category.key,
     });
-  });
+
+    ignoredClusterIds = [
+      ...ignoredClusterIds,
+      ...categoryArticles.map((a) => Number(a.id)),
+    ];
+
+    promiseMap[category.key] = Promise.resolve(categoryArticles);
+  }
 
   return await resolvePromises(promiseMap);
 }
