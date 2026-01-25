@@ -67,6 +67,7 @@ async function main() {
     await tx.delete(schema.clusterV2);
     await tx.delete(schema.clusterRun);
     await tx.delete(schema.cluster);
+    await tx.delete(schema.mossData);
     await tx.delete(schema.newsProvider);
 
     // Insert in order: parent tables first, then child tables
@@ -76,6 +77,9 @@ async function main() {
     if (socialPosts.length > 0) {
       await tx.insert(schema.socialPost).values(socialPosts);
     }
+    await tx
+      .insert(schema.mossData)
+      .values(await prodDb.query.mossData.findMany());
     await tx.insert(schema.article).values(articles);
     if (articleClusters.length > 0) {
       await tx.insert(schema.articleCluster).values(articleClusters);
