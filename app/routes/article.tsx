@@ -378,7 +378,7 @@ function ArticleBottomBanner({
   );
 }
 
-function ShareButtons() {
+export function ShareButtons() {
   const [hasCopied, setHasCopied] = useState(false);
 
   const handleCopy = () => {

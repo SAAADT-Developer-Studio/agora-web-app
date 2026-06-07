@@ -12,6 +12,7 @@ export default [
     route("kontakt", "./routes/contact.tsx"),
     route("politika-zasebnosti", "./routes/privacy-policy.tsx"),
     route("metodologija", "./routes/bias-methodology.tsx"),
+    route("lastnistvo/:providerKey", "./routes/ownership.tsx"),
     route("mediji", "./routes/providers.tsx"),
     route("medij/:providerKey", "./routes/provider.tsx"),
     ...prefix(":category", [
