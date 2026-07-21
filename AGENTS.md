@@ -50,3 +50,8 @@ through a Cloudflare Hyperdrive binding. Standard commands live in `package.json
 - `pnpm run typecheck` regenerates Cloudflare + React Router types before `tsc`;
   run it after changing `wrangler.jsonc`. `pnpm run lint` currently reports only
   warnings (no errors).
+- On the very first request after `pnpm run dev` starts, Vite may re-optimize
+  deps (logs `Failed to resolve dependency: react-router-dom`) and the browser
+  can briefly show a React error (`Cannot read properties of null (reading
+  'useContext')`). Just refresh once — it is a dev-server warm-up artifact, not a
+  code bug (server-side rendering returns HTTP 200 the whole time).
