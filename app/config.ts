@@ -7,7 +7,6 @@ type Category = {
 type AppConfig = {
   navigation: { name: string; path: string }[];
   categories: Category[];
-  apiUrl: string;
   imagesUrl: string;
 };
 
@@ -48,7 +47,5 @@ const categories = [
 export const config = {
   navigation: [{ name: "AKTUALNO", path: "/" }, ...categories],
   categories,
-  apiUrl:
-    "https://z53lrua5dblvmgq565n3tsrhyy0oyuxt.lambda-url.eu-central-1.on.aws",
   imagesUrl: "https://images.vidik.si",
 } satisfies AppConfig;
