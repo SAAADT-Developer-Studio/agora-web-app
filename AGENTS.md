@@ -50,7 +50,7 @@ pnpm dev              # dev server at http://localhost:5173
 pnpm build            # production build
 pnpm preview          # preview production build
 pnpm typecheck        # cf-typegen + react-router typegen + tsc
-pnpm lint             # eslint
+pnpm lint              # oxlint
 pnpm run db:pull      # sync schema from production DB
 pnpm run db:studio    # drizzle studio (needs DB_URL)
 ```

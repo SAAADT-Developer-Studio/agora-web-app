@@ -86,8 +86,8 @@ export default function CategoryPage({
   const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
     useInfiniteQuery({
       queryKey: ["category", params.category],
-      queryFn: ({ pageParam = 0 }) =>
-        fetchCategoryData(params.category, pageParam, 21),
+      queryFn: ({ pageParam }) =>
+        fetchCategoryData(params.category, pageParam ?? 0, 21),
       getNextPageParam: (lastPage, allPages) => {
         if (lastPage.articles.length === 21) {
           return allPages.length * 21;
