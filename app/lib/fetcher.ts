@@ -63,31 +63,33 @@ export const post = <T = unknown>(
   url: string,
   body?: unknown,
   options?: FetcherOptions,
-) =>
-  fetcher<T>(url, {
+) => {
+  const headers = new Headers(options?.headers);
+  headers.set("Content-Type", "application/json");
+
+  return fetcher<T>(url, {
     ...options,
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
+};
 
 export const put = <T = unknown>(
   url: string,
   body?: unknown,
   options?: FetcherOptions,
-) =>
-  fetcher<T>(url, {
+) => {
+  const headers = new Headers(options?.headers);
+  headers.set("Content-Type", "application/json");
+
+  return fetcher<T>(url, {
     ...options,
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      ...options?.headers,
-    },
+    headers,
     body: body ? JSON.stringify(body) : undefined,
   });
+};
 
 export const del = <T = unknown>(url: string, options?: FetcherOptions) =>
   fetcher<T>(url, { ...options, method: "DELETE" });

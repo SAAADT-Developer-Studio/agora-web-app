@@ -5,7 +5,7 @@ type SeoInput = {
   description: string;
   pathname: string;
   image?: string;
-  ogType?: "website" | "article" | string;
+  ogType?: "website" | "article";
   keywords?: string;
   noindex?: boolean;
   locale?: string;

@@ -1,0 +1,38 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "pedantic": "off"
+  },
+  "options": {
+    "typeAware": true
+  },
+  "ignorePatterns": [
+    ".react-router/**",
+    "worker-configuration.d.ts",
+    "build/**"
+  ],
+  "rules": {
+    "no-empty-pattern": "off",
+    "eslint/no-unused-vars": [
+      "warn",
+      {
+        "varsIgnorePattern": "^ignored",
+        "argsIgnorePattern": "^_"
+      }
+    ],
+    "import/consistent-type-specifier-style": "off",
+    "react/react-in-jsx-scope": "off",
+    "typescript/unbound-method": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/tests/**/*.ts"],
+      "rules": {
+        "react-hooks/rules-of-hooks": "off"
+      }
+    }
+  ]
+}
