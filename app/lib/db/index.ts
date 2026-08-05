@@ -15,7 +15,7 @@ export async function getDb(connectionString: string) {
     await client.connect();
     return drizzle(client, {
       schema: { ...schema, ...relations },
-      logger: true,
+      logger: false,
     });
   } catch (err) {
     console.error("Database connection error:", err);
