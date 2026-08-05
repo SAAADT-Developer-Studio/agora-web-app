@@ -42,7 +42,6 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.50.0",
-    "@cloudflare/workers-types": "^5.20260804.1",
     "@epic-web/config": "^1.21.3",
     "@react-router/dev": "^7.9.6",
     "@tailwindcss/container-queries": "^0.1.1",

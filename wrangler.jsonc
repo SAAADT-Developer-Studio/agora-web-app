@@ -67,15 +67,22 @@
    * https://developers.cloudflare.com/workers/wrangler/configuration/#environments
    */
   "env": {
-    "dev": {
-      "vars": {
-        "ENVIRONMENT": "dev",
-      },
-    },
     "preview": {
       "vars": {
         "ENVIRONMENT": "preview",
       },
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "a7a6a652c8724a7abbb66067e19a6179",
+        },
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "VIDIK_CACHE",
+          "id": "9b648d05c5c5414eade60094caca41ea",
+        },
+      ],
     },
   },
 }
