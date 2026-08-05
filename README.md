@@ -66,6 +66,9 @@ The source of the database schema is in the scraper repository, and the schema i
 Sync the production database schema with /app/drizzle/schema.ts with this command:
 
 ```bash
-# pull database schema
-npx drizzle-kit pull
+pnpm run db:pull
 ```
+
+### Local development
+
+Set `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` in `.env` to your database URL with `?sslmode=require`. See the [Hyperdrive local development docs](https://developers.cloudflare.com/hyperdrive/configuration/local-development/).
