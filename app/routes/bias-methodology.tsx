@@ -1,4 +1,4 @@
-import { getSeoMetas } from "~/lib/seo";
+import { breadcrumbJsonLd, faqPageJsonLd, getSeoMetas } from "~/lib/seo";
 import type { Route } from "./+types/bias-methodology";
 import { ExternalLink, BookOpen } from "lucide-react";
 import { cn } from "~/lib/utils";
@@ -37,6 +37,29 @@ const BIAS_RATINGS = [
     color: "bg-blue-500",
     description:
       "Mediji z izrazito desno politično usmeritvijo, ki pogosto podpirajo konservativne ali tradicionalne ideje oz. stranke",
+  },
+];
+
+const METHODOLOGY_FAQS = [
+  {
+    question: "Kako Vidik ocenjuje medijsko pristranskost?",
+    answer:
+      "Večina ocen temelji na dveh znanstvenih raziskavah slovenskega medijskega prostora (Caporusso et al. 2024 in Besednjak Valič et al. 2023), ostale pa na analizi vzorca člankov ali politični nagnjenosti lastniške organizacije.",
+  },
+  {
+    question: "Kakšna je lestvica pristranskosti na Vidiku?",
+    answer:
+      "Vidik uporablja petstopenjsko lestvico: Leva, Center Leva, Center, Center Desna in Desna. Ocene opisujejo politično usmeritev medijske hiše, ne posameznih člankov.",
+  },
+  {
+    question: "Kaj pomeni ocena Center?",
+    answer:
+      "Mediji z oceno Center imajo nevtralen ali uravnotežen pristop in se trudijo za objektivnost ter izogibanje političnim pristranskostim.",
+  },
+  {
+    question: "Ali so ocene pristranskosti znanstveno utemeljene?",
+    answer:
+      "Da. Temeljijo predvsem na peer-reviewed raziskavah slovenskega medijskega prostora, dopolnjenih z analizo vsebine in lastništva, kjer znanstveni podatki niso na voljo.",
   },
 ];
 
@@ -171,6 +194,15 @@ export function meta({ location }: Route.MetaArgs) {
     description:
       "Naša metodologija ocenjevanja pristranskosti virov novic na podlagi analize vsebine, lastništva, zgodovine poročanja in neodvisnih ocen.",
     pathname: location.pathname,
+    keywords:
+      "metodologija, medijska pristranskost, ocena medijev, Caporusso, Besednjak Valič, vidik",
+    jsonLd: [
+      faqPageJsonLd(METHODOLOGY_FAQS),
+      breadcrumbJsonLd([
+        { name: "Domov", path: "/" },
+        { name: "Metodologija", path: "/metodologija" },
+      ]),
+    ],
   });
 }
 

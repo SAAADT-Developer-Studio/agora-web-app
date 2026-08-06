@@ -1,4 +1,35 @@
 import type { MetaDescriptor } from "react-router";
+import {
+  DEFAULT_KEYWORDS,
+  DEFAULT_OG_IMAGE,
+  SITE_LOCALE,
+  SITE_NAME,
+  SITE_URL,
+  TWITTER_HANDLE,
+} from "./constants";
+import { organizationJsonLd, websiteJsonLd } from "./jsonLd";
+
+export {
+  SITE_URL,
+  SITE_NAME,
+  SITE_LOCALE,
+  DEFAULT_OG_IMAGE,
+  ORGANIZATION_LOGO_URL,
+  TWITTER_HANDLE,
+  SITE_DESCRIPTION,
+  DEFAULT_KEYWORDS,
+  CATEGORY_SEO,
+} from "./constants";
+
+export {
+  organizationJsonLd,
+  websiteJsonLd,
+  breadcrumbJsonLd,
+  newsArticleJsonLd,
+  collectionPageJsonLd,
+  newsMediaOrganizationJsonLd,
+  faqPageJsonLd,
+} from "./jsonLd";
 
 type SeoInput = {
   title: string;
@@ -14,6 +45,10 @@ type SeoInput = {
   alternates?: Array<{ href: string; hrefLang: string }>;
   publishedTime?: string;
   modifiedTime?: string;
+  section?: string;
+  authors?: string[];
+  /** When false, skips site-wide WebSite/Organization JSON-LD (e.g. lean error pages). */
+  includeSiteSchema?: boolean;
   jsonLd?: object[];
 };
 
@@ -21,19 +56,23 @@ export function getSeoMetas({
   title,
   description,
   pathname,
-  image = "https://vidik.si/meta-image.png",
+  image = DEFAULT_OG_IMAGE,
   ogType = "website",
-  keywords = "vidik, vidik slovenija, politika, novice, slovenska politika, pristranskost medijev, objektivne novice, news aggregator slovenia",
+  keywords = DEFAULT_KEYWORDS,
   noindex = false,
-  locale = "sl-SI",
-  siteName = "Vidik",
-  twitterHandle = "@VidikSLO",
+  locale = SITE_LOCALE,
+  siteName = SITE_NAME,
+  twitterHandle = TWITTER_HANDLE,
   alternates = [],
   publishedTime,
   modifiedTime,
+  section,
+  authors = [],
+  includeSiteSchema = true,
   jsonLd = [],
 }: SeoInput): MetaDescriptor[] {
-  const url = new URL(pathname || "/", "https://vidik.si").href;
+  const url = new URL(pathname || "/", SITE_URL).href;
+  const ogImage = image || DEFAULT_OG_IMAGE;
 
   const metas: MetaDescriptor[] = [
     { title },
@@ -54,8 +93,8 @@ export function getSeoMetas({
     { property: "og:title", content: title },
     { property: "og:description", content: description },
     { property: "og:type", content: ogType },
-    { property: "og:image", content: image },
-    { property: "og:image:secure_url", content: image },
+    { property: "og:image", content: ogImage },
+    { property: "og:image:secure_url", content: ogImage },
     { property: "og:image:width", content: "1200" },
     { property: "og:image:height", content: "630" },
     { property: "og:image:alt", content: title },
@@ -77,16 +116,28 @@ export function getSeoMetas({
           } as MetaDescriptor,
         ]
       : []),
+    ...(ogType === "article" && section
+      ? [{ property: "article:section", content: section } as MetaDescriptor]
+      : []),
+    ...(ogType === "article"
+      ? authors.map(
+          (author) =>
+            ({
+              property: "article:author",
+              content: author,
+            }) as MetaDescriptor,
+        )
+      : []),
 
     {
       name: "twitter:card",
-      content: image ? "summary_large_image" : "summary",
+      content: ogImage ? "summary_large_image" : "summary",
     },
     { name: "twitter:site", content: twitterHandle },
     { name: "twitter:creator", content: twitterHandle },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
-    { name: "twitter:image", content: image },
+    { name: "twitter:image", content: ogImage },
     { name: "twitter:image:alt", content: title },
 
     { name: "application-name", content: siteName },
@@ -97,26 +148,11 @@ export function getSeoMetas({
     metas.push({ tagName: "link", rel: "alternate", hrefLang, href });
   });
 
-  const baseJsonLd: object[] = [
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      name: siteName,
-      url: "https://vidik.si",
-      inLanguage: "sl-SI",
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      name: siteName,
-      url: "https://vidik.si",
-      logo: image,
-      sameAs: ["https://twitter.com/VidikSLO"],
-      description: "Platforma za objektivno spremljanje slovenskih novic",
-    },
-  ];
+  const schemaBlocks = includeSiteSchema
+    ? [websiteJsonLd(), organizationJsonLd(), ...jsonLd]
+    : jsonLd;
 
-  [...baseJsonLd, ...jsonLd].forEach((block) => {
+  schemaBlocks.forEach((block) => {
     metas.push({ "script:ld+json": block } as unknown as MetaDescriptor);
   });
 

@@ -12,6 +12,13 @@ import { getMaxAge } from "~/utils/getMaxAge";
 import { getCategoryArticles, type ArticleType } from "~/lib/services/ranking";
 import { getCategoryCacheKey } from "~/lib/kvCache/keys";
 import { get } from "~/lib/fetcher";
+import {
+  breadcrumbJsonLd,
+  CATEGORY_SEO,
+  collectionPageJsonLd,
+  getSeoMetas,
+  SITE_URL,
+} from "~/lib/seo";
 
 const categorySet = new Set<string>(config.categories.map((c) => c.key));
 
@@ -142,14 +149,42 @@ export default function CategoryPage({
   );
 }
 
-export function meta({ params }: Route.MetaArgs): Route.MetaDescriptors {
-  return [
-    {
-      title: `${params.category.toUpperCase()} | Vidik`,
-      name: "description",
-      content: "Explore various categories of articles.",
-    },
-  ];
+export function meta({
+  params,
+  location,
+}: Route.MetaArgs): Route.MetaDescriptors {
+  const seo = CATEGORY_SEO[params.category];
+
+  if (!seo) {
+    return getSeoMetas({
+      title: "Kategorija ni najdena | Vidik",
+      description: "Zahtevana kategorija ne obstaja.",
+      pathname: location.pathname,
+      noindex: true,
+      includeSiteSchema: false,
+    });
+  }
+
+  const url = new URL(location.pathname || "/", SITE_URL).href;
+
+  return getSeoMetas({
+    title: seo.title,
+    description: seo.description,
+    pathname: location.pathname,
+    keywords: seo.keywords,
+    ogType: "website",
+    jsonLd: [
+      collectionPageJsonLd({
+        name: seo.title,
+        description: seo.description,
+        url,
+      }),
+      breadcrumbJsonLd([
+        { name: "Domov", path: "/" },
+        { name: seo.title.replace(" | Vidik", ""), path: location.pathname },
+      ]),
+    ],
+  });
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

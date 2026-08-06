@@ -23,6 +23,12 @@ export const links: Route.LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Sarabun:wght@500;600;700&display=swap",
   },
+  {
+    rel: "alternate",
+    type: "text/plain",
+    href: "/llms.txt",
+    title: "llms.txt",
+  },
 ];
 
 function initTheme() {

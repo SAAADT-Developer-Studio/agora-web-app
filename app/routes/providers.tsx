@@ -387,9 +387,11 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
 export function meta({ location }: Route.MetaArgs): Route.MetaDescriptors {
   return getSeoMetas({
     title: "Mediji | Vidik",
-    description: "Novičarske organizacije, ki jih podpira Vidik",
+    description:
+      "Pregled slovenskih novičarskih organizacij na Vidiku z ocenami medijske pristranskosti in statistiko poročanja.",
     pathname: location.pathname,
-    keywords: "vidik, mediji, novičarske organizacije",
+    keywords:
+      "vidik, mediji, slovenski mediji, medijska pristranskost, novičarske organizacije",
     ogType: "website",
   });
 }
