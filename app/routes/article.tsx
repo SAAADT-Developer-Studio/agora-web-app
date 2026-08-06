@@ -24,6 +24,7 @@ import { useState, useEffect } from "react";
 import { cn } from "~/lib/utils";
 import { getCarouselArticleIds } from "~/utils/getCarouselArticleIds";
 import { ProviderImage } from "~/components/provider-image";
+import { getAppContext } from "~/lib/appContext";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 
 export function headers({}: Route.HeadersArgs) {
@@ -98,9 +99,9 @@ async function fetchClusterData({
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
-  const db = context.db;
+  const { db, measurer } = getAppContext(context);
 
-  const cluster = await context.measurer.time("fetchClusterData", () =>
+  const cluster = await measurer.time("fetchClusterData", () =>
     fetchClusterData({ db, articleId }),
   );
 

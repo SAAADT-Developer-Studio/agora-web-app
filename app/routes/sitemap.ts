@@ -5,10 +5,11 @@ import { Sitemap } from "~/lib/seo/sitemap";
 import { config } from "~/config";
 import type { CacheMeta } from "~/routes/api/populate-cache";
 import { LAST_UPDATED } from "~/routes/privacy-policy";
+import { getAppContext } from "~/lib/appContext";
 import { META_CACHE_KEY } from "~/lib/kvCache/keys";
 
 export async function loader({ context, request }: Route.LoaderArgs) {
-  const { kvCache, db } = context;
+  const { kvCache, db } = getAppContext(context);
 
   const meta = await kvCache.get<CacheMeta>(META_CACHE_KEY);
   const lastmod = meta?.lastUpdated ? new Date(meta.lastUpdated) : undefined;

@@ -10,6 +10,7 @@ import { Loader } from "lucide-react";
 import type { Database } from "~/lib/db";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { getCategoryArticles, type ArticleType } from "~/lib/services/ranking";
+import { getAppContext } from "~/lib/appContext";
 import { getCategoryCacheKey } from "~/lib/kvCache/keys";
 import { get } from "~/lib/fetcher";
 
@@ -48,12 +49,12 @@ export function headers({ loaderHeaders }: Route.HeadersArgs) {
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const category = params.category;
-  const { db, kvCache } = context;
+  const { db, kvCache, measurer } = getAppContext(context);
   if (!categorySet.has(category)) {
     throw new Response("Category Not Found", { status: 404 });
   }
 
-  const articles = await context.measurer.time(
+  const articles = await measurer.time(
     "fetchCategoryArticles",
     async () =>
       await kvCache.cached(
