@@ -1,13 +1,14 @@
 import {
   type ActionFunctionArgs,
-  type AppLoadContext,
   type EntryContext,
   type LoaderFunctionArgs,
+  type RouterContextProvider,
   ServerRouter,
-  type unstable_ServerInstrumentation,
+  type ServerInstrumentation,
 } from "react-router";
 import { isbot } from "isbot";
 import { renderToReadableStream } from "react-dom/server";
+import { getAppContext } from "~/lib/appContext";
 
 export const streamTimeout = 10_000;
 
@@ -16,7 +17,7 @@ export default async function handleRequest(
   responseStatusCode: number,
   responseHeaders: Headers,
   routerContext: EntryContext,
-  _loadContext: AppLoadContext,
+  loadContext: RouterContextProvider,
 ) {
   let shellRendered = false;
   const userAgent = request.headers.get("user-agent");
@@ -45,7 +46,7 @@ export default async function handleRequest(
 
   responseHeaders.set("X-App-Version", routerContext.manifest.version);
   responseHeaders.set("Content-Type", "text/html; charset=utf-8");
-  _loadContext.measurer.appendServerTimingHeaders(responseHeaders);
+  getAppContext(loadContext).measurer.appendServerTimingHeaders(responseHeaders);
 
   return new Response(body, {
     headers: responseHeaders,
@@ -57,7 +58,7 @@ export function handleDataRequest(
   response: Response,
   { context }: LoaderFunctionArgs | ActionFunctionArgs,
 ) {
-  context.measurer.appendServerTimingHeaders(response.headers);
+  getAppContext(context).measurer.appendServerTimingHeaders(response.headers);
   return response;
 }
 
@@ -65,21 +66,30 @@ function sanitizeRouteId(id: string): string {
   return id.replace(/[^a-zA-Z0-9_-]/g, "-");
 }
 
-const logging: unstable_ServerInstrumentation = {
+const logging: ServerInstrumentation = {
   route({ instrument, id }) {
     const sanitizedId = sanitizeRouteId(id);
     instrument({
       middleware: async (fn, { context }) => {
-        await context.measurer.time(`middleware-${sanitizedId}`, fn);
+        await getAppContext(context).measurer.time(
+          `middleware-${sanitizedId}`,
+          fn,
+        );
       },
       loader: async (fn, { context }) => {
-        await context.measurer.time(`loader-${sanitizedId}`, fn);
+        await getAppContext(context).measurer.time(
+          `loader-${sanitizedId}`,
+          fn,
+        );
       },
       action: async (fn, { context }) => {
-        await context.measurer.time(`action-${sanitizedId}`, fn);
+        await getAppContext(context).measurer.time(
+          `action-${sanitizedId}`,
+          fn,
+        );
       },
     });
   },
 };
 
-export const unstable_instrumentations = [logging];
+export const instrumentations = [logging];

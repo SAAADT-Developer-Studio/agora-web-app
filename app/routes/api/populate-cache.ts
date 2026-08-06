@@ -1,4 +1,5 @@
 import { fetchCategoryArticlesData } from "~/routes/category";
+import { getAppContext } from "~/lib/appContext";
 import type { Route } from "./+types/populate-cache";
 import { fetchHomeArticlesData } from "~/routes/home";
 import { config } from "~/config";
@@ -16,7 +17,7 @@ export type CacheMeta = {
 // TODO: protect this route with a secret token or something
 
 export async function action({ context }: Route.ActionArgs) {
-  const { db, kvCache } = context;
+  const { db, kvCache } = getAppContext(context);
 
   console.log("Populating cache...");
 

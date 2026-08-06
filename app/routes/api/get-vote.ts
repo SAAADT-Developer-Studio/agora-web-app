@@ -1,4 +1,5 @@
 import type { Database } from "~/lib/db";
+import { getAppContext } from "~/lib/appContext";
 import type { Route } from "./+types/get-vote";
 import { data } from "react-router";
 import { and, eq } from "drizzle-orm";
@@ -24,7 +25,7 @@ export async function getVote({
 export type Vote = NonNullable<Awaited<ReturnType<typeof getVote>>>;
 
 export async function loader({ params, context }: Route.LoaderArgs) {
-  const { db } = context;
+  const { db } = getAppContext(context);
 
   const vote = await getVote({
     db,

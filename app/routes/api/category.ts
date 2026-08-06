@@ -1,3 +1,4 @@
+import { getAppContext } from "~/lib/appContext";
 import type { Route } from "./+types/category";
 import { config } from "~/config";
 import { getCategoryArticles } from "~/lib/services/ranking";
@@ -25,8 +26,9 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   if (!categorySet.has(category)) {
     throw new Response("Category Not Found", { status: 404 });
   }
+  const { db } = getAppContext(context);
   const articles = await getCategoryArticles({
-    db: context.db,
+    db,
     ignoredClusterIds: [],
     category,
     count: Number(count),
