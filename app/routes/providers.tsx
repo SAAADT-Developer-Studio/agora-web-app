@@ -32,6 +32,7 @@ import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import { BiasRatingKey } from "~/enums/biasRatingKey";
 import { cn } from "~/lib/utils";
+import { getAppContext } from "~/lib/appContext";
 
 export interface PeriodStats {
   count: number;
@@ -195,9 +196,9 @@ export function headers() {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const { db } = context;
+  const { db, measurer } = getAppContext(context);
 
-  const providersPromise = context.measurer.time(
+  const providersPromise = measurer.time(
     "fetchAllProviders",
     async () =>
       await db.query.newsProvider.findMany({
@@ -205,7 +206,7 @@ export async function loader({ context }: Route.LoaderArgs) {
       }),
   );
 
-  const providerStatsPromise = context.measurer.time(
+  const providerStatsPromise = measurer.time(
     "fetchAllProviderStats",
     async () => await fetchAllProviderStats(db),
   );

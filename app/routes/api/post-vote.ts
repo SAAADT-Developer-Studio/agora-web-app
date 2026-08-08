@@ -1,4 +1,5 @@
 import { vote } from "~/drizzle/schema";
+import { getAppContext } from "~/lib/appContext";
 import type { Route } from "./+types/post-vote";
 
 import { z } from "zod";
@@ -25,9 +26,9 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const { providerKey, userId, value } = result.data;
 
-  const { db } = context;
+  const { db, measurer } = getAppContext(context);
 
-  await context.measurer.time("post-vote-db-insert", async () => {
+  await measurer.time("post-vote-db-insert", async () => {
     await db
       .insert(vote)
       .values({

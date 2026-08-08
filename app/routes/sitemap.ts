@@ -8,6 +8,7 @@ import { config, isCategoryKey } from "~/config";
 import type { CacheMeta } from "~/routes/api/populate-cache";
 import { LAST_UPDATED as PRIVACY_LAST_UPDATED } from "~/routes/privacy-policy";
 import { LAST_UPDATED as METHODOLOGY_LAST_UPDATED } from "~/routes/bias-methodology";
+import { getAppContext } from "~/lib/appContext";
 import { META_CACHE_KEY } from "~/lib/kvCache/keys";
 import {
   article,
@@ -17,7 +18,7 @@ import {
 } from "~/drizzle/schema";
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const { kvCache, db } = context;
+  const { kvCache, db } = getAppContext(context);
 
   const meta = await kvCache.get<CacheMeta>(META_CACHE_KEY);
   const lastmod = meta?.lastUpdated ? new Date(meta.lastUpdated) : undefined;

@@ -30,6 +30,7 @@ import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { ErrorComponent } from "~/components/error-component";
 import { VotingCard } from "~/components/voting-card";
+import { getAppContext } from "~/lib/appContext";
 import { HOME_CACHE_KEY } from "~/lib/kvCache/keys";
 import { article, newsProvider } from "~/drizzle/schema";
 
@@ -156,9 +157,9 @@ export async function fetchRandomProviders({ db }: { db: Database }) {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const { db, kvCache } = context;
+  const { db, kvCache, measurer } = getAppContext(context);
 
-  const articles = await context.measurer.time(
+  const articles = await measurer.time(
     "fetchHomeArticlesData",
     async () =>
       await kvCache.cached(

@@ -41,10 +41,11 @@ import { BiasRatingKey, type BiasRating } from "~/enums/biasRatingKey";
 import { BiasInfoTooltip } from "~/components/bias-info-tooltip";
 import { mossData as mossDataTable, article, vote } from "~/drizzle/schema";
 import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";
+import { getAppContext } from "~/lib/appContext";
 import { sql } from "drizzle-orm";
 
 export async function loader({ context, params }: Route.LoaderArgs) {
-  const { db } = context;
+  const { db, measurer } = getAppContext(context);
 
   const provider = await db.query.newsProvider.findFirst({
     where: (provider: { key: any }, { eq }: any) =>
@@ -55,18 +56,18 @@ export async function loader({ context, params }: Route.LoaderArgs) {
     throw new Response("Provider not found", { status: 404 });
   }
 
-  const stats = context.measurer.time("get-provider-stats", async () => {
+  const stats = measurer.time("get-provider-stats", async () => {
     return await getProviderStats(db, params.providerKey);
   });
 
-  const mossData = context.measurer.time("get-moss-data", async () => {
+  const mossData = measurer.time("get-moss-data", async () => {
     return await db.query.mossData.findFirst({
       where: (mossData, { eq }) => eq(mossData.providerKey, params.providerKey),
       orderBy: (mossData, { desc }) => [desc(mossData.createdAt)],
     });
   });
 
-  const latestArticle = await context.measurer.time(
+  const latestArticle = await measurer.time(
     "get-latest-article",
     async () => {
       return await db.query.article.findFirst({

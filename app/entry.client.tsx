@@ -1,12 +1,12 @@
 import { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import type {
-  unstable_ClientInstrumentation,
-  unstable_InstrumentationHandlerResult,
+  ClientInstrumentation,
+  InstrumentationHandlerResult,
 } from "react-router";
 import { HydratedRouter } from "react-router/dom";
 
-const windowPerf: unstable_ClientInstrumentation = {
+const windowPerf: ClientInstrumentation = {
   router({ instrument }) {
     instrument({
       navigate: (fn, { to, currentUrl }) =>
@@ -25,7 +25,7 @@ const windowPerf: unstable_ClientInstrumentation = {
 
 async function measure(
   label: string,
-  cb: () => Promise<unstable_InstrumentationHandlerResult>,
+  cb: () => Promise<InstrumentationHandlerResult>,
 ) {
   performance.mark(`start:${label}`);
   await cb();
@@ -39,7 +39,7 @@ startTransition(() => {
   hydrateRoot(
     document,
     <StrictMode>
-      <HydratedRouter unstable_instrumentations={instrumentations} />
+      <HydratedRouter instrumentations={instrumentations} />
     </StrictMode>,
   );
 });

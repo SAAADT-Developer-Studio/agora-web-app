@@ -1,12 +1,14 @@
+import { getAppContext } from "~/lib/appContext";
 import type { Route } from "./+types/get-provider-suggestions";
 
 export type ProviderSuggestionsData = Awaited<ReturnType<typeof loader>>;
 
 export async function loader({ params, context }: Route.LoaderArgs) {
-  return await context.measurer.time(
+  const { db, measurer } = getAppContext(context);
+
+  return await measurer.time(
     "get-provider-suggestions-loader",
     async () => {
-      const { db } = context;
       const { providerKey, userId } = params;
 
       const userVotes = await db.query.vote.findMany({
