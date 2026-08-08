@@ -44,7 +44,7 @@ const METHODOLOGY_FAQS = [
   {
     question: "Kako Vidik ocenjuje medijsko pristranskost?",
     answer:
-      "Večina ocen temelji na dveh znanstvenih raziskavah slovenskega medijskega prostora (Caporusso et al. 2024 in Besednjak Valič et al. 2023), ostale pa na analizi vzorca člankov ali politični nagnjenosti lastniške organizacije.",
+      "Kjer je mogoče, uporabimo namere iz znanstvenih raziskav (Caporusso et al. 2024; Besednjak Valič et al. 2023), analize vsebine in lastništva. Za medije, ki raziskave ne pokrivajo ali se ne ujemajo z našo lestvico, ocene določimo sami.",
   },
   {
     question: "Kakšna je lestvica pristranskosti na Vidiku?",
@@ -59,7 +59,7 @@ const METHODOLOGY_FAQS = [
   {
     question: "Ali so ocene pristranskosti znanstveno utemeljene?",
     answer:
-      "Da. Temeljijo predvsem na peer-reviewed raziskavah slovenskega medijskega prostora, dopolnjenih z analizo vsebine in lastništva, kjer znanstveni podatki niso na voljo.",
+      "Delno. Raziskave pokrivajo le del slovenskih medijev in se ne vedno neposredno preslikajo na našo lestvico. Preostale ocene so naša lastna ocena na podlagi vsebine, lastništva in splošnega poročanja.",
   },
 ];
 

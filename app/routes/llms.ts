@@ -28,9 +28,9 @@ Slovenian (\`lang="sl"\`).
 - Audience: Slovenian readers seeking multiperspective news
 - Core value: same-story coverage from multiple outlets + outlet bias ratings
 - Bias scale: Leva, Center Leva, Center, Center Desna, Desna
-- Bias methodology is grounded in peer-reviewed research of the Slovenian media
-  landscape (Caporusso et al. 2024; Besednjak Valič et al. 2023), plus ownership
-  and content analysis where needed
+- Bias methodology combines published research (where it applies to our scale),
+  content and ownership analysis, and our own editorial judgment for uncovered
+  outlets
 - Categories: ${categoryKeys}
 
 ## Primary pages
