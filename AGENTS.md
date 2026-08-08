@@ -32,7 +32,7 @@ Changing article-fetch logic usually means updating both the loader and `fetchHo
 ## Routing & config
 
 - Route definitions: `app/routes.ts`. URL segments are Slovenian (`/mediji`, `/metodologija`, `/clanek/:articleId`, etc.).
-- **Categories** are defined once in `app/config.ts` (`CategoryKey`, paths, navigation). Add a category there and wire up the route — don't hardcode category lists elsewhere.
+- **Categories**: keys live only in `app/config.ts` (`CategoryKey` / `CategoryKeyValue`). Domain configs (nav metadata, SEO, ranking priority, home side sections) must use `defineCategoryMap()` / `CategoryMap<T>` so TypeScript fails if a key is added without updating every map. Use `isCategoryKey()` for runtime checks — don't rebuild category sets ad hoc.
 - Article images: `config.imagesUrl` (`https://images.vidik.si`).
 
 ## UI conventions

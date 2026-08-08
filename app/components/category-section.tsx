@@ -1,6 +1,7 @@
 import { Article } from "./article";
 import Divider from "./ui/divider";
 import type { ArticleType } from "~/lib/services/ranking";
+import type { CategoryKeyValue } from "~/config";
 
 export default function CategorySection({
   articles,
@@ -10,7 +11,7 @@ export default function CategorySection({
 }: {
   articles: ArticleType[];
   dividerText: string;
-  categoryKey: string;
+  categoryKey: CategoryKeyValue;
   sideSection?: React.ReactNode;
 }) {
   return (

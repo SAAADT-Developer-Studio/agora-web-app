@@ -6,13 +6,12 @@ function buildLlmsTxt() {
   const categoryLinks = config.categories
     .map((category) => {
       const seo = CATEGORY_SEO[category.key];
-      const title = seo?.title.replace(" | Vidik", "") ?? category.name;
-      const description =
-        seo?.description ??
-        `Novice v kategoriji ${category.name.toLowerCase()} z več medijskih vidikov.`;
-      return `- [${title}](${SITE_URL}/${category.key}): ${description}`;
+      const title = seo.title.replace(" | Vidik", "");
+      return `- [${title}](${SITE_URL}/${category.key}): ${seo.description}`;
     })
     .join("\n");
+
+  const categoryKeys = config.categories.map((c) => c.key).join(", ");
 
   return `# Vidik
 
@@ -32,8 +31,7 @@ Slovenian (\`lang="sl"\`).
 - Bias methodology is grounded in peer-reviewed research of the Slovenian media
   landscape (Caporusso et al. 2024; Besednjak Valič et al. 2023), plus ownership
   and content analysis where needed
-- Categories: politika, gospodarstvo, kriminal, lokalno, šport,
-  tehnologija-znanost, kultura, zdravje, okolje
+- Categories: ${categoryKeys}
 
 ## Primary pages
 

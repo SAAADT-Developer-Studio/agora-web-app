@@ -1,9 +1,14 @@
 import { href, Link } from "react-router";
+import type { CategoryKeyValue } from "~/config";
 
 export default function Divider({
   text,
   categoryKey,
-}: Readonly<{ text?: string; reverse?: boolean; categoryKey: string }>) {
+}: Readonly<{
+  text?: string;
+  reverse?: boolean;
+  categoryKey: CategoryKeyValue;
+}>) {
   return (
     <Link
       to={href("/:category", { category: categoryKey })}

@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 import type { Route } from "./+types/sitemap";
 import { Sitemap } from "~/lib/seo/sitemap";
 import { SITE_URL } from "~/lib/seo";
-import { config, type CategoryKeyValue } from "~/config";
+import { config, isCategoryKey } from "~/config";
 import type { CacheMeta } from "~/routes/api/populate-cache";
 import { LAST_UPDATED as PRIVACY_LAST_UPDATED } from "~/routes/privacy-policy";
 import { LAST_UPDATED as METHODOLOGY_LAST_UPDATED } from "~/routes/bias-methodology";
@@ -15,12 +15,6 @@ import {
   clusterRun,
   clusterV2,
 } from "~/drizzle/schema";
-
-const categorySet = new Set<string>(config.categories.map((c) => c.key));
-
-function isCategoryKey(value: string): value is CategoryKeyValue {
-  return categorySet.has(value);
-}
 
 export async function loader({ context }: Route.LoaderArgs) {
   const { kvCache, db } = context;

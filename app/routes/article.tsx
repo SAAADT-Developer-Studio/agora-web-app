@@ -7,6 +7,7 @@ import {
   newsArticleJsonLd,
   SITE_URL,
 } from "~/lib/seo";
+import { isCategoryKey } from "~/config";
 import fallbackArticleImage from "~/assets/fallback.png";
 import {
   Info,
@@ -568,8 +569,9 @@ export function meta({
   const { cluster, uniqueCategories, heroImageUrl } = loaderData;
   const title = cluster.title;
   const category = params.category;
-  const categoryLabel =
-    CATEGORY_SEO[category]?.title.replace(" | Vidik", "") ?? category;
+  const categoryLabel = isCategoryKey(category)
+    ? CATEGORY_SEO[category].title.replace(" | Vidik", "")
+    : category;
 
   const providers = Array.from(
     new Map(

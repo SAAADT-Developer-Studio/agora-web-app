@@ -1,3 +1,5 @@
+import { defineCategoryMap } from "~/config";
+
 export const SITE_URL = "https://vidik.si";
 export const SITE_NAME = "Vidik";
 export const SITE_LOCALE = "sl-SI";
@@ -13,10 +15,13 @@ export const SITE_DESCRIPTION =
 export const DEFAULT_KEYWORDS =
   "vidik, vidik slovenija, politika, novice, slovenska politika, pristranskost medijev, objektivne novice, news aggregator slovenia";
 
-export const CATEGORY_SEO: Record<
-  string,
-  { title: string; description: string; keywords: string }
-> = {
+export type CategorySeo = {
+  title: string;
+  description: string;
+  keywords: string;
+};
+
+export const CATEGORY_SEO = defineCategoryMap<CategorySeo>({
   politika: {
     title: "Politika | Vidik",
     description:
@@ -72,4 +77,4 @@ export const CATEGORY_SEO: Record<
       "Okoljske novice in podnebne teme v Sloveniji, združene iz različnih medijskih virov.",
     keywords: "okolje, podnebje, ekologija, vidik",
   },
-};
+});
