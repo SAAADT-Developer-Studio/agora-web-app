@@ -1,6 +1,6 @@
 import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/category";
-import { config } from "~/config";
+import { isCategoryKey, type CategoryKeyValue } from "~/config";
 import { data, Link } from "react-router";
 import { useMediaQuery } from "~/hooks/use-media-query";
 import HeroArticles from "~/components/hero-articles";
@@ -13,11 +13,16 @@ import { getCategoryArticles, type ArticleType } from "~/lib/services/ranking";
 import { getAppContext } from "~/lib/appContext";
 import { getCategoryCacheKey } from "~/lib/kvCache/keys";
 import { get } from "~/lib/fetcher";
-
-const categorySet = new Set<string>(config.categories.map((c) => c.key));
+import {
+  breadcrumbJsonLd,
+  CATEGORY_SEO,
+  collectionPageJsonLd,
+  getSeoMetas,
+  SITE_URL,
+} from "~/lib/seo";
 
 async function fetchCategoryData(
-  category: string,
+  category: CategoryKeyValue,
   offset: number,
   count: number,
 ): Promise<{ articles: ArticleType[] }> {
@@ -31,7 +36,7 @@ export async function fetchCategoryArticlesData({
   category,
 }: {
   db: Database;
-  category: string;
+  category: CategoryKeyValue;
 }) {
   const articles = await getCategoryArticles({
     db,
@@ -50,7 +55,7 @@ export function headers({ loaderHeaders }: Route.HeadersArgs) {
 export async function loader({ params, context }: Route.LoaderArgs) {
   const category = params.category;
   const { db, kvCache, measurer } = getAppContext(context);
-  if (!categorySet.has(category)) {
+  if (!isCategoryKey(category)) {
     throw new Response("Category Not Found", { status: 404 });
   }
 
@@ -83,12 +88,17 @@ export default function CategoryPage({
   params,
 }: Route.ComponentProps) {
   const { articles } = loaderData;
+  // Loader already 404s unknown categories; narrow for typed fetches.
+  if (!isCategoryKey(params.category)) {
+    throw new Error("Invalid category");
+  }
+  const category = params.category;
 
   const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
     useInfiniteQuery({
-      queryKey: ["category", params.category],
+      queryKey: ["category", category],
       queryFn: ({ pageParam }) =>
-        fetchCategoryData(params.category, pageParam ?? 0, 21),
+        fetchCategoryData(category, pageParam ?? 0, 21),
       getNextPageParam: (lastPage, allPages) => {
         if (lastPage.articles.length === 21) {
           return allPages.length * 21;
@@ -111,7 +121,7 @@ export default function CategoryPage({
           Domov
         </Link>
         <span className="text-surface-text">·</span>
-        <h1 className="text-surface-text uppercase">{params.category}</h1>
+        <h1 className="text-surface-text uppercase">{category}</h1>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
         <HeroArticles articles={data.pages[0].articles.slice(0, sliceEnd)} />
@@ -143,14 +153,41 @@ export default function CategoryPage({
   );
 }
 
-export function meta({ params }: Route.MetaArgs): Route.MetaDescriptors {
-  return [
-    {
-      title: `${params.category.toUpperCase()} | Vidik`,
-      name: "description",
-      content: "Explore various categories of articles.",
-    },
-  ];
+export function meta({
+  params,
+  location,
+}: Route.MetaArgs): Route.MetaDescriptors {
+  if (!isCategoryKey(params.category)) {
+    return getSeoMetas({
+      title: "Kategorija ni najdena | Vidik",
+      description: "Zahtevana kategorija ne obstaja.",
+      pathname: location.pathname,
+      noindex: true,
+      includeSiteSchema: false,
+    });
+  }
+
+  const seo = CATEGORY_SEO[params.category];
+  const url = new URL(location.pathname || "/", SITE_URL).href;
+
+  return getSeoMetas({
+    title: seo.title,
+    description: seo.description,
+    pathname: location.pathname,
+    keywords: seo.keywords,
+    ogType: "website",
+    jsonLd: [
+      collectionPageJsonLd({
+        name: seo.title,
+        description: seo.description,
+        url,
+      }),
+      breadcrumbJsonLd([
+        { name: "Domov", path: "/" },
+        { name: seo.title.replace(" | Vidik", ""), path: location.pathname },
+      ]),
+    ],
+  });
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

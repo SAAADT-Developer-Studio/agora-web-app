@@ -1,6 +1,13 @@
 import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/article";
-import { getSeoMetas } from "~/lib/seo";
+import {
+  breadcrumbJsonLd,
+  CATEGORY_SEO,
+  getSeoMetas,
+  newsArticleJsonLd,
+  SITE_URL,
+} from "~/lib/seo";
+import { isCategoryKey } from "~/config";
 import fallbackArticleImage from "~/assets/fallback.png";
 import {
   Info,
@@ -548,29 +555,82 @@ function HeroImageCarousel({
 export function meta({
   loaderData,
   location,
+  params,
 }: Route.MetaArgs): Route.MetaDescriptors {
-  const title = loaderData?.cluster ? loaderData.cluster.title : "404 | Vidik";
+  if (!loaderData?.cluster) {
+    return getSeoMetas({
+      title: "Članek ni najden | Vidik",
+      description: "Oprostite, iskani članek ni bil najden.",
+      pathname: location.pathname,
+      noindex: true,
+      includeSiteSchema: false,
+    });
+  }
 
-  const imageUrl = loaderData?.heroImageUrl;
+  const { cluster, uniqueCategories, heroImageUrl } = loaderData;
+  const title = cluster.title;
+  const category = params.category;
+  const categoryLabel = isCategoryKey(category)
+    ? CATEGORY_SEO[category].title.replace(" | Vidik", "")
+    : category;
 
-  const keywords = loaderData?.uniqueCategories
-    ? loaderData.uniqueCategories.join(", ")
-    : "";
+  const providers = Array.from(
+    new Map(
+      cluster.articles.map((a) => [a.newsProviderKey, a.newsProvider.name]),
+    ).values(),
+  );
 
-  const description = loaderData?.cluster
-    ? `${title}: ${loaderData.cluster.articles
-        .slice(0, 3)
-        .map((a) => a.newsProvider.name + " - " + a.title)
-        .join("; ")} in več`
-    : "Oprostite, članek ni bil najden.";
+  const publishedTimes = cluster.articles.map((a) =>
+    new Date(a.publishedAt).getTime(),
+  );
+  const publishedTime = new Date(Math.min(...publishedTimes)).toISOString();
+  const modifiedTime = new Date(Math.max(...publishedTimes)).toISOString();
+
+  const description = `Primerjava poročanja ${providers.length} slovenskih medijev o temi »${title}«. Viri: ${providers.slice(0, 5).join(", ")}${providers.length > 5 ? " in drugi" : ""}.`;
+
+  const keywords = [
+    ...uniqueCategories,
+    ...providers.slice(0, 5),
+    "vidik",
+    "medijska pristranskost",
+  ].join(", ");
+
+  const pageUrl = new URL(location.pathname, SITE_URL).href;
 
   return getSeoMetas({
-    title,
+    title: `${title} | Vidik`,
     description,
-    image: imageUrl,
+    image: heroImageUrl || undefined,
     pathname: location.pathname,
     keywords,
     ogType: "article",
+    publishedTime,
+    modifiedTime,
+    section: categoryLabel,
+    authors: providers,
+    jsonLd: [
+      newsArticleJsonLd({
+        headline: title,
+        description,
+        image: heroImageUrl || undefined,
+        url: pageUrl,
+        datePublished: publishedTime,
+        dateModified: modifiedTime,
+        keywords: uniqueCategories,
+        section: categoryLabel,
+        sources: cluster.articles.map((a) => ({
+          title: a.title,
+          url: a.url,
+          publishedAt: new Date(a.publishedAt).toISOString(),
+          providerName: a.newsProvider.name,
+        })),
+      }),
+      breadcrumbJsonLd([
+        { name: "Domov", path: "/" },
+        { name: categoryLabel, path: `/${category}` },
+        { name: title, path: location.pathname },
+      ]),
+    ],
   });
 }
 

@@ -1,9 +1,7 @@
 import { getAppContext } from "~/lib/appContext";
 import type { Route } from "./+types/category";
-import { config } from "~/config";
+import { isCategoryKey } from "~/config";
 import { getCategoryArticles } from "~/lib/services/ranking";
-
-const categorySet = new Set<string>(config.categories.map((c) => c.key));
 
 export async function loader({ params, request, context }: Route.LoaderArgs) {
   const category = params.category;
@@ -23,7 +21,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   if (category === undefined || category === null) {
     throw new Response("Missing category parameter", { status: 400 });
   }
-  if (!categorySet.has(category)) {
+  if (!isCategoryKey(category)) {
     throw new Response("Category Not Found", { status: 404 });
   }
   const { db } = getAppContext(context);

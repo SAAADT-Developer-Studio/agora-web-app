@@ -1,6 +1,11 @@
 import { data, Link, href, Await, useRevalidator } from "react-router";
 import type { Route } from "./+types/provider";
-import { getSeoMetas } from "~/lib/seo";
+import {
+  breadcrumbJsonLd,
+  getSeoMetas,
+  newsMediaOrganizationJsonLd,
+  SITE_URL,
+} from "~/lib/seo";
 import {
   CircleCheck,
   Globe,
@@ -320,22 +325,45 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
 
   if (!provider) {
     return getSeoMetas({
-      title: "Provider Not Found",
-      description: "The requested news provider could not be found.",
+      title: "Medij ni najden | Vidik",
+      description: "Zahtevani medij ni bil najden.",
       pathname: location.pathname,
+      noindex: true,
+      includeSiteSchema: false,
     });
   }
 
+  const biasLabel = provider.biasRating
+    ? biasKeyToLabel(provider.biasRating)
+    : null;
+  const description = biasLabel
+    ? `${provider.name} na Vidiku: ocena medijske pristranskosti je ${biasLabel}. Preglejte statistiko poročanja in primerjavo z drugimi slovenskimi mediji.`
+    : `${provider.name} na Vidiku: pregled medija, statistika poročanja in ocena medijske pristranskosti.`;
+
+  const pageUrl = new URL(location.pathname, SITE_URL).href;
+  const logo = getProviderImageUrl(provider.key);
+
   return getSeoMetas({
-    title: provider.name,
-    description:
-      "Več informacij o " +
-      provider.name +
-      " in njegovi oceni medijske pristranskosti.",
-    image: getProviderImageUrl(provider.key),
+    title: `${provider.name} | Vidik`,
+    description,
+    image: logo,
     pathname: location.pathname,
-    keywords: `${provider.name}, medijska pristranskost, mediji`,
-    ogType: "article",
+    keywords: `${provider.name}, medijska pristranskost, slovenski mediji, vidik`,
+    ogType: "website",
+    jsonLd: [
+      newsMediaOrganizationJsonLd({
+        name: provider.name,
+        url: pageUrl,
+        description,
+        logo,
+        sameAs: provider.url ? [provider.url] : undefined,
+      }),
+      breadcrumbJsonLd([
+        { name: "Domov", path: "/" },
+        { name: "Mediji", path: "/mediji" },
+        { name: provider.name, path: location.pathname },
+      ]),
+    ],
   });
 }
 

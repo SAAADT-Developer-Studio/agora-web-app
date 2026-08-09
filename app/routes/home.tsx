@@ -1,6 +1,6 @@
 import type { Route } from "./+types/home";
 import { eq, isNotNull, sql, and, inArray } from "drizzle-orm";
-import { lazy } from "react";
+import { lazy, type ReactNode } from "react";
 
 import HeroArticles from "~/components/hero-articles";
 import CategorySection from "~/components/category-section";
@@ -10,13 +10,13 @@ import {
   fetchSloveniaGDP,
 } from "~/lib/services/external";
 import {
+  emptyArticlesByCategory,
   getCategoryArticles,
   getHomeArticles,
-  type ArticleType,
 } from "~/lib/services/ranking";
 import { getProviderStats } from "~/lib/services/homePageProviderStats";
 import { ProviderStatsCard } from "~/components/provider-stats-card";
-import { config, CategoryKey, type CategoryKeyValue } from "~/config";
+import { config, defineCategoryMap } from "~/config";
 import type { Database } from "~/lib/db";
 
 const EconomyCard = lazy(() =>
@@ -54,13 +54,7 @@ export async function fetchHomeArticlesData({ db }: { db: Database }) {
   const homeArticles = await getHomeArticles({ db, count: 6 });
   let ignoredClusterIds = homeArticles.map((a) => Number(a.id));
 
-  const categoryMap = {
-    home: homeArticles,
-  } as {
-    home: ArticleType[];
-  } & {
-    [K in CategoryKeyValue]: ArticleType[];
-  };
+  const byCategory = emptyArticlesByCategory();
 
   for (const category of config.categories) {
     const categoryArticles = await getCategoryArticles({
@@ -75,10 +69,13 @@ export async function fetchHomeArticlesData({ db }: { db: Database }) {
       ...categoryArticles.map((a) => Number(a.id)),
     ];
 
-    categoryMap[category.key] = categoryArticles;
+    byCategory[category.key] = categoryArticles;
   }
 
-  return categoryMap;
+  return {
+    home: homeArticles,
+    ...byCategory,
+  };
 }
 export async function fetchRandomProviders({ db }: { db: Database }) {
   const now = new Date();
@@ -210,71 +207,35 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     randomProviders,
   } = loaderData;
 
+  // Explicit null for categories without a side card — adding a CategoryKey
+  // forces a decision here via defineCategoryMap.
+  const homeSideSections = defineCategoryMap<ReactNode | null>({
+    politika: <VotingCard randomProviders={randomProviders} />,
+    gospodarstvo: (
+      <EconomyCard gdpSeries={gdpSeries} inflationSeries={inflationSeries} />
+    ),
+    kriminal: <ProviderStatsCard providerStatsPromise={providerStats} />,
+    lokalno: null,
+    sport: null,
+    "tehnologija-znanost": null,
+    kultura: null,
+    zdravje: null,
+    okolje: null,
+  });
+
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
       <HeroArticles articles={articles.home} />
 
-      <CategorySection
-        articles={articles[CategoryKey.politika]}
-        categoryKey={CategoryKey.politika}
-        dividerText="POLITIKA"
-        sideSection={<VotingCard randomProviders={randomProviders} />}
-      />
-
-      <CategorySection
-        articles={articles[CategoryKey.gospodarstvo]}
-        categoryKey={CategoryKey.gospodarstvo}
-        dividerText="GOSPODARSTVO"
-        sideSection={
-          <EconomyCard
-            gdpSeries={gdpSeries}
-            inflationSeries={inflationSeries}
-          />
-        }
-      />
-
-      <CategorySection
-        articles={articles[CategoryKey.kriminal]}
-        categoryKey={CategoryKey.kriminal}
-        dividerText="KRIMINAL"
-        sideSection={<ProviderStatsCard providerStatsPromise={providerStats} />}
-      />
-
-      <CategorySection
-        articles={articles[CategoryKey.lokalno]}
-        categoryKey={CategoryKey.lokalno}
-        dividerText="LOKALNO"
-      />
-
-      <CategorySection
-        articles={articles[CategoryKey.sport]}
-        categoryKey={CategoryKey.sport}
-        dividerText="ŠPORT"
-      />
-
-      <CategorySection
-        articles={articles[CategoryKey.tehnologijaZnanost]}
-        categoryKey={CategoryKey.tehnologijaZnanost}
-        dividerText="TEHNOLOGIJA & ZNANOST"
-      />
-
-      <CategorySection
-        articles={articles[CategoryKey.kultura]}
-        categoryKey={CategoryKey.kultura}
-        dividerText="KULTURA"
-      />
-
-      <CategorySection
-        articles={articles[CategoryKey.zdravje]}
-        categoryKey={CategoryKey.zdravje}
-        dividerText="ZDRAVJE"
-      />
-
-      <CategorySection
-        articles={articles[CategoryKey.okolje]}
-        categoryKey={CategoryKey.okolje}
-        dividerText="OKOLJE"
-      />
+      {config.categories.map((category) => (
+        <CategorySection
+          key={category.key}
+          articles={articles[category.key]}
+          categoryKey={category.key}
+          dividerText={category.name}
+          sideSection={homeSideSections[category.key] ?? undefined}
+        />
+      ))}
     </div>
   );
 }

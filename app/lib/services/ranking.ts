@@ -9,6 +9,12 @@ import {
 import { sql } from "drizzle-orm";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { extractHeroImage } from "~/utils/extractHeroImage";
+import {
+  defineCategoryMap,
+  CategoryKey,
+  type CategoryKeyValue,
+  type CategoryMap,
+} from "~/config";
 
 export type Image = {
   src: string;
@@ -37,7 +43,7 @@ export type ArticleType = {
   providerKeys: string[];
 };
 
-const CATEGORY_PRIORITY = {
+const CATEGORY_PRIORITY = defineCategoryMap({
   politika: 6,
   gospodarstvo: 6,
   kriminal: 5,
@@ -47,9 +53,16 @@ const CATEGORY_PRIORITY = {
   kultura: 2,
   zdravje: 1,
   okolje: 1,
-} as const;
+});
 
 const MAX_CATEGORY_PRIORITY = Math.max(...Object.values(CATEGORY_PRIORITY));
+
+const categoryPriorityCases = sql.join(
+  (Object.entries(CATEGORY_PRIORITY) as [CategoryKeyValue, number][]).map(
+    ([key, priority]) => sql`WHEN ${key} THEN ${priority}`,
+  ),
+  sql.raw(" "),
+);
 
 // Decay constant: articles lose ~63% relevance every 12 hours
 // Formula: exp(-hours_since_publication / 12)
@@ -67,19 +80,22 @@ const recencyScoreExpr = sql<number>`
 const categoryScoreExpr = sql<number>`
   avg(
     CASE ${article.categories}[1]
-      WHEN 'politika' THEN ${CATEGORY_PRIORITY.politika}
-      WHEN 'gospodarstvo' THEN ${CATEGORY_PRIORITY.gospodarstvo}
-      WHEN 'kriminal' THEN ${CATEGORY_PRIORITY.kriminal}
-      WHEN 'lokalno' THEN ${CATEGORY_PRIORITY.lokalno}
-      WHEN 'sport' THEN ${CATEGORY_PRIORITY.sport}
-      WHEN 'tehnologija-znanost' THEN ${CATEGORY_PRIORITY["tehnologija-znanost"]}
-      WHEN 'kultura' THEN ${CATEGORY_PRIORITY.kultura}
-      WHEN 'zdravje' THEN ${CATEGORY_PRIORITY.zdravje}
-      WHEN 'okolje' THEN ${CATEGORY_PRIORITY.okolje}
+      ${categoryPriorityCases}
       ELSE 0
     END
   ) / ${MAX_CATEGORY_PRIORITY}
 `;
+
+export type ArticlesByCategory = CategoryMap<ArticleType[]>;
+
+export function emptyArticlesByCategory(): ArticlesByCategory {
+  return Object.fromEntries(
+    (Object.values(CategoryKey) as CategoryKeyValue[]).map((key) => [
+      key,
+      [] as ArticleType[],
+    ]),
+  ) as ArticlesByCategory;
+}
 
 export async function getHomeArticles({
   db,
@@ -182,7 +198,7 @@ export async function getCategoryArticles({
 }: {
   db: Database;
   ignoredClusterIds: number[];
-  category: string;
+  category: CategoryKeyValue;
   count: number;
   offset?: number;
 }): Promise<ArticleType[]> {
