@@ -1,99 +1,174 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 @custom-variant hover (&:hover);
 @custom-variant dark (&:is(.dark *));
 
-@theme {
-  --font-sans: "Source Sans Pro", "Inter", system-ui, sans-serif;
-
-  --color-surface: oklch(0.98 0 0 / 1);
-  --color-surface-light: oklch(1 0 0);
-
-  --color-surface-text: oklch(0.258 0 0);
-  --color-surface-light-text: oklch(0.258 0 0);
-
-  --color-primary: oklch(0.258 0 0);
-  --color-primary-text: oklch(0.96 0 0);
-
-  --color-secondary: oklch(
-    0% 0 0
-  ); /* not really used, except as an unused button variant  */
-
-  --color-rightblue: oklch(0.906 0.074 234.5);
-  --color-leftred: oklch(0.756 0.203 23.7);
-  --color-centerwhite: oklch(1 0 0);
-  --color-electricblue: oklch(0.6 0.18 248.1);
-
-  --color-vidikwhite: oklch(0.978 0.009 247.5);
-  --color-vidikblack: oklch(0.258 0 0);
-  --color-vidikdarkgray: oklch(0.374 0 0);
-  --color-vidiklightgray: oklch(0.925 0 0);
-  --color-vidikgreen: oklch(0.6548 0.211 140.04);
-
-  /*
-    Convention for element specific colors:
-      bg-button // --color-button
-      text-button-text // --color-button-text
-      border-button-border // --color-button-border
-      ...
-    */
-
-  --color-header: oklch(0 0 0);
-
-  --color-border: oklch(0.952 0 0);
-  --color-ring: oklch(0.708 0 0);
+@theme inline {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-sarabun:
     "Sarabun", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
 
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Legacy aliases used by existing Vidik layouts. */
+  --color-surface: var(--background);
+  --color-surface-light: var(--card);
+  --color-surface-text: var(--foreground);
+  --color-surface-light-text: var(--card-foreground);
+  --color-primary-text: var(--primary-foreground);
+
+  --color-header: var(--header);
+  --color-electricblue: var(--bias-right);
+  --color-leftred: var(--bias-left);
+  --color-centerwhite: var(--bias-center);
+  --color-bias-left: var(--bias-left);
+  --color-bias-center-left: var(--bias-center-left);
+  --color-bias-center: var(--bias-center);
+  --color-bias-center-right: var(--bias-center-right);
+  --color-bias-right: var(--bias-right);
+  --color-vidikwhite: var(--vidik-white);
+  --color-vidikblack: var(--vidik-black);
+  --color-vidikdarkgray: var(--vidik-dark-gray);
+  --color-vidiklightgray: var(--vidik-light-gray);
+  --color-vidikgreen: var(--vidik-green);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
   --shadow-vidik: -1px 1px 2px 0px rgba(0, 0, 0, 0.1);
 }
 
+:root {
+  color-scheme: light;
+  --radius: 0.625rem;
+  --background: oklch(0.98 0.004 248);
+  --foreground: oklch(0.258 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.258 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.258 0 0);
+  --primary: oklch(0.258 0 0);
+  --primary-foreground: oklch(0.978 0.009 247.5);
+  --secondary: oklch(0.94 0.006 248);
+  --secondary-foreground: oklch(0.258 0 0);
+  --muted: oklch(0.94 0.006 248);
+  --muted-foreground: oklch(0.49 0.012 248);
+  --accent: oklch(0.925 0.008 248);
+  --accent-foreground: oklch(0.258 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.89 0.008 248);
+  --input: oklch(0.86 0.01 248);
+  --ring: oklch(0.6 0.18 248.1);
+  --chart-1: oklch(0.61 0.24 25);
+  --chart-2: oklch(0.73 0.18 18);
+  --chart-3: oklch(0.82 0.01 248);
+  --chart-4: oklch(0.69 0.15 250);
+  --chart-5: oklch(0.58 0.22 257);
+  --header: oklch(0.16 0.005 248);
+  --bias-left: #fa2d36;
+  --bias-center-left: #ff6166;
+  --bias-center: #feffff;
+  --bias-center-right: #52a1ff;
+  --bias-right: #2d7eff;
+  --vidik-white: oklch(0.978 0.009 247.5);
+  --vidik-black: oklch(0.258 0 0);
+  --vidik-dark-gray: oklch(0.374 0 0);
+  --vidik-light-gray: oklch(0.925 0 0);
+  --vidik-green: oklch(0.655 0.211 140);
+}
+
 .dark {
-  --color-surface: oklch(28.09% 0 0);
-  --color-surface-light: oklch(0.374 0 0);
+  color-scheme: dark;
+  --background: oklch(0.22 0.006 248);
+  --foreground: oklch(0.978 0.009 247.5);
+  --card: oklch(0.29 0.006 248);
+  --card-foreground: oklch(0.978 0.009 247.5);
+  --popover: oklch(0.27 0.006 248);
+  --popover-foreground: oklch(0.978 0.009 247.5);
+  --primary: oklch(0.978 0.009 247.5);
+  --primary-foreground: oklch(0.22 0.006 248);
+  --secondary: oklch(0.32 0.008 248);
+  --secondary-foreground: oklch(0.978 0.009 247.5);
+  --muted: oklch(0.32 0.008 248);
+  --muted-foreground: oklch(0.72 0.012 248);
+  --accent: oklch(0.37 0.012 248);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.69 0.15 250);
+  --header: oklch(0.18 0.006 248);
+  --vidik-green: oklch(0.5 0.16 140);
   --shadow-vidik: -2px 2px 4px 0px rgba(0, 0, 0, 0.25);
-
-  --color-surface-text: oklch(0.978 0.009 247.5);
-  --color-surface-light-text: oklch(0.978 0.009 247.5);
-
-  --color-secondary: oklch(23.93% 0 0);
-
-  --color-primary: oklch(0.978 0.009 247.5);
-  --color-primary-text: oklch(28.09% 0 0);
-
-  --color-electricblue: oklch(0.6 0.18 248.1);
-  --color-vidikgreen: oklch(0.4995 0.16 139.63);
-
-  --color-header: oklch(23.93% 0 0);
-
-  --color-border: oklch(40.54% 0.00005 271.152);
-  --color-ring: oklch(0.439 0 0);
 }
 
 html,
 body {
   min-height: 100svh;
+}
+
+body {
   display: flex;
   flex-direction: column;
+  position: relative;
   margin: 0;
   font-family: var(--font-sans);
-  background-color: var(--color-surface);
-  color: var(--color-primary);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.app-root {
+  isolation: isolate;
+  display: flex;
+  min-height: 100svh;
+  flex: 1;
+  flex-direction: column;
 }
 
 .shadow-vidik {
   box-shadow: var(--shadow-vidik);
 }
 
-/* tailwind v4 made buttons not have pointer cursor by default for some reason, so this re-adds it */
 @layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
-  }
-  * {
-    @apply border-border outline-ring/50;
   }
 }

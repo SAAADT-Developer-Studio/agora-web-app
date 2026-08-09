@@ -230,7 +230,11 @@ function ArticleMetadataBadge({
 function PaywallIcon({ className }: { className?: string }) {
   return (
     <Tooltip>
-      <TooltipTrigger>
+      <TooltipTrigger
+        render={
+          <span tabIndex={0} aria-label="Članek je plačljiv" role="img" />
+        }
+      >
         <DollarSign className={className} />
       </TooltipTrigger>
       <TooltipContent>

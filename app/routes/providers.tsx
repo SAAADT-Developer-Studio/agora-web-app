@@ -284,19 +284,21 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
         <div className="mt-4 flex flex-wrap items-start justify-start gap-3 md:mt-0">
           <DropdownMenu>
             <DropdownMenuTrigger
-              asChild
-              className="bg-surface shadow-vidik text-primary font-semibold !outline-none"
+              render={
+                <Button
+                  variant="outline"
+                  className="shadow-vidik font-semibold"
+                />
+              }
             >
-              <Button variant="outline">
-                Pristranskost
-                {selectedBiasRatings.length > 0 && (
-                  <span className="bg-surface text-primary ml-2 rounded-full px-2 py-0.5 text-xs">
-                    {selectedBiasRatings.length}
-                  </span>
-                )}
-              </Button>
+              Pristranskost
+              {selectedBiasRatings.length > 0 && (
+                <span className="bg-muted text-foreground ml-2 rounded-full px-2 py-0.5 text-xs">
+                  {selectedBiasRatings.length}
+                </span>
+              )}
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-surface text-primary shadow-vidik w-56">
+            <DropdownMenuContent className="shadow-vidik w-56">
               <DropdownMenuLabel>Filtriraj po pristranskosti</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {Object.values(BiasRatingKey).map((biasRatingKey) => (
@@ -312,25 +314,13 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
           </DropdownMenu>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="bg-surface text-primary w-[120px] font-semibold !outline-none md:w-[240px]">
+            <SelectTrigger className="shadow-vidik bg-background w-[120px] font-semibold md:w-[240px]">
               <SelectValue placeholder="Razvrsti po" />
             </SelectTrigger>
-            <SelectContent className="bg-surface text-primary shadow-vidik">
-              <SelectItem value="rank" className="hover:bg-surface-light/10">
-                Privzeto
-              </SelectItem>
-              <SelectItem
-                value="month-most"
-                className="hover:bg-surface-light/10"
-              >
-                Največ člankov
-              </SelectItem>
-              <SelectItem
-                value="month-least"
-                className="hover:bg-surface-light/10"
-              >
-                Najmanj člankov
-              </SelectItem>
+            <SelectContent className="shadow-vidik">
+              <SelectItem value="rank">Privzeto</SelectItem>
+              <SelectItem value="month-most">Največ člankov</SelectItem>
+              <SelectItem value="month-least">Najmanj člankov</SelectItem>
             </SelectContent>
           </Select>
         </div>

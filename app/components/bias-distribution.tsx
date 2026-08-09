@@ -132,26 +132,28 @@ function ProviderBadge({
 }) {
   return (
     <Tooltip>
-      <TooltipTrigger>
-        <Link
-          to={href("/medij/:providerKey", {
-            providerKey: provider.key,
-          })}
-          prefetch="intent"
-        >
-          <div className="dark:border-primary border-primary/20 relative flex w-full items-center justify-center rounded-full border-2">
-            <ProviderImage
-              provider={provider}
-              size={60}
-              className="h-full w-full overflow-clip rounded-full object-contain"
-            />
-            {provider.articleCount > 1 && (
-              <div className="absolute -top-2 -right-2 flex size-4 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-black">
-                {provider.articleCount}
-              </div>
-            )}
-          </div>
-        </Link>
+      <TooltipTrigger
+        render={
+          <Link
+            to={href("/medij/:providerKey", {
+              providerKey: provider.key,
+            })}
+            prefetch="intent"
+          />
+        }
+      >
+        <div className="dark:border-primary border-primary/20 relative flex w-full items-center justify-center rounded-full border-2">
+          <ProviderImage
+            provider={provider}
+            size={60}
+            className="h-full w-full overflow-clip rounded-full object-contain"
+          />
+          {provider.articleCount > 1 && (
+            <div className="absolute -top-2 -right-2 flex size-4 items-center justify-center rounded-full bg-white text-[10px] font-semibold text-black">
+              {provider.articleCount}
+            </div>
+          )}
+        </div>
       </TooltipTrigger>
       <TooltipContent side="right">{provider.name}</TooltipContent>
     </Tooltip>

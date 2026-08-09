@@ -2,23 +2,22 @@ import type { BiasRating } from "~/enums/biasRatingKey";
 
 export function biasKeyToColor(biasKey: string, withOpacity = false): string {
   const biasMapOpaque = {
-    left: "bg-[#FA2D36] text-vidikwhite",
-    "center-left": "bg-[#FF6166] text-vidikwhite",
-    center: "bg-[#FEFFFF] text-black border border-vidikblack/10",
-    "center-right": "bg-[#52A1FF] text-vidikwhite",
-    right: "bg-[#2D7EFF] text-vidikwhite",
+    left: "bg-bias-left text-white",
+    "center-left": "bg-bias-center-left text-black",
+    center: "bg-bias-center text-black border border-black/10",
+    "center-right": "bg-bias-center-right text-black",
+    right: "bg-bias-right text-white",
   } satisfies Record<BiasRating, string>;
 
   const biasMapWithOpacity = {
-    left: "bg-[#FA2D36]/70 border-1 md:border-2 border-[#FA2D36] text-vidikwhite",
+    left: "bg-bias-left/70 border md:border-2 border-bias-left text-white",
     "center-left":
-      "bg-[#FF6166]/70 border-1 md:border-2 border-[#FF6166] text-vidikwhite",
+      "bg-bias-center-left/70 border md:border-2 border-bias-center-left text-black",
     center:
-      "bg-[#FEFFFF]/90 border-1 md:border-2 dark:border-[#FEFFFF] border-vidikblack/10 text-black",
+      "bg-bias-center/90 border md:border-2 border-black/10 dark:border-bias-center text-black",
     "center-right":
-      "bg-[#52A1FF]/70 border md:border-2 border-[#52A1FF] text-vidikwhite",
-    right:
-      "bg-[#2D7EFF]/70 border-1 md:border-2 border-[#2D7EFF] text-vidikwhite",
+      "bg-bias-center-right/70 border md:border-2 border-bias-center-right text-black",
+    right: "bg-bias-right/70 border md:border-2 border-bias-right text-white",
   } satisfies Record<BiasRating, string>;
 
   const biasMap = withOpacity ? biasMapWithOpacity : biasMapOpaque;

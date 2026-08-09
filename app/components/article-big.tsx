@@ -1,5 +1,5 @@
 import Tag from "./ui/tag";
-import CoverageBarBig from "./coverage-bar big";
+import CoverageBarBig from "./coverage-bar-big";
 import { Sources } from "./sources";
 import { href, Link } from "react-router";
 import { useMediaQuery } from "~/hooks/use-media-query";

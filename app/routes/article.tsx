@@ -1,7 +1,7 @@
 import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/article";
 import { getSeoMetas } from "~/lib/seo";
-import fallbackArticleImage from "~/assets/fallback.png";
+import fallbackArticleImage from "~/assets/fallback.webp";
 import {
   Info,
   Newspaper,
@@ -18,8 +18,11 @@ import { Link } from "react-router";
 import { InfoCard } from "~/components/ui/info-card";
 import { ArticleItem } from "~/components/article-item";
 import type { Database } from "~/lib/db";
-import { Tooltip, TooltipContent } from "~/components/ui/tooltip";
-import { TooltipTrigger } from "@radix-ui/react-tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import { cn } from "~/lib/utils";
 import { getCarouselArticleIds } from "~/utils/getCarouselArticleIds";

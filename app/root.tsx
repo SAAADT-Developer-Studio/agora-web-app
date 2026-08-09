@@ -7,6 +7,7 @@ import { Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { Toaster } from "sonner";
+import { useLocalStorage } from "~/hooks/use-local-storage";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -59,7 +60,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta httpEquiv="x-ua-compatible" content="ie=edge" />
       </head>
       <body>
-        {children}
+        <div className="app-root">{children}</div>
         <ScrollRestoration />
         {import.meta.env.PROD && (
           <script suppressHydrationWarning>
@@ -82,6 +83,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 const queryClient = new QueryClient();
 
 export default function App() {
+  const [theme] = useLocalStorage<"light" | "dark">("theme", "light");
+
   useEffect(() => {
     let userId = localStorage.getItem("user_id");
     if (!userId) {
@@ -100,7 +103,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <Suspense>
         <TooltipProvider>
-          <Toaster />
+          <Toaster theme={theme} />
           <Outlet />
         </TooltipProvider>
       </Suspense>

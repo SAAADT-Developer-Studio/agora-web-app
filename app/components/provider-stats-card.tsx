@@ -68,30 +68,32 @@ function ProviderStatsChart({
         return (
           <div key={provider.key}>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  to={href("/medij/:providerKey", {
-                    providerKey: provider.key,
-                  })}
-                  className="group flex gap-2"
-                  prefetch="intent"
-                >
-                  <ProviderImage
-                    provider={provider}
-                    className="size-8 overflow-clip rounded border-2 border-black/20 transition-all group-hover:border-black/40 dark:border-white/70 dark:group-hover:border-white"
+              <TooltipTrigger
+                render={
+                  <Link
+                    to={href("/medij/:providerKey", {
+                      providerKey: provider.key,
+                    })}
+                    className="group flex gap-2"
+                    prefetch="intent"
                   />
+                }
+              >
+                <ProviderImage
+                  provider={provider}
+                  className="size-8 overflow-clip rounded border-2 border-black/20 transition-all group-hover:border-black/40 dark:border-white/70 dark:group-hover:border-white"
+                />
 
-                  <div className="flex flex-1 rounded-md bg-black/5 dark:bg-[#5a5a5a]">
-                    <div
-                      className="bg-electricblue flex h-8 items-center justify-end rounded-md px-2 font-semibold text-white transition-all group-hover:shadow-[0_0_8px_var(--color-electricblue)]"
-                      style={{
-                        width: `${(provider.articleCount / maxArticles) * 100}%`,
-                      }}
-                    >
-                      {provider.articleCount}
-                    </div>
+                <div className="flex flex-1 rounded-md bg-black/5 dark:bg-[#5a5a5a]">
+                  <div
+                    className="bg-electricblue flex h-8 items-center justify-end rounded-md px-2 font-semibold text-white transition-all group-hover:shadow-[0_0_8px_var(--color-electricblue)]"
+                    style={{
+                      width: `${(provider.articleCount / maxArticles) * 100}%`,
+                    }}
+                  >
+                    {provider.articleCount}
                   </div>
-                </Link>
+                </div>
               </TooltipTrigger>
               <TooltipContent side="left">{provider.name}</TooltipContent>
             </Tooltip>

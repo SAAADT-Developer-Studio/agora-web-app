@@ -28,8 +28,8 @@ export function ErrorComponent({ error }: { error: unknown }) {
         </pre>
       )}
       {showHomeLink && (
-        <Button asChild className="w-fit">
-          <Link to="/">Nazaj na domačo stran</Link>
+        <Button render={<Link to="/" />} className="w-fit">
+          Nazaj na domačo stran
         </Button>
       )}
     </main>

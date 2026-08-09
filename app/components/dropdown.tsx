@@ -13,29 +13,29 @@ export function Dropdown({
   trigger,
 }: {
   items: { label: string; to: string; icon?: React.ReactNode }[];
-  trigger?: React.ReactNode;
+  trigger?: React.ReactElement;
 }) {
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        {trigger ?? <Grip size={28} className="cursor-pointer" />}
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          trigger ?? (
+            <button type="button" aria-label="Odpri meni">
+              <Grip size={28} />
+            </button>
+          )
+        }
+      />
       <DropdownMenuContent
-        className="bg-surface color-primary border-primary/10 translate-x-[10px] border-1"
+        className="translate-x-[10px]"
         align="end"
         sideOffset={15}
       >
         <DropdownMenuGroup>
           {items.map((item) => (
-            <DropdownMenuItem
-              asChild
-              className="hover:bg-surface cursor-pointer"
-              key={item.to}
-            >
-              <Link to={item.to}>
-                {item.icon ?? ""}
-                {item.label}
-              </Link>
+            <DropdownMenuItem render={<Link to={item.to} />} key={item.to}>
+              {item.icon}
+              {item.label}
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
