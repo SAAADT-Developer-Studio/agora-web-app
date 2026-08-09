@@ -69,62 +69,72 @@
 
 :root {
   color-scheme: light;
-  --radius: 0.7rem;
-  /* Editorial cool paper: soft atmospheric page, crisp lifted cards. */
-  --background: oklch(0.955 0.014 240);
-  --foreground: oklch(0.23 0.028 255);
+  --radius: 0.85rem;
+  /*
+    Light theme: slate desk + white editorial sheet.
+    The page canvas must read as clearly colored, not near-white.
+  */
+  --background: oklch(0.88 0.028 245);
+  --foreground: oklch(0.2 0.035 255);
   --card: oklch(0.995 0.004 240);
-  --card-foreground: oklch(0.23 0.028 255);
+  --card-foreground: oklch(0.2 0.035 255);
   --popover: oklch(1 0.002 240);
-  --popover-foreground: oklch(0.23 0.028 255);
-  --primary: oklch(0.24 0.03 255);
-  --primary-foreground: oklch(0.985 0.006 240);
-  --secondary: oklch(0.925 0.02 240);
-  --secondary-foreground: oklch(0.28 0.03 255);
-  --muted: oklch(0.93 0.016 240);
-  --muted-foreground: oklch(0.48 0.03 250);
-  --accent: oklch(0.935 0.028 245);
-  --accent-foreground: oklch(0.28 0.04 255);
+  --popover-foreground: oklch(0.2 0.035 255);
+  --primary: oklch(0.2 0.035 255);
+  --primary-foreground: oklch(0.99 0.005 240);
+  --secondary: oklch(0.93 0.03 245);
+  --secondary-foreground: oklch(0.28 0.04 255);
+  --muted: oklch(0.935 0.02 245);
+  --muted-foreground: oklch(0.45 0.035 250);
+  --accent: oklch(0.93 0.045 245);
+  --accent-foreground: oklch(0.28 0.06 255);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.84 0.022 245);
-  --input: oklch(0.87 0.02 245);
-  --ring: oklch(0.55 0.17 250);
+  --border: oklch(0.8 0.03 245);
+  --input: oklch(0.84 0.028 245);
+  --ring: oklch(0.52 0.18 252);
   --chart-1: oklch(0.61 0.24 25);
   --chart-2: oklch(0.73 0.18 18);
   --chart-3: oklch(0.78 0.02 245);
   --chart-4: oklch(0.64 0.16 250);
   --chart-5: oklch(0.55 0.2 257);
-  --header: oklch(0.15 0.025 255);
+  --header: oklch(0.14 0.03 255);
   --bias-left: #fa2d36;
   --bias-center-left: #ff6166;
   --bias-center: #feffff;
   --bias-center-right: #52a1ff;
   --bias-right: #2d7eff;
-  --vidik-white: oklch(0.985 0.006 240);
-  --vidik-black: oklch(0.24 0.03 255);
-  --vidik-dark-gray: oklch(0.38 0.02 255);
-  --vidik-light-gray: oklch(0.92 0.016 240);
+  --vidik-white: oklch(0.99 0.005 240);
+  --vidik-black: oklch(0.2 0.035 255);
+  --vidik-dark-gray: oklch(0.36 0.03 255);
+  --vidik-light-gray: oklch(0.9 0.02 245);
   --vidik-green: oklch(0.655 0.211 140);
   --shadow-vidik:
-    0 1px 2px rgba(15, 28, 52, 0.05), 0 8px 24px rgba(15, 28, 52, 0.06);
+    0 1px 2px rgba(18, 36, 72, 0.08), 0 12px 32px rgba(18, 36, 72, 0.12);
   --page-atmosphere:
     radial-gradient(
-      1100px 520px at 8% -12%,
-      oklch(0.98 0.03 235 / 0.9),
-      transparent 58%
+      900px 480px at 12% -8%,
+      oklch(0.94 0.05 230 / 0.85),
+      transparent 55%
     ),
     radial-gradient(
-      900px 480px at 100% 0%,
-      oklch(0.96 0.035 255 / 0.55),
-      transparent 52%
+      800px 520px at 92% 8%,
+      oklch(0.86 0.06 255 / 0.7),
+      transparent 50%
+    ),
+    repeating-linear-gradient(
+      -18deg,
+      transparent 0 14px,
+      oklch(0.82 0.03 245 / 0.18) 14px 15px
     ),
     linear-gradient(
-      180deg,
-      oklch(0.975 0.012 240) 0%,
-      oklch(0.955 0.014 240) 32%,
-      oklch(0.95 0.012 245) 100%
+      165deg,
+      oklch(0.9 0.035 240) 0%,
+      oklch(0.86 0.03 248) 48%,
+      oklch(0.84 0.028 252) 100%
     );
+  --content-sheet: oklch(0.99 0.006 240 / 0.88);
+  --content-sheet-border: oklch(0.76 0.035 245);
 }
 
 .dark {
@@ -146,12 +156,14 @@
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 14%);
-  --input: oklch(1 0 0 / 18%);
+  --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.69 0.15 250);
   --header: oklch(0.18 0.006 248);
   --vidik-green: oklch(0.5 0.16 140);
   --shadow-vidik: -2px 2px 4px 0px rgba(0, 0, 0, 0.25);
   --page-atmosphere: none;
+  --content-sheet: transparent;
+  --content-sheet-border: transparent;
 }
 
 html,
@@ -177,6 +189,18 @@ body {
   min-height: 100svh;
   flex: 1;
   flex-direction: column;
+}
+
+.content-sheet {
+  background: var(--content-sheet);
+  border: 1px solid var(--content-sheet-border);
+  box-shadow: var(--shadow-vidik);
+}
+
+.dark .content-sheet {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .shadow-vidik {

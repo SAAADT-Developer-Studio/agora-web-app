@@ -11,7 +11,7 @@ export default function RootLayout({}: Route.ComponentProps) {
     <>
       <Header />
 
-      <main className="mx-auto h-full w-full max-w-[1200px] flex-1 px-3 py-4 md:mt-4 md:px-6">
+      <main className="content-sheet mx-auto mt-3 mb-6 h-full w-full max-w-[1200px] flex-1 rounded-2xl px-3 py-4 backdrop-blur-sm md:mt-5 md:mb-8 md:px-6 md:py-6 dark:backdrop-blur-none">
         <Outlet />
       </main>
 

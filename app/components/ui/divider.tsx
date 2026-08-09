@@ -7,7 +7,7 @@ export default function Divider({
   return (
     <Link
       to={href("/:category", { category: categoryKey })}
-      className="col-span-full w-fit pt-4 text-lg font-normal hover:underline focus:underline dark:font-bold"
+      className="text-foreground hover:text-bias-right col-span-full w-fit pt-4 text-lg font-semibold tracking-wide uppercase transition-colors hover:underline focus:underline"
     >
       {text}
     </Link>

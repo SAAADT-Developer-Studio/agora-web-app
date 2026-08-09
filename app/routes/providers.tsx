@@ -294,7 +294,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
               render={
                 <Button
                   variant="outline"
-                  className="shadow-vidik font-semibold"
+                  className="border-border bg-card shadow-vidik font-semibold"
                 />
               }
             >

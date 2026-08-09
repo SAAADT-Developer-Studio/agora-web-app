@@ -54,7 +54,7 @@ export function Header() {
           <ThemeSwitch />
           <Link
             to={href("/mediji")}
-            className="bg-vidikwhite dark:text-vidikdarkgray hover:bg-vidikwhite/90 text-md rounded-lg px-3 py-1 font-medium text-black"
+            className="bg-bias-right hover:bg-bias-right/90 text-md rounded-lg px-3 py-1.5 font-semibold text-white shadow-sm transition-colors"
             prefetch="intent"
           >
             Mediji
@@ -62,7 +62,7 @@ export function Header() {
         </div>
       </div>
 
-      <nav className="border-border/70 bg-card/90 supports-backdrop-filter:bg-card/80 hidden w-full justify-center border-b backdrop-blur-md md:flex">
+      <nav className="border-border/60 bg-card/95 supports-backdrop-filter:bg-card/85 dark:bg-card/40 hidden w-full justify-center border-b backdrop-blur-md md:flex">
         <div className="flex overflow-hidden">
           {config.navigation.map((item) => (
             <NavLink
@@ -73,9 +73,9 @@ export function Header() {
               className={({ isActive, isPending }) =>
                 cn(
                   "text-muted-foreground hover:text-foreground px-4 py-3.5 text-sm font-medium text-nowrap transition-colors",
-                  isPending && "border-border animate-pulse border-b-2",
+                  isPending && "border-bias-right/40 animate-pulse border-b-2",
                   isActive &&
-                    "text-foreground border-foreground border-b-2 font-semibold",
+                    "text-bias-right border-bias-right border-b-2 font-semibold",
                 )
               }
             >

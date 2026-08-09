@@ -15,7 +15,7 @@ const XIcon = createLucideIcon("X", [
 
 export default function Footer() {
   return (
-    <footer className="border-border/80 bg-card text-card-foreground mt-20 flex items-center justify-center border-t">
+    <footer className="border-border/50 bg-card/70 text-card-foreground dark:bg-card mt-4 flex items-center justify-center border-t backdrop-blur-sm dark:mt-20 dark:backdrop-blur-none">
       <div className="w-[1200px] px-4 py-12">
         <div className="flex flex-col items-start justify-around gap-8 md:flex-row md:justify-between md:gap-0">
           <div className="w-full md:w-1/2">
