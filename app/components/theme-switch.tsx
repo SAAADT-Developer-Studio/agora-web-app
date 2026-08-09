@@ -11,8 +11,8 @@ export function ThemeSwitch({
 }: SwitchPrimitive.Root.Props) {
   const [theme, setTheme] = useLocalStorage("theme", "light");
 
-  const handleSwitch = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
+  const handleSwitch = (checked: boolean) => {
+    const newTheme = checked ? "light" : "dark";
     document.documentElement.classList.remove(theme);
     document.documentElement.classList.add(newTheme);
     setTheme(newTheme);

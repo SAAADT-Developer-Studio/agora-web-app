@@ -157,6 +157,7 @@ export function BiasInfoTooltip({ iconClassName }: { iconClassName?: string }) {
 
         <DialogFooter>
           <Button
+            nativeButton={false}
             variant="outline"
             className="bg-primary text-primary-text"
             render={<Link to={href("/metodologija")} />}

@@ -28,7 +28,7 @@ export function ErrorComponent({ error }: { error: unknown }) {
         </pre>
       )}
       {showHomeLink && (
-        <Button render={<Link to="/" />} className="w-fit">
+        <Button nativeButton={false} render={<Link to="/" />} className="w-fit">
           Nazaj na domačo stran
         </Button>
       )}

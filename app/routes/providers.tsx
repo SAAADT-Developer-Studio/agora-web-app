@@ -237,11 +237,11 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
   const [selectedBiasRatings, setSelectedBiasRatings] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("rank");
 
-  const toggleBiasRating = (rating: string) => {
-    setSelectedBiasRatings((prev) =>
-      prev.includes(rating)
-        ? prev.filter((r) => r !== rating)
-        : [...prev, rating],
+  const setBiasRatingChecked = (rating: string, checked: boolean) => {
+    setSelectedBiasRatings((current) =>
+      checked
+        ? [...new Set([...current, rating])]
+        : current.filter((item) => item !== rating),
     );
   };
 
@@ -307,13 +307,17 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="shadow-vidik w-56">
               <DropdownMenuGroup>
-                <DropdownMenuLabel>Filtriraj po pristranskosti</DropdownMenuLabel>
+                <DropdownMenuLabel>
+                  Filtriraj po pristranskosti
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {Object.values(BiasRatingKey).map((biasRatingKey) => (
                   <DropdownMenuCheckboxItem
                     key={biasRatingKey}
                     checked={selectedBiasRatings.includes(biasRatingKey)}
-                    onCheckedChange={() => toggleBiasRating(biasRatingKey)}
+                    onCheckedChange={(checked) =>
+                      setBiasRatingChecked(biasRatingKey, checked)
+                    }
                   >
                     {biasKeyToLabel(biasRatingKey)}
                   </DropdownMenuCheckboxItem>
