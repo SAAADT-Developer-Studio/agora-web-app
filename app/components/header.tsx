@@ -62,7 +62,7 @@ export function Header() {
         </div>
       </div>
 
-      <nav className="border-primary/10 bg-surface-light hidden w-full justify-center border-b md:flex">
+      <nav className="border-border/70 bg-card/90 supports-backdrop-filter:bg-card/80 hidden w-full justify-center border-b backdrop-blur-md md:flex">
         <div className="flex overflow-hidden">
           {config.navigation.map((item) => (
             <NavLink
@@ -72,11 +72,10 @@ export function Header() {
               end
               className={({ isActive, isPending }) =>
                 cn(
-                  "text-surface-light-text/70 hover:text-surface-light-text px-4 py-3.5 text-sm font-medium text-nowrap transition-colors",
-                  isPending &&
-                    "border-surface-light-text/30 animate-pulse border-b",
+                  "text-muted-foreground hover:text-foreground px-4 py-3.5 text-sm font-medium text-nowrap transition-colors",
+                  isPending && "border-border animate-pulse border-b-2",
                   isActive &&
-                    "text-surface-light-text border-surface-light-text border-b",
+                    "text-foreground border-foreground border-b-2 font-semibold",
                 )
               }
             >

@@ -74,7 +74,7 @@ export function BiasDistribution({
   return (
     <div
       className={cn(
-        "bg-surface-light text-surface-light-text flex flex-col overflow-hidden rounded-lg border border-current/10 p-4 shadow-xs md:col-span-1",
+        "bg-card text-card-foreground border-border/80 shadow-vidik flex flex-col overflow-hidden rounded-xl border p-4 md:col-span-1",
         className,
       )}
     >

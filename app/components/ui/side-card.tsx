@@ -4,8 +4,8 @@ export function SideCardContainer({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={cn(
-        "bg-surface-light border-vidikdarkgray/10 col-span-1 row-span-2 flex flex-col rounded-md border-1 shadow-xs",
-        "dark:border-current/15 dark:border-t-white/20",
+        "bg-card text-card-foreground border-border/80 shadow-vidik col-span-1 row-span-2 flex flex-col rounded-xl border",
+        "dark:border-current/15 dark:border-t-white/20 dark:shadow-none",
       )}
     >
       {children}

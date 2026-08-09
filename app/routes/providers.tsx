@@ -335,7 +335,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
               }
             }}
           >
-            <SelectTrigger className="shadow-vidik bg-background w-[120px] font-semibold md:w-[240px]">
+            <SelectTrigger className="shadow-vidik bg-card border-border w-[120px] font-semibold md:w-[240px]">
               <SelectValue placeholder="Razvrsti po" />
             </SelectTrigger>
             <SelectContent className="shadow-vidik">
@@ -352,7 +352,7 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
       <div className="mt-6 grid w-full grid-cols-1 gap-2 md:grid-cols-2 md:gap-6 xl:grid-cols-3">
         {filteredAndSortedProviders.map((provider) => (
           <Link
-            className="bg-surface-light/50 shadow-vidik flex flex-col items-start justify-between gap-4 rounded-md p-4 transition-all hover:bg-current/5"
+            className="bg-card border-border/80 shadow-vidik hover:border-border hover:bg-accent/40 flex flex-col items-start justify-between gap-4 rounded-xl border p-4 transition-all"
             to={href("/medij/:providerKey", { providerKey: provider.key })}
             key={provider.key}
           >
