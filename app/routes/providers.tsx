@@ -34,7 +34,6 @@ import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import { BiasRatingKey } from "~/enums/biasRatingKey";
 import { cn } from "~/lib/utils";
 import { getAppContext } from "~/lib/appContext";
-import { agentDebugLog } from "~/lib/agent-debug-log";
 
 const sortOptions = [
   { label: "Privzeto", value: "rank" },
@@ -237,25 +236,6 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
 
   const [selectedBiasRatings, setSelectedBiasRatings] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("rank");
-
-  const providerKeys = providers.map((provider) => provider.key);
-  // #region agent log
-  agentDebugLog({
-    hypothesisId: "C,D",
-    location: "app/routes/providers.tsx:ProvidersPage",
-    message: "Providers page list-key inputs",
-    data: {
-      providerCount: providers.length,
-      missingProviderKeys: providerKeys.filter((key) => !key).length,
-      duplicateProviderKeys: providerKeys.filter(
-        (key, index) => providerKeys.indexOf(key) !== index,
-      ),
-      sortOptionValues: sortOptions.map((option) => option.value),
-      selectedBiasCount: selectedBiasRatings.length,
-      sortBy,
-    },
-  });
-  // #endregion
 
   const toggleBiasRating = (rating: string) => {
     setSelectedBiasRatings((prev) =>

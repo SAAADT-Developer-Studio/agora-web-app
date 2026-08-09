@@ -5,7 +5,6 @@ import { Select as SelectPrimitive } from "@base-ui/react/select";
 
 import { cn } from "~/lib/utils";
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react";
-import { agentDebugLog, summarizeChildren } from "~/lib/agent-debug-log";
 
 const Select = SelectPrimitive.Root;
 
@@ -37,15 +36,6 @@ function SelectTrigger({
 }: SelectPrimitive.Trigger.Props & {
   size?: "sm" | "default";
 }) {
-  // #region agent log
-  agentDebugLog({
-    hypothesisId: "C",
-    location: "app/components/ui/select.tsx:SelectTrigger",
-    message: "Select trigger children received",
-    data: { children: summarizeChildren(children) },
-  });
-  // #endregion
-
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
