@@ -4,72 +4,164 @@
 @custom-variant hover (&:hover);
 @custom-variant dark (&:is(.dark *));
 
-@theme {
-  --font-sans: "Source Sans Pro", "Inter", system-ui, sans-serif;
+/*
+  Vidik design tokens
+  -------------------
+  Brand/surface tokens (--color-vidik*, --color-surface*) are the source of truth.
+  shadcn/Base UI semantic tokens (--background, --primary, --muted, …) are mapped
+  onto those values so generated components match Vidik in light and dark mode.
+*/
 
-  --color-surface: oklch(0.98 0 0 / 1);
-  --color-surface-light: oklch(1 0 0);
+:root {
+  --radius: 0.625rem;
 
-  --color-surface-text: oklch(0.258 0 0);
-  --color-surface-light-text: oklch(0.258 0 0);
+  /* Brand / surfaces */
+  --vidik-white: oklch(0.978 0.009 247.5);
+  --vidik-black: oklch(0.258 0 0);
+  --vidik-dark-gray: oklch(0.374 0 0);
+  --vidik-light-gray: oklch(0.925 0 0);
+  --vidik-green: oklch(0.6548 0.211 140.04);
 
-  --color-primary: oklch(0.258 0 0);
-  --color-primary-text: oklch(0.96 0 0);
+  --surface: oklch(0.98 0 0);
+  --surface-light: oklch(1 0 0);
+  --surface-text: oklch(0.258 0 0);
+  --surface-light-text: oklch(0.258 0 0);
 
-  --color-secondary: oklch(
-    0% 0 0
-  ); /* not really used, except as an unused button variant  */
+  --header: oklch(0 0 0);
 
-  --color-rightblue: oklch(0.906 0.074 234.5);
-  --color-leftred: oklch(0.756 0.203 23.7);
-  --color-centerwhite: oklch(1 0 0);
-  --color-electricblue: oklch(0.6 0.18 248.1);
+  /* Bias / accent hues */
+  --rightblue: oklch(0.906 0.074 234.5);
+  --leftred: oklch(0.756 0.203 23.7);
+  --centerwhite: oklch(1 0 0);
+  --electricblue: oklch(0.6 0.18 248.1);
 
-  --color-vidikwhite: oklch(0.978 0.009 247.5);
-  --color-vidikblack: oklch(0.258 0 0);
-  --color-vidikdarkgray: oklch(0.374 0 0);
-  --color-vidiklightgray: oklch(0.925 0 0);
-  --color-vidikgreen: oklch(0.6548 0.211 140.04);
+  /* shadcn semantic tokens → Vidik */
+  --background: var(--surface);
+  --foreground: var(--surface-text);
+  --card: var(--surface-light);
+  --card-foreground: var(--surface-light-text);
+  --popover: var(--surface-light);
+  --popover-foreground: var(--surface-text);
+  --primary: var(--vidik-black);
+  --primary-foreground: var(--vidik-white);
+  --secondary: oklch(0 0 0);
+  --secondary-foreground: var(--vidik-white);
+  --muted: var(--vidik-light-gray);
+  --muted-foreground: var(--vidik-dark-gray);
+  --accent: oklch(0.96 0 0);
+  --accent-foreground: var(--vidik-black);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.952 0 0);
+  --input: oklch(0.9 0 0);
+  --ring: oklch(0.708 0 0);
 
-  /*
-    Convention for element specific colors:
-      bg-button // --color-button
-      text-button-text // --color-button-text
-      border-button-border // --color-button-border
-      ...
-    */
+  --chart-1: oklch(0.6 0.18 248.1);
+  --chart-2: oklch(0.6548 0.211 140.04);
+  --chart-3: oklch(0.756 0.203 23.7);
+  --chart-4: oklch(0.7 0.12 200);
+  --chart-5: oklch(0.55 0.08 260);
 
-  --color-header: oklch(0 0 0);
-
-  --color-border: oklch(0.952 0 0);
-  --color-ring: oklch(0.708 0 0);
-  --font-sarabun:
-    "Sarabun", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-
-  --shadow-vidik: -1px 1px 2px 0px rgba(0, 0, 0, 0.1);
+  --shadow-vidik-value: -1px 1px 2px 0px rgba(0, 0, 0, 0.1);
 }
 
 .dark {
-  --color-surface: oklch(28.09% 0 0);
-  --color-surface-light: oklch(0.374 0 0);
-  --shadow-vidik: -2px 2px 4px 0px rgba(0, 0, 0, 0.25);
+  --vidik-green: oklch(0.4995 0.16 139.63);
 
-  --color-surface-text: oklch(0.978 0.009 247.5);
-  --color-surface-light-text: oklch(0.978 0.009 247.5);
+  --surface: oklch(0.2809 0 0);
+  --surface-light: oklch(0.374 0 0);
+  --surface-text: oklch(0.978 0.009 247.5);
+  --surface-light-text: oklch(0.978 0.009 247.5);
 
-  --color-secondary: oklch(23.93% 0 0);
+  --header: oklch(0.2393 0 0);
 
-  --color-primary: oklch(0.978 0.009 247.5);
-  --color-primary-text: oklch(28.09% 0 0);
+  --background: var(--surface);
+  --foreground: var(--surface-text);
+  --card: var(--surface-light);
+  --card-foreground: var(--surface-light-text);
+  --popover: var(--surface-light);
+  --popover-foreground: var(--surface-text);
+  --primary: var(--vidik-white);
+  --primary-foreground: oklch(0.2809 0 0);
+  --secondary: oklch(0.2393 0 0);
+  --secondary-foreground: var(--vidik-white);
+  --muted: oklch(0.32 0 0);
+  --muted-foreground: oklch(0.72 0 0);
+  --accent: oklch(0.34 0 0);
+  --accent-foreground: var(--vidik-white);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(0.4054 0.00005 271.152);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.439 0 0);
 
-  --color-electricblue: oklch(0.6 0.18 248.1);
-  --color-vidikgreen: oklch(0.4995 0.16 139.63);
+  --chart-1: oklch(0.6 0.18 248.1);
+  --chart-2: oklch(0.4995 0.16 139.63);
+  --chart-3: oklch(0.7 0.18 25);
+  --chart-4: oklch(0.65 0.12 200);
+  --chart-5: oklch(0.6 0.1 280);
 
-  --color-header: oklch(23.93% 0 0);
+  --shadow-vidik-value: -2px 2px 4px 0px rgba(0, 0, 0, 0.25);
+}
 
-  --color-border: oklch(40.54% 0.00005 271.152);
-  --color-ring: oklch(0.439 0 0);
+@theme inline {
+  --font-sans: "Source Sans 3", "Inter", system-ui, sans-serif;
+  --font-sarabun:
+    "Sarabun", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* shadcn semantic colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  /* Legacy Vidik alias used across the app */
+  --color-primary-text: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Vidik surface / brand tokens */
+  --color-surface: var(--surface);
+  --color-surface-light: var(--surface-light);
+  --color-surface-text: var(--surface-text);
+  --color-surface-light-text: var(--surface-light-text);
+  --color-header: var(--header);
+
+  --color-vidikwhite: var(--vidik-white);
+  --color-vidikblack: var(--vidik-black);
+  --color-vidikdarkgray: var(--vidik-dark-gray);
+  --color-vidiklightgray: var(--vidik-light-gray);
+  --color-vidikgreen: var(--vidik-green);
+
+  --color-rightblue: var(--rightblue);
+  --color-leftred: var(--leftred);
+  --color-centerwhite: var(--centerwhite);
+  --color-electricblue: var(--electricblue);
+
+  --shadow-vidik: var(--shadow-vidik-value);
 }
 
 html,
@@ -79,12 +171,38 @@ body {
   flex-direction: column;
   margin: 0;
   font-family: var(--font-sans);
-  background-color: var(--color-surface);
-  color: var(--color-primary);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  background-image:
+    radial-gradient(
+      1200px 600px at 10% -10%,
+      color-mix(in oklch, var(--electricblue) 8%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      900px 500px at 100% 0%,
+      color-mix(in oklch, var(--vidik-green) 6%, transparent),
+      transparent 55%
+    );
+  background-attachment: fixed;
+}
+
+html.dark body {
+  background-image:
+    radial-gradient(
+      1000px 500px at 0% 0%,
+      color-mix(in oklch, var(--electricblue) 12%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      800px 400px at 100% 0%,
+      color-mix(in oklch, var(--vidik-green) 8%, transparent),
+      transparent 50%
+    );
 }
 
 .shadow-vidik {
-  box-shadow: var(--shadow-vidik);
+  box-shadow: var(--shadow-vidik-value);
 }
 
 /* tailwind v4 made buttons not have pointer cursor by default for some reason, so this re-adds it */

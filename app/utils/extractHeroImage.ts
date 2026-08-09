@@ -1,4 +1,4 @@
-import fallback from "~/assets/fallback.png";
+import fallback from "~/assets/fallback.webp";
 import {
   getCarouselArticleIds,
   type ArticleData,

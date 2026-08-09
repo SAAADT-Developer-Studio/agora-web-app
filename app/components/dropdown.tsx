@@ -1,4 +1,5 @@
 import { Grip } from "lucide-react";
+import type { ReactElement } from "react";
 import { Link } from "react-router";
 import {
   DropdownMenu,
@@ -13,29 +14,31 @@ export function Dropdown({
   trigger,
 }: {
   items: { label: string; to: string; icon?: React.ReactNode }[];
-  trigger?: React.ReactNode;
+  trigger?: ReactElement;
 }) {
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        {trigger ?? <Grip size={28} className="cursor-pointer" />}
-      </DropdownMenuTrigger>
+      {trigger ? (
+        <DropdownMenuTrigger render={trigger} />
+      ) : (
+        <DropdownMenuTrigger className="cursor-pointer" aria-label="Meni">
+          <Grip size={28} />
+        </DropdownMenuTrigger>
+      )}
       <DropdownMenuContent
-        className="bg-surface color-primary border-primary/10 translate-x-[10px] border-1"
+        className="bg-surface text-primary border-primary/10 translate-x-[10px] border"
         align="end"
         sideOffset={15}
       >
         <DropdownMenuGroup>
           {items.map((item) => (
             <DropdownMenuItem
-              asChild
-              className="hover:bg-surface cursor-pointer"
               key={item.to}
+              className="hover:bg-surface cursor-pointer"
+              render={<Link to={item.to} />}
             >
-              <Link to={item.to}>
-                {item.icon ?? ""}
-                {item.label}
-              </Link>
+              {item.icon ?? null}
+              {item.label}
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>

@@ -1,6 +1,6 @@
 import { Sun, Moon } from "lucide-react";
 import * as React from "react";
-import * as SwitchPrimitive from "@radix-ui/react-switch";
+import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
 
 import { cn } from "~/lib/utils";
 import { useLocalStorage } from "~/hooks/use-local-storage";

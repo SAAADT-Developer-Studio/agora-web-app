@@ -284,17 +284,15 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
         <div className="mt-4 flex flex-wrap items-start justify-start gap-3 md:mt-0">
           <DropdownMenu>
             <DropdownMenuTrigger
-              asChild
               className="bg-surface shadow-vidik text-primary font-semibold !outline-none"
+              render={<Button variant="outline" />}
             >
-              <Button variant="outline">
-                Pristranskost
-                {selectedBiasRatings.length > 0 && (
-                  <span className="bg-surface text-primary ml-2 rounded-full px-2 py-0.5 text-xs">
-                    {selectedBiasRatings.length}
-                  </span>
-                )}
-              </Button>
+              Pristranskost
+              {selectedBiasRatings.length > 0 && (
+                <span className="bg-surface text-primary ml-2 rounded-full px-2 py-0.5 text-xs">
+                  {selectedBiasRatings.length}
+                </span>
+              )}
             </DropdownMenuTrigger>
             <DropdownMenuContent className="bg-surface text-primary shadow-vidik w-56">
               <DropdownMenuLabel>Filtriraj po pristranskosti</DropdownMenuLabel>
@@ -311,7 +309,12 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Select value={sortBy} onValueChange={setSortBy}>
+          <Select
+            value={sortBy}
+            onValueChange={(value) => {
+              if (value != null) setSortBy(value);
+            }}
+          >
             <SelectTrigger className="bg-surface text-primary w-[120px] font-semibold !outline-none md:w-[240px]">
               <SelectValue placeholder="Razvrsti po" />
             </SelectTrigger>

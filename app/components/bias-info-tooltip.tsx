@@ -20,11 +20,31 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
 const biasRatings = [
-  { label: "Leva", color: "bg-red-500", textColor: "text-white" },
-  { label: "C. Leva", color: "bg-red-300", textColor: "text-gray-800" },
-  { label: "Center", color: "bg-gray-300", textColor: "text-gray-800" },
-  { label: "C. Desna", color: "bg-blue-400", textColor: "text-gray-800" },
-  { label: "Desna", color: "bg-blue-500", textColor: "text-white" },
+  {
+    label: "Leva",
+    color: "bg-[#FA2D36]",
+    textColor: "text-vidikwhite",
+  },
+  {
+    label: "C. Leva",
+    color: "bg-[#FF6166]",
+    textColor: "text-vidikwhite",
+  },
+  {
+    label: "Center",
+    color: "bg-[#FEFFFF] border border-vidikblack/10",
+    textColor: "text-vidikblack",
+  },
+  {
+    label: "C. Desna",
+    color: "bg-[#52A1FF]",
+    textColor: "text-vidikwhite",
+  },
+  {
+    label: "Desna",
+    color: "bg-[#2D7EFF]",
+    textColor: "text-vidikwhite",
+  },
 ];
 
 export function BiasInfoTooltip({ iconClassName }: { iconClassName?: string }) {
@@ -44,7 +64,7 @@ export function BiasInfoTooltip({ iconClassName }: { iconClassName?: string }) {
   if (isDesktop) {
     return (
       <Tooltip>
-        <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+        <TooltipTrigger render={trigger} />
         <TooltipContent side="top" className="max-w-xs">
           <div>
             <p className="mb-2 text-sm">
@@ -68,17 +88,15 @@ export function BiasInfoTooltip({ iconClassName }: { iconClassName?: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-start text-xl">
             Ocena pristranskosti
           </DialogTitle>
-          <DialogDescription asChild>
-            <div className="text-primary/70 text-start text-sm">
-              Pristranskost ocenjujemo na podlagi znanstvenih raziskav in
-              analize lastništva medijev
-            </div>
+          <DialogDescription className="text-primary/70 text-start text-sm">
+            Pristranskost ocenjujemo na podlagi znanstvenih raziskav in analize
+            lastništva medijev
           </DialogDescription>
         </DialogHeader>
 
@@ -150,12 +168,10 @@ export function BiasInfoTooltip({ iconClassName }: { iconClassName?: string }) {
           <Button
             variant="outline"
             className="bg-primary text-primary-text"
-            asChild
+            render={<Link to={href("/metodologija")} />}
           >
-            <Link to={href("/metodologija")}>
-              Več o metodologiji
-              <ChevronRight className="h-4 w-4" />
-            </Link>
+            Več o metodologiji
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </DialogFooter>
       </DialogContent>
