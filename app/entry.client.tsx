@@ -5,6 +5,33 @@ import type {
   InstrumentationHandlerResult,
 } from "react-router";
 import { HydratedRouter } from "react-router/dom";
+import { agentDebugLog } from "~/lib/agent-debug-log";
+
+const originalConsoleError = console.error;
+console.error = (...args: unknown[]) => {
+  if (
+    args.some(
+      (arg) =>
+        typeof arg === "string" &&
+        arg.includes("Each child in a list should have a unique key prop"),
+    )
+  ) {
+    // #region agent log
+    agentDebugLog({
+      hypothesisId: "A,B,C,E",
+      location: "app/entry.client.tsx:console.error",
+      message: "React unique-key warning captured",
+      data: {
+        arguments: args.map((arg) =>
+          typeof arg === "string" ? arg : String(arg),
+        ),
+        stack: new Error("React key warning capture").stack,
+      },
+    });
+    // #endregion
+  }
+  originalConsoleError(...args);
+};
 
 const windowPerf: ClientInstrumentation = {
   router({ instrument }) {

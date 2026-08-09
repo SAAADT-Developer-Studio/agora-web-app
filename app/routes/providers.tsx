@@ -22,6 +22,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -33,6 +34,13 @@ import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import { BiasRatingKey } from "~/enums/biasRatingKey";
 import { cn } from "~/lib/utils";
 import { getAppContext } from "~/lib/appContext";
+import { agentDebugLog } from "~/lib/agent-debug-log";
+
+const sortOptions = [
+  { label: "Privzeto", value: "rank" },
+  { label: "Največ člankov", value: "month-most" },
+  { label: "Najmanj člankov", value: "month-least" },
+] as const;
 
 export interface PeriodStats {
   count: number;
@@ -230,6 +238,25 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
   const [selectedBiasRatings, setSelectedBiasRatings] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("rank");
 
+  const providerKeys = providers.map((provider) => provider.key);
+  // #region agent log
+  agentDebugLog({
+    hypothesisId: "C,D",
+    location: "app/routes/providers.tsx:ProvidersPage",
+    message: "Providers page list-key inputs",
+    data: {
+      providerCount: providers.length,
+      missingProviderKeys: providerKeys.filter((key) => !key).length,
+      duplicateProviderKeys: providerKeys.filter(
+        (key, index) => providerKeys.indexOf(key) !== index,
+      ),
+      sortOptionValues: sortOptions.map((option) => option.value),
+      selectedBiasCount: selectedBiasRatings.length,
+      sortBy,
+    },
+  });
+  // #endregion
+
   const toggleBiasRating = (rating: string) => {
     setSelectedBiasRatings((prev) =>
       prev.includes(rating)
@@ -299,28 +326,40 @@ export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
               )}
             </DropdownMenuTrigger>
             <DropdownMenuContent className="shadow-vidik w-56">
-              <DropdownMenuLabel>Filtriraj po pristranskosti</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {Object.values(BiasRatingKey).map((biasRatingKey) => (
-                <DropdownMenuCheckboxItem
-                  key={biasRatingKey}
-                  checked={selectedBiasRatings.includes(biasRatingKey)}
-                  onCheckedChange={() => toggleBiasRating(biasRatingKey)}
-                >
-                  {biasKeyToLabel(biasRatingKey)}
-                </DropdownMenuCheckboxItem>
-              ))}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Filtriraj po pristranskosti</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {Object.values(BiasRatingKey).map((biasRatingKey) => (
+                  <DropdownMenuCheckboxItem
+                    key={biasRatingKey}
+                    checked={selectedBiasRatings.includes(biasRatingKey)}
+                    onCheckedChange={() => toggleBiasRating(biasRatingKey)}
+                  >
+                    {biasKeyToLabel(biasRatingKey)}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Select value={sortBy} onValueChange={setSortBy}>
+          <Select
+            items={sortOptions}
+            value={sortBy}
+            onValueChange={(value) => {
+              if (value !== null) {
+                setSortBy(value);
+              }
+            }}
+          >
             <SelectTrigger className="shadow-vidik bg-background w-[120px] font-semibold md:w-[240px]">
               <SelectValue placeholder="Razvrsti po" />
             </SelectTrigger>
             <SelectContent className="shadow-vidik">
-              <SelectItem value="rank">Privzeto</SelectItem>
-              <SelectItem value="month-most">Največ člankov</SelectItem>
-              <SelectItem value="month-least">Najmanj člankov</SelectItem>
+              {sortOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

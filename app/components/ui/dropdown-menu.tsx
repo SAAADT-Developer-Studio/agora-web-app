@@ -3,6 +3,11 @@ import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 
 import { cn } from "~/lib/utils";
 import { ChevronRightIcon, CheckIcon } from "lucide-react";
+import {
+  agentDebugLog,
+  summarizeChildren,
+  summarizeElement,
+} from "~/lib/agent-debug-log";
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
@@ -13,6 +18,18 @@ function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
 }
 
 function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
+  // #region agent log
+  agentDebugLog({
+    hypothesisId: "A,B",
+    location: "app/components/ui/dropdown-menu.tsx:DropdownMenuTrigger",
+    message: "Menu trigger composition inputs",
+    data: {
+      children: summarizeChildren(props.children),
+      render: summarizeElement(props.render),
+    },
+  });
+  // #endregion
+
   return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
 }
 

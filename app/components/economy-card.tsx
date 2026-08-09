@@ -231,9 +231,12 @@ function InflationChart({
             content={
               <ChartTooltipContent
                 className="border-none"
-                labelFormatter={(v: string, payload: any) => {
+                labelFormatter={(v, payload) => {
+                  if (typeof v !== "string") {
+                    return "";
+                  }
                   const [y, m] = v.split("-");
-                  const value = payload && payload[0]?.value;
+                  const value = payload[0]?.value;
                   return `${m}/${y} — ${Number(value).toFixed(1)} %`;
                 }}
               />
