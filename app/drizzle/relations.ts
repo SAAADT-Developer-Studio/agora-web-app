@@ -1,5 +1,34 @@
 import { relations } from "drizzle-orm/relations";
-import { article, articleCluster, clusterV2, clusterRun, cluster, newsProvider, articleSocialPost, socialPost, mossData, vote } from "./schema";
+import { cluster, article, newsProvider, articleCluster, clusterV2, clusterRun, articleSocialPost, socialPost, mossData, storyArticle, story, vote } from "./schema";
+
+export const articleRelations = relations(article, ({one, many}) => ({
+	cluster: one(cluster, {
+		fields: [article.clusterId],
+		references: [cluster.id]
+	}),
+	newsProvider: one(newsProvider, {
+		fields: [article.newsProviderKey],
+		references: [newsProvider.key]
+	}),
+	articleClusters: many(articleCluster),
+	articleSocialPosts: many(articleSocialPost),
+	storyArticles_articleId: many(storyArticle, {
+		relationName: "storyArticle_articleId_article_id"
+	}),
+	storyArticles_nearestArticleId: many(storyArticle, {
+		relationName: "storyArticle_nearestArticleId_article_id"
+	}),
+}));
+
+export const clusterRelations = relations(cluster, ({many}) => ({
+	articles: many(article),
+}));
+
+export const newsProviderRelations = relations(newsProvider, ({many}) => ({
+	articles: many(article),
+	mossData: many(mossData),
+	votes: many(vote),
+}));
 
 export const articleClusterRelations = relations(articleCluster, ({one}) => ({
 	article: one(article, {
@@ -16,19 +45,6 @@ export const articleClusterRelations = relations(articleCluster, ({one}) => ({
 	}),
 }));
 
-export const articleRelations = relations(article, ({one, many}) => ({
-	articleClusters: many(articleCluster),
-	cluster: one(cluster, {
-		fields: [article.clusterId],
-		references: [cluster.id]
-	}),
-	newsProvider: one(newsProvider, {
-		fields: [article.newsProviderKey],
-		references: [newsProvider.key]
-	}),
-	articleSocialPosts: many(articleSocialPost),
-}));
-
 export const clusterV2Relations = relations(clusterV2, ({one, many}) => ({
 	articleClusters: many(articleCluster),
 	clusterRun: one(clusterRun, {
@@ -40,16 +56,6 @@ export const clusterV2Relations = relations(clusterV2, ({one, many}) => ({
 export const clusterRunRelations = relations(clusterRun, ({many}) => ({
 	articleClusters: many(articleCluster),
 	clusterV2s: many(clusterV2),
-}));
-
-export const clusterRelations = relations(cluster, ({many}) => ({
-	articles: many(article),
-}));
-
-export const newsProviderRelations = relations(newsProvider, ({many}) => ({
-	articles: many(article),
-	mossData: many(mossData),
-	votes: many(vote),
 }));
 
 export const articleSocialPostRelations = relations(articleSocialPost, ({one}) => ({
@@ -72,6 +78,27 @@ export const mossDataRelations = relations(mossData, ({one}) => ({
 		fields: [mossData.providerKey],
 		references: [newsProvider.key]
 	}),
+}));
+
+export const storyArticleRelations = relations(storyArticle, ({one}) => ({
+	article_articleId: one(article, {
+		fields: [storyArticle.articleId],
+		references: [article.id],
+		relationName: "storyArticle_articleId_article_id"
+	}),
+	article_nearestArticleId: one(article, {
+		fields: [storyArticle.nearestArticleId],
+		references: [article.id],
+		relationName: "storyArticle_nearestArticleId_article_id"
+	}),
+	story: one(story, {
+		fields: [storyArticle.storyId],
+		references: [story.id]
+	}),
+}));
+
+export const storyRelations = relations(story, ({many}) => ({
+	storyArticles: many(storyArticle),
 }));
 
 export const voteRelations = relations(vote, ({one}) => ({

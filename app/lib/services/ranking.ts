@@ -1,10 +1,9 @@
 import type { Database } from "~/lib/db";
 import {
   article,
-  clusterV2,
-  articleCluster,
-  clusterRun,
   articleSocialPost,
+  story,
+  storyArticle,
 } from "~/drizzle/schema";
 import { sql } from "drizzle-orm";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
@@ -41,6 +40,7 @@ export type ArticleType = {
   showTags?: boolean;
   numberOfArticles: number;
   providerKeys: string[];
+  to?: string;
 };
 
 const CATEGORY_PRIORITY = defineCategoryMap({
@@ -97,6 +97,9 @@ export function emptyArticlesByCategory(): ArticlesByCategory {
   ) as ArticlesByCategory;
 }
 
+// Stories aren't run-scoped; 14d window stands in for latest cluster_run
+const recentStoriesFilter = sql`${story.lastArticlePublishedAt} > now() - interval '14 days'`;
+
 export async function getHomeArticles({
   db,
   count,
@@ -104,43 +107,35 @@ export async function getHomeArticles({
   db: Database;
   count: number;
 }): Promise<ArticleType[]> {
-  // TODO: maybe pass in clusterRunId as param?
-  const topClusterIds = await db.execute(sql`
-  WITH latest_run AS (
-    SELECT ${clusterRun.id} as id
-    FROM ${clusterRun}
-    WHERE ${clusterRun.isProduction} = true
-    ORDER BY ${clusterRun.createdAt} DESC
-    LIMIT 1
-  ),
-
-  provider_counts AS (
+  const topStoryIds = await db.execute(sql`
+  WITH provider_counts AS (
     SELECT
-      ${articleCluster.clusterId} as cluster_id,
+      ${storyArticle.storyId} as story_id,
       ${article.newsProviderKey} as provider_key,
       count(*) as provider_article_count
-    FROM ${articleCluster}
-    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
-    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
-    GROUP BY ${articleCluster.clusterId}, ${article.newsProviderKey}
+    FROM ${storyArticle}
+    INNER JOIN ${article} ON ${storyArticle.articleId} = ${article.id}
+    INNER JOIN ${story} ON ${story.id} = ${storyArticle.storyId}
+    WHERE ${recentStoriesFilter}
+    GROUP BY ${storyArticle.storyId}, ${article.newsProviderKey}
   ),
 
   cluster_scores AS (
     SELECT
-      ${clusterV2.id} as id,
+      ${story.id} as id,
       count(${article.id}) as article_count,
       sum(${article.llmRank}) as sum_llm_rank,
       ${recencyScoreExpr} as recency_score,
       ${categoryScoreExpr} as category_score,
       count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count,
       max(pc.provider_article_count) as max_provider_articles
-    FROM ${clusterV2}
-    INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
-    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
+    FROM ${story}
+    INNER JOIN ${storyArticle} ON ${story.id} = ${storyArticle.storyId}
+    INNER JOIN ${article} ON ${storyArticle.articleId} = ${article.id}
     LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
-    LEFT JOIN provider_counts pc ON pc.cluster_id = ${clusterV2.id}
-    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
-    GROUP BY ${clusterV2.id}
+    LEFT JOIN provider_counts pc ON pc.story_id = ${story.id}
+    WHERE ${recentStoriesFilter}
+    GROUP BY ${story.id}
     HAVING count(${article.id}) > 0
   ),
 
@@ -183,9 +178,9 @@ export async function getHomeArticles({
   ORDER BY combined_score DESC
   LIMIT ${count}
 `);
-  return await common(
+  return await hydrateStories(
     db,
-    topClusterIds.rows as { id: number; combined_score: number }[],
+    topStoryIds.rows as { id: number; combined_score: number }[],
   );
 }
 
@@ -202,43 +197,36 @@ export async function getCategoryArticles({
   count: number;
   offset?: number;
 }): Promise<ArticleType[]> {
-  const topClusterIds = await db.execute(sql`
-  WITH latest_run AS (
-    SELECT ${clusterRun.id} as id
-    FROM ${clusterRun}
-    WHERE ${clusterRun.isProduction} = true
-    ORDER BY ${clusterRun.createdAt} DESC
-    LIMIT 1
-  ),
-
-  provider_counts AS (
+  const topStoryIds = await db.execute(sql`
+  WITH provider_counts AS (
     SELECT
-      ${articleCluster.clusterId} as cluster_id,
+      ${storyArticle.storyId} as story_id,
       ${article.newsProviderKey} as provider_key,
       count(*) as provider_article_count
-    FROM ${articleCluster}
-    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
-    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
-    GROUP BY ${articleCluster.clusterId}, ${article.newsProviderKey}
+    FROM ${storyArticle}
+    INNER JOIN ${article} ON ${storyArticle.articleId} = ${article.id}
+    INNER JOIN ${story} ON ${story.id} = ${storyArticle.storyId}
+    WHERE ${recentStoriesFilter}
+    GROUP BY ${storyArticle.storyId}, ${article.newsProviderKey}
   ),
 
   cluster_scores AS (
     SELECT
-      ${clusterV2.id} as id,
+      ${story.id} as id,
       count(${article.id}) as article_count,
       sum(${article.llmRank}) as sum_llm_rank,
       ${recencyScoreExpr} as recency_score,
       count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count,
       max(pc.provider_article_count) as max_provider_articles
-    FROM ${clusterV2}
-    INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
-    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
+    FROM ${story}
+    INNER JOIN ${storyArticle} ON ${story.id} = ${storyArticle.storyId}
+    INNER JOIN ${article} ON ${storyArticle.articleId} = ${article.id}
     LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
-    LEFT JOIN provider_counts pc ON pc.cluster_id = ${clusterV2.id}
-    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
+    LEFT JOIN provider_counts pc ON pc.story_id = ${story.id}
+    WHERE ${recentStoriesFilter}
       AND (${category} = ANY(ARRAY[${article.categories}[1], ${article.categories}[2]]))
-      ${ignoredClusterIds.length > 0 ? sql`AND ${clusterV2.id} NOT IN ${ignoredClusterIds}` : sql``}
-    GROUP BY ${clusterV2.id}
+      ${ignoredClusterIds.length > 0 ? sql`AND ${story.id} NOT IN ${ignoredClusterIds}` : sql``}
+    GROUP BY ${story.id}
     HAVING count(${article.id}) > 0
   ),
 
@@ -283,28 +271,28 @@ export async function getCategoryArticles({
   OFFSET ${offset ?? 0}
 `);
 
-  return await common(
+  return await hydrateStories(
     db,
-    topClusterIds.rows as { id: number; combined_score: number }[],
+    topStoryIds.rows as { id: number; combined_score: number }[],
   );
 }
 
-async function common(
+async function hydrateStories(
   db: Database,
-  clusterIds: { id: number; combined_score: number }[],
+  storyIds: { id: number; combined_score: number }[],
 ): Promise<ArticleType[]> {
-  const topClusters = await db.query.clusterV2.findMany({
-    where: (cluster, { and, inArray }) =>
-      and(
-        inArray(
-          cluster.id,
-          clusterIds.map((c) => c.id),
-        ),
+  if (storyIds.length === 0) return [];
+
+  const topStories = await db.query.story.findMany({
+    where: (s, { inArray }) =>
+      inArray(
+        s.id,
+        storyIds.map((row) => row.id),
       ),
     with: {
-      articleClusters: {
+      storyArticles: {
         with: {
-          article: {
+          article_articleId: {
             columns: { id: true, imageUrls: true, categories: true },
             with: { newsProvider: true },
           },
@@ -313,45 +301,36 @@ async function common(
     },
   });
 
-  topClusters.sort((a, b) => {
-    const aScore = clusterIds.find((c) => c.id === a.id)?.combined_score ?? 0;
-    const bScore = clusterIds.find((c) => c.id === b.id)?.combined_score ?? 0;
+  topStories.sort((a, b) => {
+    const aScore = storyIds.find((row) => row.id === a.id)?.combined_score ?? 0;
+    const bScore = storyIds.find((row) => row.id === b.id)?.combined_score ?? 0;
     return bScore - aScore;
   });
 
-  const articles: ArticleType[] = topClusters.map((c) => {
-    const clusterArticles = c.articleClusters.map((ac) => ac.article);
-
-    const imgSrc = extractHeroImage(clusterArticles);
-
+  return topStories.map((s) => {
+    const storyArticles = s.storyArticles.map((sa) => sa.article_articleId);
     const tags = new Set(
-      clusterArticles
+      storyArticles
         .map((a) => a.categories)
         .filter((c) => c !== null)
         .flat(),
     );
-
-    const biasDistribution = getBiasDistribution(clusterArticles);
-
-    const providerKeys = new Set(
-      clusterArticles.map((a) => a.newsProvider.key),
-    );
+    const providerKeys = new Set(storyArticles.map((a) => a.newsProvider.key));
+    const tagList = Array.from(tags).slice(0, 3);
 
     return {
-      id: c.id.toString(),
-      slug: c.slug ?? undefined,
-      title: c.title,
+      id: s.id.toString(),
+      title: s.title,
       image: {
-        src: imgSrc,
+        src: extractHeroImage(storyArticles),
         alt: "Placeholder Image 1", // TODO: fix this or get rid of it
       },
-      tags: Array.from(tags).slice(0, 3),
-      biasDistribution,
+      tags: tagList.length > 0 ? tagList : ["politika"],
+      biasDistribution: getBiasDistribution(storyArticles),
       showTags: true,
-      numberOfArticles: clusterArticles.length,
+      numberOfArticles: storyArticles.length,
       providerKeys: Array.from(providerKeys),
+      to: `/zgodba/${s.id}`,
     };
   });
-
-  return articles;
 }

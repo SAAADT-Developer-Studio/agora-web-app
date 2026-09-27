@@ -14,6 +14,7 @@ export default function ArticleBig({
   biasDistribution,
   numberOfArticles,
   providerKeys,
+  to,
 }: ArticleType) {
   const imageUrl = image.src;
 
@@ -21,10 +22,13 @@ export default function ArticleBig({
 
   return (
     <Link
-      to={href("/:category/clanek/:articleId", {
-        category: tags[0].toLowerCase(),
-        articleId: slug ?? id,
-      })}
+      to={
+        to ??
+        href("/:category/clanek/:articleId", {
+          category: tags[0].toLowerCase(),
+          articleId: slug ?? id,
+        })
+      }
       prefetch="intent"
       className="contents w-full"
       viewTransition={isLarge}

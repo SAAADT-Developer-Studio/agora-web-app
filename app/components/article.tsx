@@ -13,15 +13,19 @@ export function Article({
   tags,
   biasDistribution,
   numberOfArticles,
+  to,
 }: ArticleType) {
   // const imageUrl = `https://wsrv.nl/?url=${image.src}&w=380&h=240`;
   const imageUrl = image.src;
   return (
     <Link
-      to={href("/:category/clanek/:articleId", {
-        category: tags[0].toLowerCase(),
-        articleId: slug ?? id,
-      })}
+      to={
+        to ??
+        href("/:category/clanek/:articleId", {
+          category: tags[0].toLowerCase(),
+          articleId: slug ?? id,
+        })
+      }
       prefetch="intent"
       className="contents w-full"
     >
