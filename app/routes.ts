@@ -20,6 +20,9 @@ export default [
       route("clanek/:articleId", "./routes/article.tsx"),
     ]),
   ]),
+  route("dev", "./routes/dev-layout.tsx", [
+    route("compare-clustering", "./routes/dev/compare-clustering.tsx"),
+  ]),
   ...prefix("api", [
     route("category/:category", "./routes/api/category.ts"),
     route("populate-cache", "./routes/api/populate-cache.ts"),

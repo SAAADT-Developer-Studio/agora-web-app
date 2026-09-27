@@ -13,7 +13,8 @@ export default {
   async fetch(request, env, ctx) {
     const cache = await caches.open("custom:vidik-page-cache");
 
-    let response = await cache.match(request);
+    const skipCache = new URL(request.url).pathname.startsWith("/dev");
+    let response = skipCache ? undefined : await cache.match(request);
 
     if (!response) {
       const db = await getDb(env.HYPERDRIVE.connectionString);
@@ -34,7 +35,9 @@ export default {
           "public, max-age=0, must-revalidate",
         );
       }
-      ctx.waitUntil(cache.put(request, response.clone()));
+      if (!skipCache) {
+        ctx.waitUntil(cache.put(request, response.clone()));
+      }
     }
 
     return response;

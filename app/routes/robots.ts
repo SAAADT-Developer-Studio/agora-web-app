@@ -9,6 +9,7 @@ export async function loader({}: Route.LoaderArgs) {
   return generateRobotsTxt(
     [
       { type: "disallow", value: "/api/" },
+      { type: "disallow", value: "/dev/" },
       { type: "userAgent", value: "GPTBot" },
       { type: "allow", value: "/" },
       { type: "userAgent", value: "ChatGPT-User" },
