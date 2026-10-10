@@ -2,11 +2,13 @@ import { fetchCategoryArticlesData } from "~/routes/category";
 import { getAppContext } from "~/lib/appContext";
 import type { Route } from "./+types/populate-cache";
 import { fetchHomeArticlesData } from "~/routes/home";
+import { fetchStoryHomeArticlesData } from "~/lib/services/storyRanking";
 import { config } from "~/config";
 import {
   getCategoryCacheKey,
   HOME_CACHE_KEY,
   META_CACHE_KEY,
+  NOVO_HOME_CACHE_KEY,
 } from "~/lib/kvCache/keys";
 
 export type CacheMeta = {
@@ -24,6 +26,15 @@ export async function action({ context }: Route.ActionArgs) {
   const articles = await fetchHomeArticlesData({ db });
 
   kvCache.putDeferred(HOME_CACHE_KEY, articles, { expirationTtl: 30 * 60 });
+
+  try {
+    const novoArticles = await fetchStoryHomeArticlesData({ db });
+    kvCache.putDeferred(NOVO_HOME_CACHE_KEY, novoArticles, {
+      expirationTtl: 30 * 60,
+    });
+  } catch (error) {
+    console.error("Failed to fetch story home articles for /novo:", error);
+  }
 
   const categoryResults = await Promise.allSettled(
     config.categories.map((c) =>

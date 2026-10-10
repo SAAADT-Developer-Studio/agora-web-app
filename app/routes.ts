@@ -14,6 +14,7 @@ export default [
     route("metodologija", "./routes/bias-methodology.tsx"),
     route("mediji", "./routes/providers.tsx"),
     route("medij/:providerKey", "./routes/provider.tsx"),
+    route("novo", "./routes/novo.tsx"),
     route("zgodba/:storyId", "./routes/story.tsx"),
     ...prefix(":category", [
       index("./routes/category.tsx"),

@@ -6,6 +6,7 @@ import {
   newsArticleJsonLd,
   SITE_URL,
 } from "~/lib/seo";
+import { UNINDEXED_ROBOTS } from "~/lib/seo/unindexed";
 import { getAppContext } from "~/lib/appContext";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 import ArticlePage, { type ArticlePageData } from "~/components/article-page";
@@ -13,6 +14,7 @@ import ArticlePage, { type ArticlePageData } from "~/components/article-page";
 export function headers({}: Route.HeadersArgs) {
   return {
     "Cache-Control": "max-age=10, s-maxage=10",
+    "X-Robots-Tag": UNINDEXED_ROBOTS,
   };
 }
 
@@ -22,7 +24,7 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
       title: "Zgodba ni najdena | Vidik",
       description: "Oprostite, iskana zgodba ni bila najdena.",
       pathname: location.pathname,
-      noindex: true,
+      robots: UNINDEXED_ROBOTS,
       includeSiteSchema: false,
     });
   }
@@ -47,6 +49,7 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
     description,
     image: heroImageUrl || undefined,
     pathname: location.pathname,
+    robots: UNINDEXED_ROBOTS,
     keywords: [...uniqueCategories, ...providers.slice(0, 5), "vidik"].join(
       ", ",
     ),

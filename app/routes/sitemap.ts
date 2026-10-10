@@ -15,7 +15,6 @@ import {
   articleCluster,
   clusterRun,
   clusterV2,
-  story,
 } from "~/drizzle/schema";
 
 export async function loader({ context }: Route.LoaderArgs) {
@@ -111,27 +110,6 @@ export async function loader({ context }: Route.LoaderArgs) {
       ),
       {
         lastmod: cluster.created_at ? new Date(cluster.created_at) : lastmod,
-        priority: 0.6,
-      },
-    );
-  }
-
-  const stories = await db.execute<{
-    id: number;
-    created_at: string;
-  }>(sql`
-    SELECT
-      ${story.id} AS id,
-      ${story.lastArticlePublishedAt} AS created_at
-    FROM ${story}
-    WHERE ${story.lastArticlePublishedAt} > now() - interval '14 days'
-  `);
-
-  for (const row of stories.rows) {
-    sitemap.append(
-      new URL(href("/zgodba/:storyId", { storyId: String(row.id) }), origin),
-      {
-        lastmod: row.created_at ? new Date(row.created_at) : lastmod,
         priority: 0.6,
       },
     );
