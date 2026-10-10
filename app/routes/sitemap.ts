@@ -66,7 +66,6 @@ export async function loader({ context }: Route.LoaderArgs) {
     );
   }
 
-  // Latest production clustering run — same source of truth as homepage ranking.
   const clusters = await db.execute<{
     id: number;
     slug: string | null;

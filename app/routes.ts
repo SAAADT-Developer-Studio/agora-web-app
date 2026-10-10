@@ -14,10 +14,15 @@ export default [
     route("metodologija", "./routes/bias-methodology.tsx"),
     route("mediji", "./routes/providers.tsx"),
     route("medij/:providerKey", "./routes/provider.tsx"),
+    route("novo", "./routes/novo.tsx"),
+    route("zgodba/:storyId", "./routes/story.tsx"),
     ...prefix(":category", [
       index("./routes/category.tsx"),
       route("clanek/:articleId", "./routes/article.tsx"),
     ]),
+  ]),
+  route("dev", "./routes/dev-layout.tsx", [
+    route("compare-clustering", "./routes/dev/compare-clustering.tsx"),
   ]),
   ...prefix("api", [
     route("category/:category", "./routes/api/category.ts"),

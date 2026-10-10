@@ -31,9 +31,28 @@ Changing article-fetch logic usually means updating both the loader and `fetchHo
 
 ## Routing & config
 
-- Route definitions: `app/routes.ts`. URL segments are Slovenian (`/mediji`, `/metodologija`, `/clanek/:articleId`, etc.).
+- Route definitions: `app/routes.ts`. Public URL segments are Slovenian (`/mediji`, `/metodologija`, `/clanek/:articleId`). Hidden, unlisted routes: `/novo` (story-ranked home) and `/zgodba/:storyId`. `/dev/*` is English and internal.
 - **Categories**: keys live only in `app/config.ts` (`CategoryKey` / `CategoryKeyValue`). Domain configs (nav metadata, SEO, ranking priority, home side sections) must use `defineCategoryMap()` / `CategoryMap<T>` so TypeScript fails if a key is added without updating every map. Use `isCategoryKey()` for runtime checks — don't rebuild category sets ad hoc.
 - Article images: `config.imagesUrl` (`https://images.vidik.si`).
+- React Router route modules cannot import other route modules. Shared UI belongs in `app/components/` (e.g. `article-page.tsx` used by both clanek and zgodba).
+
+## Clustering (story vs cluster_v2)
+
+Two systems coexist on purpose:
+
+- **Public listings** (`/` and `/:category`) rank `cluster_v2` from the latest production `cluster_run` and link to `/:category/clanek/:articleId`. KV keys stay `data:v2:home` and `data:v2:category:{category}`.
+- **Hidden listings** (`/novo`) rank `story` + `story_article` (14-day `last_article_published_at` window) and link to `/zgodba/:storyId`. KV key is `data:story:novo` (`NOVO_HOME_CACHE_KEY`) so it never collides with the public home cache.
+- **Story pages** `/zgodba/:storyId` load `story` + `story_article`. Do not 301 clanek into stories.
+- `/novo` and `/zgodba/` are unlisted: `noindex, nofollow` meta, `X-Robots-Tag`, `Disallow` in robots.txt, and omitted from the sitemap. No public page links to them.
+- Story ids and cluster ids are different namespaces — the same number is not the same entity.
+- Stories are incremental (no `cluster_run`). Closest clocks: `story_article.assigned_at`, `story.created_at`.
+- `story_article.similarity` is cosine vs `nearest_article_id` at assign time (`method` `seed` | `cosine`). `article_cluster` has no scores; live cosine is `article.embedding` (float8[]).
+
+`ArticleType.to` is how `/novo` cards point at `/zgodba/...`. Public listings leave `to` unset and use clanek URLs. Changing the hidden URL shape requires bumping `NOVO_HOME_CACHE_KEY` in `app/lib/kvCache/keys.ts`.
+
+## Dev tools
+
+`/dev/*` uses `app/routes/dev-layout.tsx` (no site header/footer), is noindexed, and is skipped from the Worker page cache (`pathname.startsWith("/dev")` in `workers/app.ts`). English copy is allowed there. Clustering explorer: `/dev/compare-clustering`. Indexes that page needs (trigram title search, HNSW on `article.embedding`) belong in the scraper repo.
 
 ## UI conventions
 
@@ -59,4 +78,4 @@ pnpm run db:studio    # drizzle studio (needs DB_URL)
 
 - Don't add migrations, edit `app/drizzle/schema.ts` by hand, or run `drizzle-kit push` — schema changes belong in the scraper repo.
 - Don't assume `DB_URL` is available at runtime; only Hyperdrive connection strings are used in the Worker.
-- Don't add English user-facing copy unless explicitly requested — the product is Slovenian-first.
+- Don't add English **product** copy unless explicitly requested — the public site is Slovenian-first. `/dev/*` is English.

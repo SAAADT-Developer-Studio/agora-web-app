@@ -3,6 +3,7 @@ import { createAppLoadContext } from "~/lib/appContext";
 import { KVCache } from "~/lib/kvCache";
 import { getDb } from "~/lib/db";
 import { Measurer } from "~/lib/measurer";
+import { withUnindexedRobots } from "~/lib/seo/unindexed";
 
 const requestHandler = createRequestHandler(
   () => import("virtual:react-router/server-build"),
@@ -13,7 +14,9 @@ export default {
   async fetch(request, env, ctx) {
     const cache = await caches.open("custom:vidik-page-cache");
 
-    let response = await cache.match(request);
+    const url = new URL(request.url);
+    const skipCache = url.pathname.startsWith("/dev");
+    let response = skipCache ? undefined : await cache.match(request);
 
     if (!response) {
       const db = await getDb(env.HYPERDRIVE.connectionString);
@@ -34,7 +37,12 @@ export default {
           "public, max-age=0, must-revalidate",
         );
       }
-      ctx.waitUntil(cache.put(request, response.clone()));
+      response = withUnindexedRobots(response, url.pathname);
+      if (!skipCache) {
+        ctx.waitUntil(cache.put(request, response.clone()));
+      }
+    } else {
+      response = withUnindexedRobots(response, url.pathname);
     }
 
     return response;

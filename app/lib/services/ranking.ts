@@ -41,6 +41,8 @@ export type ArticleType = {
   showTags?: boolean;
   numberOfArticles: number;
   providerKeys: string[];
+  /** Set only by the hidden story listing (`/novo`). Public listings omit it and link to clanek. */
+  to?: string;
 };
 
 const CATEGORY_PRIORITY = defineCategoryMap({

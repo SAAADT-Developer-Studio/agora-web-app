@@ -2,27 +2,36 @@ import type { Route } from "./+types/robots";
 import { generateRobotsTxt } from "@nasa-gcn/remix-seo";
 import { SITE_URL } from "~/lib/seo";
 
+const hiddenDisallows = [
+  { type: "disallow" as const, value: "/novo" },
+  { type: "disallow" as const, value: "/zgodba/" },
+];
+
+function aiCrawler(userAgent: string) {
+  return [
+    { type: "userAgent" as const, value: userAgent },
+    { type: "allow" as const, value: "/" },
+    ...hiddenDisallows,
+  ];
+}
+
 export async function loader({}: Route.LoaderArgs) {
   // Default policies already include "User-agent: *" and "Allow: /".
   // Explicit AI crawler rules make GEO intent clear for assistants that check
-  // robots.txt before citing content.
+  // robots.txt before citing content. Hidden routes are disallowed for every
+  // group so a later `Allow: /` does not reopen them.
   return generateRobotsTxt(
     [
       { type: "disallow", value: "/api/" },
-      { type: "userAgent", value: "GPTBot" },
-      { type: "allow", value: "/" },
-      { type: "userAgent", value: "ChatGPT-User" },
-      { type: "allow", value: "/" },
-      { type: "userAgent", value: "ClaudeBot" },
-      { type: "allow", value: "/" },
-      { type: "userAgent", value: "anthropic-ai" },
-      { type: "allow", value: "/" },
-      { type: "userAgent", value: "Google-Extended" },
-      { type: "allow", value: "/" },
-      { type: "userAgent", value: "PerplexityBot" },
-      { type: "allow", value: "/" },
-      { type: "userAgent", value: "Applebot-Extended" },
-      { type: "allow", value: "/" },
+      { type: "disallow", value: "/dev/" },
+      ...hiddenDisallows,
+      ...aiCrawler("GPTBot"),
+      ...aiCrawler("ChatGPT-User"),
+      ...aiCrawler("ClaudeBot"),
+      ...aiCrawler("anthropic-ai"),
+      ...aiCrawler("Google-Extended"),
+      ...aiCrawler("PerplexityBot"),
+      ...aiCrawler("Applebot-Extended"),
       { type: "sitemap", value: `${SITE_URL}/sitemap.xml` },
     ],
     {

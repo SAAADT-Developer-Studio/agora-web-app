@@ -1,7 +1,49 @@
-import { pgTable, index, serial, varchar, jsonb, boolean, timestamp, foreignKey, unique, integer, doublePrecision, uuid, primaryKey } from "drizzle-orm/pg-core"
+import { pgTable, index, foreignKey, unique, serial, varchar, timestamp, doublePrecision, integer, boolean, jsonb, uuid, primaryKey } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 
+
+export const article = pgTable("article", {
+	id: serial().primaryKey().notNull(),
+	url: varchar().notNull(),
+	title: varchar().notNull(),
+	publishedAt: timestamp("published_at", { withTimezone: true, mode: 'string' }).notNull(),
+	deck: varchar(),
+	author: varchar(),
+	content: varchar(),
+	embedding: doublePrecision().array().notNull(),
+	newsProviderKey: varchar("news_provider_key").notNull(),
+	summary: varchar(),
+	clusterId: integer("cluster_id"),
+	imageUrls: varchar("image_urls").array(),
+	categories: varchar().array(),
+	llmRank: integer("llm_rank"),
+	isPaywalled: boolean("is_paywalled"),
+}, (table) => [
+	index("ix_article_published_at_news_provider_key").using("btree", table.publishedAt.asc().nullsLast().op("text_ops"), table.newsProviderKey.asc().nullsLast().op("text_ops")),
+	foreignKey({
+			columns: [table.clusterId],
+			foreignColumns: [cluster.id],
+			name: "article_cluster_id_fkey"
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.newsProviderKey],
+			foreignColumns: [newsProvider.key],
+			name: "article_news_provider_key_fkey"
+		}),
+	unique("article_url_key").on(table.url),
+]);
+
+export const newsProvider = pgTable("news_provider", {
+	key: varchar().primaryKey().notNull(),
+	name: varchar().notNull(),
+	url: varchar().notNull(),
+	rank: integer().notNull(),
+	biasRating: varchar("bias_rating"),
+}, (table) => [
+	unique("news_provider_name_key").on(table.name),
+	unique("news_provider_url_key").on(table.url),
+]);
 
 export const clusterRun = pgTable("cluster_run", {
 	id: serial().primaryKey().notNull(),
@@ -45,6 +87,10 @@ export const clusterV2 = pgTable("cluster_v2", {
 	slug: varchar(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
 	runId: integer("run_id").notNull(),
+	wikiImageUrls: varchar("wiki_image_urls").array().default([""]).notNull(),
+	wikiImageLookupAt: timestamp("wiki_image_lookup_at", { withTimezone: true, mode: 'string' }),
+	wikiImageLastAttemptAt: timestamp("wiki_image_last_attempt_at", { withTimezone: true, mode: 'string' }),
+	wikiImageMetadata: jsonb("wiki_image_metadata").default([]).notNull(),
 }, (table) => [
 	index("ix_cluster_v2_run_id").using("btree", table.runId.asc().nullsLast().op("int4_ops")),
 	foreignKey({
@@ -53,48 +99,6 @@ export const clusterV2 = pgTable("cluster_v2", {
 			name: "cluster_v2_run_id_fkey"
 		}).onDelete("cascade"),
 	unique("cluster_v2_slug_key").on(table.slug),
-]);
-
-export const article = pgTable("article", {
-	id: serial().primaryKey().notNull(),
-	url: varchar().notNull(),
-	title: varchar().notNull(),
-	publishedAt: timestamp("published_at", { withTimezone: true, mode: 'string' }).notNull(),
-	deck: varchar(),
-	author: varchar(),
-	content: varchar(),
-	embedding: doublePrecision().array().notNull(),
-	newsProviderKey: varchar("news_provider_key").notNull(),
-	summary: varchar(),
-	clusterId: integer("cluster_id"),
-	imageUrls: varchar("image_urls").array(),
-	categories: varchar().array(),
-	llmRank: integer("llm_rank"),
-	isPaywalled: boolean("is_paywalled"),
-}, (table) => [
-	index("ix_article_published_at_news_provider_key").using("btree", table.publishedAt.asc().nullsLast().op("text_ops"), table.newsProviderKey.asc().nullsLast().op("text_ops")),
-	foreignKey({
-			columns: [table.clusterId],
-			foreignColumns: [cluster.id],
-			name: "article_cluster_id_fkey"
-		}).onDelete("set null"),
-	foreignKey({
-			columns: [table.newsProviderKey],
-			foreignColumns: [newsProvider.key],
-			name: "article_news_provider_key_fkey"
-		}),
-	unique("article_url_key").on(table.url),
-]);
-
-export const newsProvider = pgTable("news_provider", {
-	key: varchar().primaryKey().notNull(),
-	name: varchar().notNull(),
-	url: varchar().notNull(),
-	rank: integer().notNull(),
-	biasRating: varchar("bias_rating"),
-}, (table) => [
-	unique("news_provider_name_key").on(table.name),
-	unique("news_provider_url_key").on(table.url),
 ]);
 
 export const articleSocialPost = pgTable("article_social_post", {
@@ -157,6 +161,43 @@ export const cluster = pgTable("cluster", {
 	slug: varchar(),
 }, (table) => [
 	unique("cluster_slug_key").on(table.slug),
+]);
+
+export const storyArticle = pgTable("story_article", {
+	id: serial().primaryKey().notNull(),
+	storyId: integer("story_id").notNull(),
+	articleId: integer("article_id").notNull(),
+	method: varchar().notNull(),
+	similarity: doublePrecision(),
+	nearestArticleId: integer("nearest_article_id"),
+	assignedAt: timestamp("assigned_at", { withTimezone: true, mode: 'string' }).notNull(),
+}, (table) => [
+	index("ix_story_article_story_id").using("btree", table.storyId.asc().nullsLast().op("int4_ops")),
+	foreignKey({
+			columns: [table.articleId],
+			foreignColumns: [article.id],
+			name: "story_article_article_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.nearestArticleId],
+			foreignColumns: [article.id],
+			name: "story_article_nearest_article_id_fkey"
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.storyId],
+			foreignColumns: [story.id],
+			name: "story_article_story_id_fkey"
+		}).onDelete("cascade"),
+	unique("uq_story_article_article_id").on(table.articleId),
+]);
+
+export const story = pgTable("story", {
+	id: serial().primaryKey().notNull(),
+	title: varchar().notNull(),
+	lastArticlePublishedAt: timestamp("last_article_published_at", { withTimezone: true, mode: 'string' }).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
+}, (table) => [
+	index("ix_story_last_article_published_at").using("btree", table.lastArticlePublishedAt.asc().nullsLast().op("timestamptz_ops")),
 ]);
 
 export const vote = pgTable("vote", {
