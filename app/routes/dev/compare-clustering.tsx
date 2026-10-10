@@ -219,7 +219,11 @@ function majority(rows: MemberRow[], key: (row: MemberRow) => number | null) {
     cur.n += 1;
     counts.set(id, cur);
   }
-  return [...counts.values()].toSorted((a, b) => b.n - a.n)[0]?.row ?? null;
+  let best: { n: number; row: MemberRow } | null = null;
+  for (const cur of counts.values()) {
+    if (!best || cur.n > best.n) best = cur;
+  }
+  return best?.row ?? null;
 }
 
 function parseDbDate(value: string): Date | null {

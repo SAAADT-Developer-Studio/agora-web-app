@@ -38,6 +38,7 @@ export type ArticlePageData = {
       newsProvider: {
         key: string;
         name: string;
+        url: string;
         biasRating: string | null;
         rank: number;
       };
