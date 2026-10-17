@@ -52,6 +52,11 @@ type SeoInput = {
   jsonLd?: object[];
   /** Overrides the robots meta content. Hidden routes pass `noindex, nofollow`. */
   robots?: string;
+  /**
+   * Canonical path. `false` omits the tag (error and gone pages).
+   * Defaults to `pathname`.
+   */
+  canonical?: string | false;
 };
 
 export function getSeoMetas({
@@ -73,8 +78,12 @@ export function getSeoMetas({
   includeSiteSchema = true,
   jsonLd = [],
   robots,
+  canonical,
 }: SeoInput): MetaDescriptor[] {
-  const url = new URL(pathname || "/", SITE_URL).href;
+  const url = new URL(
+    (canonical === false ? pathname : (canonical ?? pathname)) || "/",
+    SITE_URL,
+  ).href;
   const ogImage = image || DEFAULT_OG_IMAGE;
 
   const metas: MetaDescriptor[] = [
@@ -92,7 +101,9 @@ export function getSeoMetas({
           : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"),
     },
 
-    { tagName: "link", rel: "canonical", href: url },
+    ...(canonical === false
+      ? []
+      : [{ tagName: "link" as const, rel: "canonical", href: url }]),
 
     { property: "og:url", content: url },
     { property: "og:title", content: title },

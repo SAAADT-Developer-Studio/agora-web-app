@@ -35,6 +35,8 @@ export default [
     ),
   ]),
   route("sitemap.xml", "./routes/sitemap.ts"),
+  route("sitemap-pages.xml", "./routes/sitemap-pages.ts"),
+  route("sitemap-stories/:page", "./routes/sitemap-stories.ts"),
   route("news-sitemap.xml", "./routes/news-sitemap.ts"),
   route("robots.txt", "./routes/robots.ts"),
   route("llms.txt", "./routes/llms.ts"),

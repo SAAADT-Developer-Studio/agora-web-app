@@ -20,7 +20,7 @@ export async function loader({ context }: Route.LoaderArgs) {
       stories.map((storyEntry) => ({
         loc: new URL(storyPath(storyEntry.id), origin).href,
         title: storyEntry.title,
-        publicationDate: storyEntry.lastmod,
+        publicationDate: storyEntry.publishedAt,
         publicationName: SITE_NAME,
         language: "sl",
       })),

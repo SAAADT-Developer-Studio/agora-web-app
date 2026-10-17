@@ -1,3 +1,4 @@
+import { redirect } from "react-router";
 import type { Route } from "./+types/story";
 import { ErrorComponent } from "~/components/error-component";
 import {
@@ -9,19 +10,39 @@ import {
 import { getAppContext } from "~/lib/appContext";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 import ArticlePage, { type ArticlePageData } from "~/components/article-page";
+import {
+  classifyStoryParam,
+  persistedStoryStatus,
+  storyPath,
+} from "~/lib/articleUrl";
 
-export function headers({}: Route.HeadersArgs) {
+const GONE_HEADERS = {
+  "X-Robots-Tag": "noindex",
+  "Cache-Control": "public, max-age=300",
+};
+
+const NOT_FOUND_HEADERS = {
+  "X-Robots-Tag": "noindex",
+  "Cache-Control": "public, max-age=60",
+};
+
+export function headers({ errorHeaders, loaderHeaders }: Route.HeadersArgs) {
+  // Thrown 301/404/410 responses carry Location, Cache-Control, and
+  // X-Robots-Tag. Replacing them with only Cache-Control drops noindex.
+  if (errorHeaders) return errorHeaders;
+  if (loaderHeaders.has("Location")) return loaderHeaders;
   return {
     "Cache-Control": "max-age=10, s-maxage=10",
   };
 }
 
-export function meta({ loaderData, location }: Route.MetaArgs) {
+export function meta({ loaderData }: Route.MetaArgs) {
   if (!loaderData?.cluster) {
     return getSeoMetas({
       title: "Zgodba ni najdena | Vidik",
       description: "Oprostite, iskana zgodba ni bila najdena.",
-      pathname: location.pathname,
+      pathname: "/",
+      canonical: false,
       noindex: true,
       includeSiteSchema: false,
     });
@@ -29,6 +50,7 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
 
   const { cluster, uniqueCategories, heroImageUrl } = loaderData;
   const title = cluster.title;
+  const path = storyPath(cluster.id);
   const providers = Array.from(
     new Map(
       cluster.articles.map((a) => [a.newsProviderKey, a.newsProvider.name]),
@@ -40,13 +62,13 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
   const publishedTime = new Date(Math.min(...publishedTimes)).toISOString();
   const modifiedTime = new Date(Math.max(...publishedTimes)).toISOString();
   const description = `Primerjava poročanja ${providers.length} slovenskih medijev o temi »${title}«. Viri: ${providers.slice(0, 5).join(", ")}${providers.length > 5 ? " in drugi" : ""}.`;
-  const pageUrl = new URL(location.pathname, SITE_URL).href;
+  const pageUrl = new URL(path, SITE_URL).href;
 
   return getSeoMetas({
     title: `${title} | Vidik`,
     description,
     image: heroImageUrl || undefined,
-    pathname: location.pathname,
+    pathname: path,
     keywords: [...uniqueCategories, ...providers.slice(0, 5), "vidik"].join(
       ", ",
     ),
@@ -72,28 +94,36 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
       }),
       breadcrumbJsonLd([
         { name: "Domov", path: "/" },
-        { name: title, path: location.pathname },
+        { name: title, path },
       ]),
     ],
   });
 }
 
-export async function loader({ params, context }: Route.LoaderArgs) {
-  const rawId = params.storyId;
-  if (!rawId || !/^\d+$/.test(rawId)) {
-    throw new Response("Gone", {
-      status: 410,
-      statusText: "Gone",
-      headers: { "X-Robots-Tag": "noindex" },
+export async function loader({ params, request, context }: Route.LoaderArgs) {
+  const classified = classifyStoryParam(params.storyId);
+  if (classified.type === "not-found") {
+    throw new Response("Not Found", {
+      status: 404,
+      statusText: "Not Found",
+      headers: NOT_FOUND_HEADERS,
     });
   }
-  const storyId = Number.parseInt(rawId, 10);
+
+  const url = new URL(request.url);
+  const canonical = storyPath(classified.id);
+  if (classified.type === "redirect" || url.pathname !== canonical) {
+    throw redirect(`${canonical}${url.search}`, {
+      status: 301,
+      headers: { "Cache-Control": "public, max-age=86400" },
+    });
+  }
 
   const { db, measurer } = getAppContext(context);
 
   const story = await measurer.time("fetchStoryData", () =>
     db.query.story.findFirst({
-      where: (s, { eq }) => eq(s.id, storyId),
+      where: (s, { eq }) => eq(s.id, classified.id),
       with: {
         storyArticles: {
           with: {
@@ -119,21 +149,21 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   );
 
   if (!story) {
-    throw new Response("Gone", {
-      status: 410,
-      statusText: "Gone",
-      headers: { "X-Robots-Tag": "noindex" },
+    throw new Response("Not Found", {
+      status: 404,
+      statusText: "Not Found",
+      headers: NOT_FOUND_HEADERS,
     });
   }
 
   const articles = story.storyArticles
     .map((sa) => sa.article_articleId)
     .filter((article) => article != null);
-  if (articles.length === 0) {
+  if (persistedStoryStatus(articles.length) === 410) {
     throw new Response("Gone", {
       status: 410,
       statusText: "Gone",
-      headers: { "X-Robots-Tag": "noindex" },
+      headers: GONE_HEADERS,
     });
   }
   articles.sort(

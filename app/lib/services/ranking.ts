@@ -7,6 +7,8 @@ import {
   articleSocialPost,
 } from "~/drizzle/schema";
 import { sql } from "drizzle-orm";
+import { storyPath } from "~/lib/articleUrl";
+import { dominantStoryIds } from "~/lib/services/resolveArticle";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 import {
@@ -41,7 +43,10 @@ export type ArticleType = {
   showTags?: boolean;
   numberOfArticles: number;
   providerKeys: string[];
-  /** Set only by the hidden story listing (`/novo`). Public listings omit it and link to clanek. */
+  /**
+   * Permanent story URL. Public listings set this when the cluster maps to a
+   * story. `/novo` always sets it. Unset cards still use the clanek URL.
+   */
   to?: string;
 };
 
@@ -321,6 +326,11 @@ async function common(
     return bScore - aScore;
   });
 
+  const storyIds = await dominantStoryIds(
+    db,
+    topClusters.map((cluster) => cluster.id),
+  );
+
   const articles: ArticleType[] = topClusters.map((c) => {
     const clusterArticles = c.articleClusters.map((ac) => ac.article);
 
@@ -338,6 +348,7 @@ async function common(
     const providerKeys = new Set(
       clusterArticles.map((a) => a.newsProvider.key),
     );
+    const storyId = storyIds.get(c.id);
 
     return {
       id: c.id.toString(),
@@ -352,6 +363,7 @@ async function common(
       showTags: true,
       numberOfArticles: clusterArticles.length,
       providerKeys: Array.from(providerKeys),
+      to: storyId == null ? undefined : storyPath(storyId),
     };
   });
 

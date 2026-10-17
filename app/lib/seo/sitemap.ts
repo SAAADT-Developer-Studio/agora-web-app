@@ -44,3 +44,17 @@ export class Sitemap {
     return `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${entries}</urlset>`;
   }
 }
+
+export function renderSitemapIndex(
+  entries: { loc: string; lastmod?: Date }[],
+): string {
+  const body = entries
+    .map((entry) => {
+      const lastmod = entry.lastmod
+        ? `<lastmod>${entry.lastmod.toISOString()}</lastmod>`
+        : "";
+      return `<sitemap><loc>${escapeXml(entry.loc)}</loc>${lastmod}</sitemap>`;
+    })
+    .join("");
+  return `<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${body}</sitemapindex>`;
+}

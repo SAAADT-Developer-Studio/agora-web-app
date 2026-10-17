@@ -40,7 +40,7 @@ Changing article-fetch logic usually means updating both the loader and `fetchHo
 
 Two systems coexist on purpose:
 
-- **Public listings** (`/` and `/:category`) rank `cluster_v2` from the latest production `cluster_run` and still link to `/:category/clanek/:articleId`, which 301s to `/zgodba/:storyId`. KV keys stay `data:v2:home` and `data:v2:category:{category}`.
+- **Public listings** (`/` and `/:category`) rank `cluster_v2` from the latest production `cluster_run` and link to `/zgodba/:storyId` when the cluster maps to a story. Unmapped cards still use `/:category/clanek/:articleId`, which 301s. KV keys stay `data:v2:home` and `data:v2:category:{category}`.
 - **Hidden listings** (`/novo`) rank `story` + `story_article` (14-day `last_article_published_at` window) and link to `/zgodba/:storyId`. KV key is `data:story:novo` (`NOVO_HOME_CACHE_KEY`) so it never collides with the public home cache.
 - **Story pages** `/zgodba/:storyId` are the permanent public article URL (`story.id` does not change across ranking runs). They are indexable and listed in the sitemap. `/:category/clanek/:articleId` 301s here.
 - `/novo` is unlisted: `noindex, nofollow` meta, `X-Robots-Tag`, `Disallow` in robots.txt, and omitted from the sitemap. No public page links to it.
@@ -48,7 +48,7 @@ Two systems coexist on purpose:
 - Stories are incremental (no `cluster_run`). Closest clocks: `story_article.assigned_at`, `story.created_at`.
 - `story_article.similarity` is cosine vs `nearest_article_id` at assign time (`method` `seed` | `cosine`). `article_cluster` has no scores; live cosine is `article.embedding` (float8[]).
 
-`ArticleType.to` is how `/novo` cards point at `/zgodba/...`. Public listings leave `to` unset and use clanek URLs, which 301 to the story. Changing the `/novo` URL shape requires bumping `NOVO_HOME_CACHE_KEY` in `app/lib/kvCache/keys.ts`.
+`ArticleType.to` is the card href. `/novo` and public listings set it to `/zgodba/{id}` when a story id is known. Changing the `/novo` URL shape requires bumping `NOVO_HOME_CACHE_KEY` in `app/lib/kvCache/keys.ts`.
 
 ## Dev tools
 

@@ -3,10 +3,12 @@ import { cn } from "~/lib/utils";
 
 export function ErrorUI({
   message,
+  title,
   size = "large",
   className,
 }: {
   message: string;
+  title?: string;
   size?: "small" | "large";
   className?: string;
 }) {
@@ -36,7 +38,7 @@ export function ErrorUI({
       </div>
       {size === "large" && (
         <h3 className="mb-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
-          Ups! Nekaj je šlo narobe
+          {title ?? "Ups! Nekaj je šlo narobe"}
         </h3>
       )}
       <p

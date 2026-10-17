@@ -41,6 +41,7 @@ export function meta({ location }: Route.MetaArgs): Route.MetaDescriptors {
     title: "Članek | Vidik",
     description: "Ta naslov se preusmeri na trajno stran zgodbe.",
     pathname: location.pathname,
+    canonical: false,
     noindex: true,
     includeSiteSchema: false,
   });
