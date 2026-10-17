@@ -1,3 +1,4 @@
+import { biasSide } from "~/utils/biasSide";
 import type { BiasDistribution } from "~/lib/services/ranking";
 
 export function getBiasDistribution(
@@ -7,21 +8,10 @@ export function getBiasDistribution(
     (a) => a.newsProvider.biasRating !== null,
   ).length;
 
-  const leftCount = articles.filter(
-    (a) =>
-      a.newsProvider.biasRating &&
-      ["left", "center-left"].includes(a.newsProvider.biasRating),
-  ).length;
-
-  const centerCount = articles.filter(
-    (a) => a.newsProvider.biasRating === "center",
-  ).length;
-
-  const rightCount = articles.filter(
-    (a) =>
-      a.newsProvider.biasRating &&
-      ["right", "center-right"].includes(a.newsProvider.biasRating),
-  ).length;
+  const sides = articles.map((a) => biasSide(a.newsProvider.biasRating));
+  const leftCount = sides.filter((side) => side === "left").length;
+  const centerCount = sides.filter((side) => side === "center").length;
+  const rightCount = sides.filter((side) => side === "right").length;
 
   return {
     leftPercent:

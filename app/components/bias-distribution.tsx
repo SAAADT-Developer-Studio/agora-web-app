@@ -48,6 +48,7 @@ const biasCategories: BiasCategory[] = [
 export function BiasDistribution({
   biasDistribution: { leftPercent, centerPercent, rightPercent },
   providers,
+  minRows = 0,
   className,
 }: {
   biasDistribution: {
@@ -58,6 +59,8 @@ export function BiasDistribution({
   providers: (InferSelectModel<typeof newsProvider> & {
     articleCount: number;
   })[];
+  /** Reserve height for this many badges per column so sparse charts don't look squat. */
+  minRows?: number;
   className?: string;
 }) {
   const providersByBias = biasCategories.map((category) => ({
@@ -116,6 +119,16 @@ export function BiasDistribution({
                 {category.providers.map((provider, idx) => (
                   <ProviderBadge key={idx} provider={provider} />
                 ))}
+                {Array.from(
+                  { length: Math.max(0, minRows - category.providers.length) },
+                  (_, idx) => (
+                    <div
+                      key={`slot-${idx}`}
+                      aria-hidden
+                      className="aspect-square w-full"
+                    />
+                  ),
+                )}
               </div>
             </div>
           </div>

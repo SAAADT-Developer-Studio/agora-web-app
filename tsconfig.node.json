@@ -3,6 +3,7 @@
   "include": [
     "tailwind.config.ts",
     "vite.config.ts",
+    "vitest.config.ts",
     "react-router.config.ts",
     "drizzle.config.ts"
   ],
