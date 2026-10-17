@@ -13,6 +13,7 @@ import {
 import fallbackArticleImage from "~/assets/fallback.png";
 import redditIcon from "~/assets/reddit.svg";
 import { BiasDistribution } from "~/components/bias-distribution";
+import { BiasInfoTooltip } from "~/components/bias-info-tooltip";
 import { Icon } from "~/components/icon";
 import { ProviderImage } from "~/components/provider-image";
 import {
@@ -79,6 +80,17 @@ const shortDateFormatter = new Intl.DateTimeFormat("sl-SI", {
   month: "short",
 });
 
+function formatSpan(oldest: Date, newest: Date) {
+  const from = shortDateFormatter.format(oldest);
+  const to = shortDateFormatter.format(newest);
+  if (from === to) {
+    const start = timeFormatter.format(oldest);
+    const end = timeFormatter.format(newest);
+    return start === end ? `${from}, ${start}` : `${from}, ${start}–${end}`;
+  }
+  return `${from} – ${to}`;
+}
+
 type SideFilter = "all" | BiasSide;
 
 /** `dot` is the bias rating whose colour marks the filter chip. */
@@ -126,37 +138,20 @@ export default function StoryPage({ data }: { data: StoryPageData }) {
         <ShareButtons />
       </nav>
 
-      <div className="grid gap-x-10 gap-y-10 lg:grid-cols-[minmax(0,1fr)_340px]">
+      {/* lg: main column (header, hero, coverage) + sidebar. The sidebar spans
+          both rows; on narrow screens it falls between hero and coverage. */}
+      <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0">
-          <header className="mb-6 md:mb-8">
-            <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-semibold tracking-wider uppercase">
-              {story.isDeveloping ? (
-                <span className="bg-vidikgreen/15 text-vidikgreen flex items-center gap-2 rounded-full px-2.5 py-1">
-                  <span className="relative flex size-2">
-                    <span className="bg-vidikgreen absolute inline-flex size-full animate-ping rounded-full opacity-60" />
-                    <span className="bg-vidikgreen relative inline-flex size-2 rounded-full" />
-                  </span>
-                  V razvoju
-                </span>
-              ) : (
-                <span className="bg-primary/8 rounded-full px-2.5 py-1">
-                  Zgodba
-                </span>
-              )}
-              <span className="text-primary/60" suppressHydrationWarning>
-                Posodobljeno {timeDiffInSlovenian(newestDate)}
-              </span>
-            </div>
-
-            <h1 className="text-primary text-2xl leading-tight font-bold tracking-tight text-balance md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+          <header className="mb-5 md:mb-6">
+            <h1 className="text-primary text-[1.65rem] leading-[1.15] font-bold tracking-tight text-balance md:text-4xl lg:text-[2.6rem] lg:leading-[1.08]">
               {story.title}
             </h1>
 
             <CoverageMeta
               providers={providers}
               articleCount={articles.length}
-              oldestDate={oldestDate}
               newestDate={newestDate}
+              isDeveloping={story.isDeveloping}
             />
           </header>
 
@@ -165,7 +160,9 @@ export default function StoryPage({ data }: { data: StoryPageData }) {
             onCaptionClick={showAll}
             title={story.title}
           />
+        </div>
 
+        <aside className="flex min-w-0 flex-col gap-6 lg:col-start-2 lg:row-span-2 lg:row-start-1">
           {story.bullets.length > 0 && (
             <KeyPoints
               bullets={story.bullets}
@@ -173,26 +170,29 @@ export default function StoryPage({ data }: { data: StoryPageData }) {
               onSourceClick={showAll}
             />
           )}
-        </div>
-
-        <aside className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
-          <div className="flex flex-col gap-6 lg:sticky lg:top-20 xl:top-32">
+          <BiasStrip articles={articles} />
+          <div className="hidden lg:sticky lg:top-20 lg:block xl:top-32">
             <BiasDistribution
               biasDistribution={getBiasDistribution(articles)}
               providers={providers}
+              className="min-h-80"
             />
-            {mentions.length > 0 && (
-              <SocialMentions mentions={mentions} articlesById={articlesById} />
-            )}
           </div>
         </aside>
 
-        <CoverageTimeline
-          articles={articles}
-          side={side}
-          onSideChange={setSide}
-          mentionCounts={mentionCounts}
-        />
+        <div className="flex min-w-0 flex-col gap-10">
+          {mentions.length > 0 && (
+            <SocialMentions mentions={mentions} articlesById={articlesById} />
+          )}
+          <CoverageTimeline
+            articles={articles}
+            side={side}
+            onSideChange={setSide}
+            mentionCounts={mentionCounts}
+            oldestDate={oldestDate}
+            newestDate={newestDate}
+          />
+        </div>
       </div>
 
       <p className="text-primary/50 mx-auto mt-16 max-w-xl text-center text-xs leading-relaxed text-pretty">
@@ -238,22 +238,19 @@ function uniqueProviders(articles: StoryArticle[]) {
 function CoverageMeta({
   providers,
   articleCount,
-  oldestDate,
   newestDate,
+  isDeveloping,
 }: {
   providers: ReturnType<typeof uniqueProviders>;
   articleCount: number;
-  oldestDate: Date;
   newestDate: Date;
+  isDeveloping: boolean;
 }) {
   const shown = providers.slice(0, 5);
   const hidden = providers.length - shown.length;
-  const sameDay =
-    shortDateFormatter.format(oldestDate) ===
-    shortDateFormatter.format(newestDate);
 
   return (
-    <div className="text-primary/70 mt-5 flex flex-wrap items-center gap-x-4 gap-y-3 text-sm">
+    <div className="text-primary/70 mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
       <div className="flex items-center">
         {shown.map((provider) => (
           <ProviderImage
@@ -287,13 +284,20 @@ function CoverageMeta({
           plural: "virov",
         })}
       </span>
-      <span aria-hidden className="text-primary/30">
-        •
-      </span>
-      <span>
-        {sameDay
-          ? `${shortDateFormatter.format(oldestDate)}, ${timeFormatter.format(oldestDate)}–${timeFormatter.format(newestDate)}`
-          : `${shortDateFormatter.format(oldestDate)} – ${shortDateFormatter.format(newestDate)}`}
+      <span className="flex items-center gap-2">
+        {isDeveloping && (
+          <span
+            className="relative flex size-2"
+            title="Zgodba se razvija"
+            aria-label="Zgodba se razvija"
+          >
+            <span className="bg-vidikgreen absolute inline-flex size-full animate-ping rounded-full opacity-60" />
+            <span className="bg-vidikgreen relative inline-flex size-2 rounded-full" />
+          </span>
+        )}
+        <span suppressHydrationWarning>
+          posodobljeno {timeDiffInSlovenian(newestDate)}
+        </span>
       </span>
     </div>
   );
@@ -311,26 +315,21 @@ function KeyPoints({
   return (
     <section
       aria-labelledby="key-points"
-      className="border-primary/10 bg-surface-light mt-8 rounded-xl border p-5 shadow-xs md:p-8"
+      className="bg-surface-light text-surface-light-text rounded-lg border border-current/10 p-4 shadow-xs"
     >
-      <h2
-        id="key-points"
-        className="mb-5 text-xs font-bold tracking-[0.2em] uppercase md:mb-6"
-      >
+      <h2 id="key-points" className="mb-4 font-bold tracking-wide uppercase">
         Na kratko
       </h2>
 
-      <ol className="space-y-5 md:space-y-6">
+      <ul className="space-y-4">
         {bullets.map((bullet, index) => (
-          <li key={index} className="flex gap-4 md:gap-5">
+          <li key={index} className="flex gap-3">
             <span
               aria-hidden
-              className="text-electricblue w-6 shrink-0 pt-0.5 text-lg leading-none font-bold tabular-nums md:text-xl"
-            >
-              {String(index + 1).padStart(2, "0")}
-            </span>
+              className="bg-electricblue mt-[0.55rem] size-1.5 shrink-0 rounded-full"
+            />
             <div className="min-w-0 flex-1">
-              <p className="text-primary text-base leading-relaxed text-pretty md:text-lg">
+              <p className="text-primary text-[0.95rem] leading-snug text-pretty">
                 {bullet.text}
               </p>
               <BulletSources
@@ -343,12 +342,11 @@ function KeyPoints({
             </div>
           </li>
         ))}
-      </ol>
+      </ul>
 
-      <p className="text-primary/50 border-primary/10 mt-6 flex items-start gap-2 border-t pt-4 text-xs leading-relaxed md:mt-8">
-        <Sparkles className="mt-0.5 size-3.5 shrink-0" />
-        Povzetek je samodejno ustvarjen iz poročanja medijev in se lahko
-        posodobi, ko pridejo novi članki. Za podrobnosti preberite vire.
+      <p className="text-primary/50 mt-4 flex items-start gap-1.5 text-[11px] leading-snug">
+        <Sparkles className="mt-px size-3 shrink-0" />
+        Samodejni povzetek poročanja. Lahko se posodobi, ko pridejo novi članki.
       </p>
     </section>
   );
@@ -366,14 +364,14 @@ function BulletSources({
   const hidden = articles.length - shown.length;
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+    <div className="mt-1.5 flex flex-wrap items-center gap-1">
       {shown.map((article) => (
         <Tooltip key={article.id}>
           <TooltipTrigger asChild>
             <a
               href={`#article-${article.id}`}
               onClick={onClick}
-              className="border-primary/10 bg-primary/[0.04] hover:border-electricblue/50 hover:bg-electricblue/10 text-primary/70 flex items-center gap-1.5 rounded-full border py-0.5 pr-2.5 pl-0.5 text-[11px] font-semibold transition-colors"
+              className="border-primary/10 bg-primary/[0.04] hover:border-electricblue/50 hover:bg-electricblue/10 text-primary/70 flex items-center gap-1 rounded-full border py-0.5 pr-2 pl-0.5 text-[11px] font-semibold transition-colors"
             >
               <ProviderImage
                 provider={article.newsProvider}
@@ -399,8 +397,12 @@ function CoverageTimeline({
   side,
   onSideChange,
   mentionCounts,
+  oldestDate,
+  newestDate,
 }: {
   articles: StoryArticle[];
+  oldestDate: Date;
+  newestDate: Date;
   side: SideFilter;
   onSideChange: (side: SideFilter) => void;
   mentionCounts: Map<number, number>;
@@ -417,7 +419,7 @@ function CoverageTimeline({
 
   return (
     <section aria-labelledby="coverage" className="min-w-0">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3 md:mb-6">
         <div>
           <h2
             id="coverage"
@@ -426,14 +428,14 @@ function CoverageTimeline({
             Kako so poročali mediji
           </h2>
           <p className="text-primary/60 mt-1 text-sm">
-            Najnovejši članki na vrhu
+            {formatSpan(oldestDate, newestDate)} · najnovejši na vrhu
           </p>
         </div>
 
         <div
           role="tablist"
           aria-label="Filtriraj po pristranskosti"
-          className="bg-primary/[0.06] flex rounded-lg p-1"
+          className="bg-primary/[0.06] grid w-full grid-cols-4 rounded-lg p-1 sm:flex sm:w-auto"
         >
           {biasSides.map(({ key, label, dot }) => {
             const count = counts.get(key) ?? 0;
@@ -447,7 +449,7 @@ function CoverageTimeline({
                 disabled={count === 0}
                 onClick={() => onSideChange(key)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 md:px-3",
+                  "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 md:px-3",
                   active
                     ? "bg-surface-light text-primary shadow-xs"
                     : "text-primary/60 hover:text-primary",
@@ -472,13 +474,13 @@ function CoverageTimeline({
             <h3 className="text-primary/50 mb-3 text-xs font-bold tracking-wider uppercase">
               {dayFormatter.format(group.date)}
             </h3>
-            <ol className="border-primary/10 ml-1.5 space-y-3 border-l pl-5 md:pl-6">
+            <ol className="border-primary/10 space-y-3 sm:ml-1.5 sm:border-l sm:pl-5 md:pl-6">
               {group.items.map((article) => (
                 <li key={article.id} className="relative">
                   <span
                     aria-hidden
                     className={cn(
-                      "ring-surface absolute top-6 -left-[25px] size-2.5 rounded-full ring-4 md:-left-[29px]",
+                      "ring-surface absolute top-6 -left-[25px] hidden size-2.5 rounded-full ring-4 sm:block md:-left-[29px]",
                       biasKeyToColor(article.newsProvider.biasRating ?? ""),
                     )}
                   />
@@ -515,7 +517,7 @@ function StoryArticleCard({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group bg-surface-light border-primary/10 flex scroll-mt-24 gap-4 rounded-xl border p-4 shadow-xs transition-all duration-200 md:p-5 xl:scroll-mt-36",
+        "group bg-surface-light border-primary/10 flex scroll-mt-24 gap-3 rounded-xl border p-3.5 shadow-xs transition-all duration-200 sm:gap-4 md:p-5 xl:scroll-mt-36",
         "hover:border-primary/25 hover:shadow-vidik",
         "target:ring-electricblue/60 target:ring-2",
       )}
@@ -584,7 +586,7 @@ function StoryArticleCard({
           src={image}
           alt=""
           loading="lazy"
-          className="bg-primary/5 hidden aspect-[4/3] w-28 shrink-0 self-start rounded-lg object-cover sm:block md:w-36"
+          className="bg-primary/5 aspect-square w-16 shrink-0 self-start rounded-md object-cover sm:aspect-[4/3] sm:w-28 sm:rounded-lg md:w-36"
         />
       )}
     </a>
@@ -601,44 +603,52 @@ function SocialMentions({
   articlesById: Map<number, StoryArticle>;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const shown = expanded ? mentions : mentions.slice(0, MENTIONS_PREVIEW);
 
   return (
-    <section
-      aria-labelledby="social-mentions"
-      className="bg-surface-light text-surface-light-text rounded-lg border border-current/10 p-4 shadow-xs"
-    >
-      <h2
-        id="social-mentions"
-        className="mb-1 flex items-center justify-between font-bold tracking-wide uppercase"
-      >
-        Na družbenih omrežjih
-        <span className="bg-primary/8 text-primary/70 rounded-full px-2 py-0.5 text-xs tabular-nums">
-          {mentions.length}
+    <section aria-labelledby="social-mentions" className="min-w-0">
+      <div className="mb-3 flex items-baseline gap-2">
+        <h2
+          id="social-mentions"
+          className="text-primary text-lg font-bold tracking-tight md:text-xl"
+        >
+          Na družbenih omrežjih
+        </h2>
+        <span className="text-primary/50 text-sm tabular-nums">
+          {mentions.length}{" "}
+          {resolvePlural({
+            count: mentions.length,
+            singular: "objava",
+            dual: "objavi",
+            plural: "objav",
+          })}
         </span>
-      </h2>
-      <p className="text-primary/60 mb-4 text-xs">
-        Objave, ki delijo članke iz te zgodbe
-      </p>
+      </div>
 
-      <ul className="space-y-1">
-        {shown.map((mention) => {
+      {/* Swipe row on phones; a two-column grid with a preview cap above. */}
+      <ul className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0">
+        {mentions.map((mention, index) => {
           const article = articlesById.get(mention.articleIds[0]);
           return (
-            <li key={mention.id}>
+            <li
+              key={mention.id}
+              className={cn(
+                "w-[80%] shrink-0 snap-start sm:w-auto",
+                !expanded && index >= MENTIONS_PREVIEW && "sm:hidden",
+              )}
+            >
               <a
                 href={mention.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:bg-primary/[0.05] -mx-2 flex gap-3 rounded-lg p-2 transition-colors"
+                className="group bg-surface-light border-primary/10 hover:border-primary/25 hover:shadow-vidik flex h-full gap-3 rounded-xl border p-3.5 shadow-xs transition-all"
               >
                 {mention.platform === "reddit" ? (
-                  <Icon href={redditIcon} className="mt-0.5 size-6 shrink-0" />
+                  <Icon href={redditIcon} className="size-7 shrink-0" />
                 ) : (
-                  <MessageCircle className="mt-0.5 size-6 shrink-0" />
+                  <MessageCircle className="size-7 shrink-0" />
                 )}
-                <div className="min-w-0 flex-1">
-                  <p className="text-primary line-clamp-2 text-sm leading-snug font-semibold">
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <p className="text-primary group-hover:text-electricblue line-clamp-2 text-sm leading-snug font-semibold transition-colors">
                     {mention.title ?? article?.title ?? mention.url}
                   </p>
                   <p
@@ -647,7 +657,6 @@ function SocialMentions({
                   >
                     {[
                       mention.community && `r/${mention.community}`,
-                      mention.author && `u/${mention.author}`,
                       mention.postedAt &&
                         timeDiffInSlovenian(new Date(mention.postedAt)),
                     ]
@@ -655,13 +664,13 @@ function SocialMentions({
                       .join(" · ")}
                   </p>
                   {article && (
-                    <p className="text-primary/50 mt-1 flex items-center gap-1.5 text-xs">
+                    <p className="text-primary/60 mt-auto flex items-center gap-1.5 pt-2 text-xs">
                       <ProviderImage
                         provider={article.newsProvider}
                         className="size-3.5 rounded-full object-contain"
                       />
                       <span className="truncate">
-                        {article.newsProvider.name}
+                        Deli članek: {article.newsProvider.name}
                       </span>
                     </p>
                   )}
@@ -676,11 +685,59 @@ function SocialMentions({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-electricblue mt-2 text-xs font-semibold hover:underline"
+          className="text-electricblue mt-3 hidden text-xs font-semibold hover:underline sm:block"
         >
           {expanded ? "Pokaži manj" : `Pokaži vse (${mentions.length})`}
         </button>
       )}
+    </section>
+  );
+}
+
+/** One-line bias summary for narrow screens, where the full chart is too tall. */
+function BiasStrip({ articles }: { articles: StoryArticle[] }) {
+  const { leftPercent, centerPercent, rightPercent, totalCount } =
+    getBiasDistribution(articles);
+  if (totalCount === 0) return null;
+  const segments = [
+    { label: "Leva", percent: leftPercent, color: biasKeyToColor("left") },
+    {
+      label: "Center",
+      percent: centerPercent,
+      color: biasKeyToColor("center"),
+    },
+    { label: "Desna", percent: rightPercent, color: biasKeyToColor("right") },
+  ];
+
+  return (
+    <section
+      aria-label="Distribucija pristranskosti"
+      className="bg-surface-light text-surface-light-text rounded-lg border border-current/10 p-4 shadow-xs lg:hidden"
+    >
+      <div className="mb-2.5 flex items-center justify-between text-sm font-bold tracking-wide uppercase">
+        Pristranskost virov
+        <BiasInfoTooltip />
+      </div>
+      <div className="flex h-2.5 overflow-hidden rounded-full">
+        {segments.map(
+          (segment) =>
+            segment.percent > 0 && (
+              <div
+                key={segment.label}
+                className={cn(segment.color, "h-full border-0")}
+                style={{ width: `${segment.percent}%` }}
+              />
+            ),
+        )}
+      </div>
+      <div className="mt-2 flex justify-between text-xs font-semibold">
+        {segments.map((segment) => (
+          <span key={segment.label}>
+            <span className="text-primary/60 font-medium">{segment.label}</span>{" "}
+            {segment.percent}%
+          </span>
+        ))}
+      </div>
     </section>
   );
 }
