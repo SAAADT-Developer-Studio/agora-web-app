@@ -30,7 +30,7 @@ import { useState, useEffect } from "react";
 import { cn } from "~/lib/utils";
 import { getCarouselArticleIds } from "~/utils/getCarouselArticleIds";
 import { ProviderImage } from "~/components/provider-image";
-import { ArchiveNotice } from "~/components/archive-notice";
+import { ArchiveNotice, NewerCopyNotice } from "~/components/archive-notice";
 import { getAppContext } from "~/lib/appContext";
 import {
   clanekHttpStatus,
@@ -189,7 +189,11 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
         <ShareButtons />
       </div>
 
-      {archived ? <ArchiveNotice newerTo={newerClusterPath} /> : null}
+      {archived ? (
+        <ArchiveNotice newerTo={newerClusterPath} />
+      ) : newerClusterPath ? (
+        <NewerCopyNotice newerTo={newerClusterPath} />
+      ) : null}
 
       <h1 className="text-primary mb-8 line-clamp-3 text-xl leading-normal font-bold tracking-tight text-balance md:text-3xl md:leading-tight lg:text-4xl">
         {cluster.title}

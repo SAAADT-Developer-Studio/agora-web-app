@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { PgDialect } from "drizzle-orm/pg-core";
 import type { SQL } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import { ArchiveNotice } from "~/components/archive-notice";
+import { ArchiveNotice, NewerCopyNotice } from "~/components/archive-notice";
 import type { Database } from "~/lib/db";
 import {
   ARCHIVE_LABEL,
@@ -11,6 +11,7 @@ import {
   CLUSTERER_WINDOW_MS,
   INT4_MAX,
   NEWER_CLUSTER_LABEL,
+  NEWER_LIVE_MESSAGE,
   articleClusterWhere,
   clanekHttpStatus,
   clanekIndexing,
@@ -209,24 +210,52 @@ describe("archived clanek pages", () => {
     expect(executed).toBe(0);
   });
 
-  it("does not archive an old cluster when its articles are in the latest run", async () => {
+  it("links an old page whose articles are still live, without the archive notice", async () => {
     const queries: ReturnType<typeof compile>[] = [];
+    let executed = 0;
     const result = await resolveClanekArchive(
       executorDb(async (query) => {
+        executed += 1;
         queries.push(compile(query));
+        if (executed === 1) {
+          return {
+            rows: [{ latest_run_id: 20, in_current_selection: true }],
+          };
+        }
         return {
-          rows: [{ latest_run_id: 15, in_current_selection: true }],
+          rows: [
+            {
+              slug: "nina-pecar-ziva",
+              id: 48378536,
+              categories: [["loklano", "kriminal"], ["politika"]],
+            },
+          ],
         };
       }),
-      oldInput,
+      { ...oldInput, category: "sport" },
       NOW,
     );
 
-    expect(result).toStrictEqual({ archived: false, newerClusterPath: null });
-    expect(queries).toHaveLength(1);
+    expect(result).toStrictEqual({
+      archived: false,
+      newerClusterPath: "/kriminal/clanek/nina-pecar-ziva",
+    });
+    expect(queries).toHaveLength(2);
     expect(queries[0]?.params).toStrictEqual(expect.arrayContaining([10, 11]));
-    expect(queries[0]?.sql).not.toMatch(/\blike\b/i);
     expect(queries[0]?.sql).toMatch(/is_production/i);
+    expect(queries[1]?.sql).toMatch(/published_at/i);
+    expect(queries[1]?.sql).toMatch(/order by/i);
+    expect(queries.every((query) => !/\blike\b/i.test(query.sql))).toBe(true);
+
+    const html = renderToStaticMarkup(
+      createElement(NewerCopyNotice, {
+        newerTo: "/kriminal/clanek/nina-pecar-ziva",
+      }),
+    );
+    expect(html).toContain(NEWER_LIVE_MESSAGE);
+    expect(html).toContain('href="/kriminal/clanek/nina-pecar-ziva"');
+    expect(html).not.toContain(ARCHIVE_LABEL);
+    expect(html).not.toContain(ARCHIVE_MESSAGE);
   });
 
   it("does not archive the cluster from the latest run itself", async () => {
@@ -241,7 +270,8 @@ describe("archived clanek pages", () => {
     );
 
     expect(result.archived).toBe(false);
-    expect(executed).toBe(1);
+    expect(result.newerClusterPath).toBeNull();
+    expect(executed).toBe(2);
   });
 
   it("does not archive when the latest-run query returns no row", async () => {
@@ -256,7 +286,8 @@ describe("archived clanek pages", () => {
     );
 
     expect(result.archived).toBe(false);
-    expect(executed).toBe(1);
+    expect(result.newerClusterPath).toBeNull();
+    expect(executed).toBe(2);
   });
 
   it("archives an old cluster outside the current selection and links a newer copy", async () => {
@@ -272,7 +303,13 @@ describe("archived clanek pages", () => {
           };
         }
         return {
-          rows: [{ slug: "novejsa-zgodba", id: 99, category: "politika" }],
+          rows: [
+            {
+              slug: "novejsa-zgodba",
+              id: 99,
+              categories: [["politika"]],
+            },
+          ],
         };
       }),
       { ...oldInput, runId: 14 },

@@ -24,6 +24,9 @@ export const ARCHIVE_MESSAGE =
 
 export const NEWER_CLUSTER_LABEL = "Novejša različica";
 
+export const NEWER_LIVE_MESSAGE =
+  "Novejša različica te zgodbe je v aktualnem izboru.";
+
 export type ArticleClusterKey =
   | { kind: "id"; id: number }
   | { kind: "slug"; slug: string };
@@ -36,7 +39,7 @@ type SelectionRow = {
 type NewerClusterRow = {
   slug?: unknown;
   id?: unknown;
-  category?: unknown;
+  categories?: unknown;
 };
 
 export type NewerCluster = {
@@ -138,14 +141,18 @@ export function currentSelectionSql(articleIds: number[]): SQL {
   `;
 }
 
-/** Newest other cluster that shares an article id. Equality only. */
+/**
+ * Newest other cluster that shares an article id, with that cluster's
+ * category arrays ordered newest-first for `clusterOwnCategory`.
+ * Equality only.
+ */
 export function newerClusterSql(input: {
   articleIds: number[];
   clusterId: number;
   createdAt: string;
 }): SQL {
   return sql`
-    SELECT picked.slug AS slug, picked.id AS id, cat.category AS category
+    SELECT picked.slug AS slug, picked.id AS id, cats.categories AS categories
     FROM (
       SELECT ${clusterV2.id} AS id, ${clusterV2.slug} AS slug
       FROM ${articleCluster}
@@ -158,14 +165,24 @@ export function newerClusterSql(input: {
       LIMIT 1
     ) AS picked
     LEFT JOIN LATERAL (
-      SELECT ${article.categories}[1] AS category
-      FROM ${articleCluster}
-      INNER JOIN ${article}
-        ON ${article.id} = ${articleCluster.articleId}
-      WHERE ${articleCluster.clusterId} = picked.id
-        AND ${article.categories}[1] IS NOT NULL
-      LIMIT 1
-    ) AS cat ON true
+      SELECT coalesce(
+        json_agg(
+          src.categories
+          ORDER BY src.published_at DESC NULLS LAST, src.id DESC
+        ),
+        '[]'::json
+      ) AS categories
+      FROM (
+        SELECT
+          ${article.categories} AS categories,
+          ${article.publishedAt} AS published_at,
+          ${article.id} AS id
+        FROM ${articleCluster}
+        INNER JOIN ${article}
+          ON ${article.id} = ${articleCluster.articleId}
+        WHERE ${articleCluster.clusterId} = picked.id
+      ) AS src
+    ) AS cats ON true
   `;
 }
 
@@ -251,6 +268,26 @@ function asText(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
+/** Category arrays in the order returned by `newerClusterSql` (newest article first). */
+function articlesInNewestFirstOrder(
+  value: unknown,
+): { categories: string[] | null }[] {
+  let parsed = value;
+  if (typeof parsed === "string") {
+    try {
+      parsed = JSON.parse(parsed) as unknown;
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(parsed)) return [];
+  return parsed.map((categories) => ({
+    categories: Array.isArray(categories)
+      ? categories.filter((item): item is string => typeof item === "string")
+      : null,
+  }));
+}
+
 export async function resolveClanekArchive(
   db: Pick<Database, "execute">,
   input: {
@@ -281,7 +318,7 @@ export async function resolveClanekArchive(
     latestProductionRunId,
     inCurrentSelection,
   });
-  if (!archived || input.articleIds.length === 0) {
+  if (input.articleIds.length === 0) {
     return { archived, newerClusterPath: null };
   }
 
@@ -300,11 +337,13 @@ export async function resolveClanekArchive(
       : {
           id: newerId,
           slug: asText(newerRow?.slug),
-          category: asText(newerRow?.category),
+          category: clusterOwnCategory(
+            articlesInNewestFirstOrder(newerRow?.categories),
+          ),
         };
 
   return {
-    archived: true,
+    archived,
     newerClusterPath: newer ? newerClusterPath(newer, input.category) : null,
   };
 }
