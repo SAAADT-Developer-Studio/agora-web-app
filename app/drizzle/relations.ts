@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { cluster, article, newsProvider, articleCluster, clusterV2, clusterRun, articleSocialPost, socialPost, mossData, storyArticle, story, vote } from "./schema";
+import { cluster, article, newsProvider, articleCluster, clusterV2, clusterRun, articleSocialPost, socialPost, mossData, storyArticle, story, rankingRun, storySummary, vote } from "./schema";
 
 export const articleRelations = relations(article, ({one, many}) => ({
 	cluster: one(cluster, {
@@ -18,6 +18,7 @@ export const articleRelations = relations(article, ({one, many}) => ({
 	storyArticles_nearestArticleId: many(storyArticle, {
 		relationName: "storyArticle_nearestArticleId_article_id"
 	}),
+	storySummaries: many(storySummary),
 }));
 
 export const clusterRelations = relations(cluster, ({many}) => ({
@@ -50,6 +51,10 @@ export const clusterV2Relations = relations(clusterV2, ({one, many}) => ({
 	clusterRun: one(clusterRun, {
 		fields: [clusterV2.runId],
 		references: [clusterRun.id]
+	}),
+	rankingRun: one(rankingRun, {
+		fields: [clusterV2.rankingRunId],
+		references: [rankingRun.id]
 	}),
 }));
 
@@ -99,6 +104,22 @@ export const storyArticleRelations = relations(storyArticle, ({one}) => ({
 
 export const storyRelations = relations(story, ({many}) => ({
 	storyArticles: many(storyArticle),
+	storySummaries: many(storySummary),
+}));
+
+export const rankingRunRelations = relations(rankingRun, ({many}) => ({
+	clusterV2s: many(clusterV2),
+}));
+
+export const storySummaryRelations = relations(storySummary, ({one}) => ({
+	article: one(article, {
+		fields: [storySummary.leadArticleId],
+		references: [article.id]
+	}),
+	story: one(story, {
+		fields: [storySummary.storyId],
+		references: [story.id]
+	}),
 }));
 
 export const voteRelations = relations(vote, ({one}) => ({

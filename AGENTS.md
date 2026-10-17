@@ -34,7 +34,7 @@ Changing article-fetch logic usually means updating both the loader and `fetchHo
 - Route definitions: `app/routes.ts`. Public URL segments are Slovenian (`/mediji`, `/metodologija`, `/clanek/:articleId`). Hidden, unlisted routes: `/novo` (story-ranked home) and `/zgodba/:storyId`. `/dev/*` is English and internal.
 - **Categories**: keys live only in `app/config.ts` (`CategoryKey` / `CategoryKeyValue`). Domain configs (nav metadata, SEO, ranking priority, home side sections) must use `defineCategoryMap()` / `CategoryMap<T>` so TypeScript fails if a key is added without updating every map. Use `isCategoryKey()` for runtime checks — don't rebuild category sets ad hoc.
 - Article images: `config.imagesUrl` (`https://images.vidik.si`).
-- React Router route modules cannot import other route modules. Shared UI belongs in `app/components/` (e.g. `article-page.tsx` used by both clanek and zgodba).
+- React Router route modules cannot import other route modules. Shared UI belongs in `app/components/` (e.g. `story-page.tsx` renders `/zgodba/:storyId`).
 
 ## Clustering (story vs cluster_v2)
 
@@ -42,7 +42,7 @@ Two systems coexist on purpose:
 
 - **Public listings** (`/` and `/:category`) rank `cluster_v2` from the latest production `cluster_run` and link to `/:category/clanek/:articleId`. KV keys stay `data:v2:home` and `data:v2:category:{category}`.
 - **Hidden listings** (`/novo`) rank `story` + `story_article` (14-day `last_article_published_at` window) and link to `/zgodba/:storyId`. KV key is `data:story:novo` (`NOVO_HOME_CACHE_KEY`) so it never collides with the public home cache.
-- **Story pages** `/zgodba/:storyId` load `story` + `story_article`. Do not 301 clanek into stories.
+- **Story pages** `/zgodba/:storyId` load `story` + `story_article`, the newest `story_summary` (LLM headline + `bullets: [{ text, article_ids }]`, append-only; parsed by `parseStoryBullets`) and the members' `social_post` rows (reddit `platform_metadata` is a JSON string inside jsonb; parsed by `parseSocialPost`). Do not 301 clanek into stories.
 - `/novo` and `/zgodba/` are unlisted: `noindex, nofollow` meta, `X-Robots-Tag`, `Disallow` in robots.txt, and omitted from the sitemap. No public page links to them.
 - Story ids and cluster ids are different namespaces — the same number is not the same entity.
 - Stories are incremental (no `cluster_run`). Closest clocks: `story_article.assigned_at`, `story.created_at`.
@@ -70,6 +70,7 @@ pnpm build            # production build
 pnpm preview          # preview production build
 pnpm typecheck        # cf-typegen + react-router typegen + tsc
 pnpm lint              # oxlint
+pnpm test              # vitest (app/**/*.test.ts)
 pnpm run db:pull      # sync schema from production DB
 pnpm run db:studio    # drizzle studio (needs DB_URL)
 ```
