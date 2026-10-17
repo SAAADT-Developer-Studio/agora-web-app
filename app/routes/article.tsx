@@ -24,14 +24,22 @@ import { isSameHour } from "~/utils/isSameHour";
 import { Link } from "react-router";
 import { InfoCard } from "~/components/ui/info-card";
 import { ArticleItem } from "~/components/article-item";
-import type { Database } from "~/lib/db";
 import { Tooltip, TooltipContent } from "~/components/ui/tooltip";
 import { TooltipTrigger } from "@radix-ui/react-tooltip";
 import { useState, useEffect } from "react";
 import { cn } from "~/lib/utils";
 import { getCarouselArticleIds } from "~/utils/getCarouselArticleIds";
 import { ProviderImage } from "~/components/provider-image";
+import { ArchiveNotice, NewerCopyNotice } from "~/components/archive-notice";
 import { getAppContext } from "~/lib/appContext";
+import {
+  clanekHttpStatus,
+  clanekIndexing,
+  clanekPath,
+  clusterOwnCategory,
+  findClusterForClanek,
+  resolveClanekArchive,
+} from "~/lib/articleClusterLookup";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 
 export function headers({}: Route.HeadersArgs) {
@@ -64,56 +72,26 @@ export type ArticlePageData = {
   };
   uniqueCategories: string[];
   heroImageUrl: string;
+  archived: boolean;
+  newerClusterPath: string | null;
+  canonicalPath: string | null;
+  canonicalCategory: string | null;
 };
-
-async function fetchClusterData({
-  db,
-  articleId,
-}: {
-  db: Database;
-  articleId: string;
-}) {
-  return await db.query.clusterV2.findFirst({
-    where: (clusterV2, { eq }) => {
-      if (Number.isInteger(Number.parseInt(articleId))) {
-        return eq(clusterV2.id, Number.parseInt(articleId));
-      }
-      return eq(clusterV2.slug, articleId);
-    },
-    with: {
-      articleClusters: {
-        with: {
-          article: {
-            columns: {
-              id: true,
-              title: true,
-              url: true,
-              publishedAt: true,
-              summary: true,
-              categories: true,
-              newsProviderKey: true,
-              imageUrls: true,
-              author: true,
-              isPaywalled: true,
-            },
-            with: { newsProvider: true },
-          },
-        },
-      },
-    },
-  });
-}
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
   const { db, measurer } = getAppContext(context);
 
+  // One pg Client cannot run two queries at once. Resolve the cluster first
+  // so a missing row never starts the selection lookup.
   const cluster = await measurer.time("fetchClusterData", () =>
-    fetchClusterData({ db, articleId }),
+    findClusterForClanek(db, articleId),
   );
 
   if (!cluster) {
-    throw new Response("Article Not Found", { status: 404 });
+    throw new Response("Article Not Found", {
+      status: clanekHttpStatus(false),
+    });
   }
 
   const articles = cluster.articleClusters.map((ac) => ac.article);
@@ -125,6 +103,22 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const allCategories = articles.flatMap((a) => a.categories || []);
   const uniqueCategories = Array.from(new Set(allCategories));
   const heroImageUrl = extractHeroImage(articles);
+  const canonicalCategory = clusterOwnCategory(articles);
+  const timeRange = articleTimeRange(articles.map((item) => item.publishedAt));
+  const archive = await measurer.time("resolveClanekArchive", () =>
+    resolveClanekArchive(
+      db,
+      {
+        id: cluster.id,
+        runId: cluster.runId,
+        createdAt: cluster.createdAt,
+        articleIds: articles.map((item) => item.id),
+        newestPublishedAt: timeRange?.newest ?? null,
+        category: canonicalCategory,
+      },
+      new Date(),
+    ),
+  );
 
   return {
     cluster: {
@@ -134,14 +128,33 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     },
     uniqueCategories,
     heroImageUrl,
+    archived: archive.archived,
+    newerClusterPath: archive.newerClusterPath,
+    canonicalCategory,
+    canonicalPath: clanekPath(canonicalCategory, articleId),
   } satisfies ArticlePageData;
 }
 
+function articleTimeRange(publishedAt: string[]) {
+  const times = publishedAt
+    .map((value) => new Date(value).getTime())
+    .filter((time) => Number.isFinite(time));
+  if (times.length === 0) return null;
+  const oldestMs = Math.min(...times);
+  const newestMs = Math.max(...times);
+  return {
+    oldest: new Date(oldestMs),
+    newest: new Date(newestMs),
+    publishedTime: new Date(oldestMs).toISOString(),
+    modifiedTime: new Date(newestMs).toISOString(),
+  };
+}
+
 export default function ArticlePage({ loaderData }: Route.ComponentProps) {
-  const { cluster, uniqueCategories } = loaderData;
-  const dates = cluster.articles.map((a) => new Date(a.publishedAt));
-  const oldestDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-  const newestDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+  const { cluster, uniqueCategories, archived, newerClusterPath } = loaderData;
+  const timeRange = articleTimeRange(
+    cluster.articles.map((article) => article.publishedAt),
+  );
 
   const uniqueProviders = Array.from(
     new Set(cluster.articles.map((a) => a.newsProviderKey)),
@@ -176,6 +189,12 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
         <ShareButtons />
       </div>
 
+      {archived ? (
+        <ArchiveNotice newerTo={newerClusterPath} />
+      ) : newerClusterPath ? (
+        <NewerCopyNotice newerTo={newerClusterPath} />
+      ) : null}
+
       <h1 className="text-primary mb-8 line-clamp-3 text-xl leading-normal font-bold tracking-tight text-balance md:text-3xl md:leading-tight lg:text-4xl">
         {cluster.title}
       </h1>
@@ -196,8 +215,8 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
       <ArticleInfoBanner
         providerCount={uniqueProviders.length}
         articleCount={cluster.articles.length}
-        oldestDate={oldestDate}
-        newestDate={newestDate}
+        oldestDate={timeRange?.oldest ?? null}
+        newestDate={timeRange?.newest ?? null}
       />
 
       <div className="mb-8">
@@ -220,7 +239,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
       <ArticleBottomBanner
         articleCount={cluster.articles.length}
         providerCount={uniqueProviders.length}
-        newestDate={newestDate}
+        newestDate={timeRange?.newest ?? null}
       />
     </article>
   );
@@ -234,8 +253,8 @@ function ArticleInfoBanner({
 }: {
   providerCount: number;
   articleCount: number;
-  oldestDate: Date;
-  newestDate: Date;
+  oldestDate: Date | null;
+  newestDate: Date | null;
 }) {
   return (
     <InfoCard className="mb-12">
@@ -281,10 +300,12 @@ function ArticleInfoBanner({
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Calendar className="h-6 w-6" />
-            <Timespan oldestDate={oldestDate} newestDate={newestDate} />
-          </div>
+          {oldestDate && newestDate ? (
+            <div className="flex items-center gap-3">
+              <Calendar className="h-6 w-6" />
+              <Timespan oldestDate={oldestDate} newestDate={newestDate} />
+            </div>
+          ) : null}
           <div className="flex items-center gap-3"></div>
         </div>
       </div>
@@ -349,7 +370,7 @@ function ArticleBottomBanner({
 }: {
   articleCount: number;
   providerCount: number;
-  newestDate: Date;
+  newestDate: Date | null;
 }) {
   return (
     <InfoCard className="mt-12 text-center">
@@ -374,13 +395,19 @@ function ArticleBottomBanner({
             plural: "različnih virov",
           })}
         </strong>
-        . Nazadnje posodobljeno{" "}
-        {newestDate.toLocaleDateString("sl-SI", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })}
         .
+        {newestDate ? (
+          <>
+            {" "}
+            Nazadnje posodobljeno{" "}
+            {newestDate.toLocaleDateString("sl-SI", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+            .
+          </>
+        ) : null}
       </p>
     </InfoCard>
   );
@@ -562,17 +589,27 @@ export function meta({
       title: "Članek ni najden | Vidik",
       description: "Oprostite, iskani članek ni bil najden.",
       pathname: location.pathname,
-      noindex: true,
+      noindex: clanekIndexing(false).noindex,
       includeSiteSchema: false,
     });
   }
 
-  const { cluster, uniqueCategories, heroImageUrl } = loaderData;
+  const {
+    cluster,
+    uniqueCategories,
+    heroImageUrl,
+    canonicalPath,
+    canonicalCategory,
+  } = loaderData;
   const title = cluster.title;
-  const category = params.category;
+  const category =
+    canonicalCategory && isCategoryKey(canonicalCategory)
+      ? canonicalCategory
+      : params.category;
   const categoryLabel = isCategoryKey(category)
     ? CATEGORY_SEO[category].title.replace(" | Vidik", "")
     : category;
+  const pathname = canonicalPath ?? location.pathname;
 
   const providers = Array.from(
     new Map(
@@ -580,11 +617,9 @@ export function meta({
     ).values(),
   );
 
-  const publishedTimes = cluster.articles.map((a) =>
-    new Date(a.publishedAt).getTime(),
+  const timeRange = articleTimeRange(
+    cluster.articles.map((article) => article.publishedAt),
   );
-  const publishedTime = new Date(Math.min(...publishedTimes)).toISOString();
-  const modifiedTime = new Date(Math.max(...publishedTimes)).toISOString();
 
   const description = `Primerjava poročanja ${providers.length} slovenskih medijev o temi »${title}«. Viri: ${providers.slice(0, 5).join(", ")}${providers.length > 5 ? " in drugi" : ""}.`;
 
@@ -595,40 +630,45 @@ export function meta({
     "medijska pristranskost",
   ].join(", ");
 
-  const pageUrl = new URL(location.pathname, SITE_URL).href;
+  const pageUrl = new URL(pathname, SITE_URL).href;
 
   return getSeoMetas({
     title: `${title} | Vidik`,
     description,
     image: heroImageUrl || undefined,
-    pathname: location.pathname,
+    pathname,
     keywords,
     ogType: "article",
-    publishedTime,
-    modifiedTime,
+    publishedTime: timeRange?.publishedTime,
+    modifiedTime: timeRange?.modifiedTime,
     section: categoryLabel,
     authors: providers,
+    noindex: clanekIndexing(true).noindex,
     jsonLd: [
-      newsArticleJsonLd({
-        headline: title,
-        description,
-        image: heroImageUrl || undefined,
-        url: pageUrl,
-        datePublished: publishedTime,
-        dateModified: modifiedTime,
-        keywords: uniqueCategories,
-        section: categoryLabel,
-        sources: cluster.articles.map((a) => ({
-          title: a.title,
-          url: a.url,
-          publishedAt: new Date(a.publishedAt).toISOString(),
-          providerName: a.newsProvider.name,
-        })),
-      }),
+      ...(timeRange
+        ? [
+            newsArticleJsonLd({
+              headline: title,
+              description,
+              image: heroImageUrl || undefined,
+              url: pageUrl,
+              datePublished: timeRange.publishedTime,
+              dateModified: timeRange.modifiedTime,
+              keywords: uniqueCategories,
+              section: categoryLabel,
+              sources: cluster.articles.map((a) => ({
+                title: a.title,
+                url: a.url,
+                publishedAt: new Date(a.publishedAt).toISOString(),
+                providerName: a.newsProvider.name,
+              })),
+            }),
+          ]
+        : []),
       breadcrumbJsonLd([
         { name: "Domov", path: "/" },
         { name: categoryLabel, path: `/${category}` },
-        { name: title, path: location.pathname },
+        { name: title, path: pathname },
       ]),
     ],
   });
