@@ -24,7 +24,6 @@ import { isSameHour } from "~/utils/isSameHour";
 import { Link } from "react-router";
 import { InfoCard } from "~/components/ui/info-card";
 import { ArticleItem } from "~/components/article-item";
-import type { Database } from "~/lib/db";
 import { Tooltip, TooltipContent } from "~/components/ui/tooltip";
 import { TooltipTrigger } from "@radix-ui/react-tooltip";
 import { useState, useEffect } from "react";
@@ -34,11 +33,12 @@ import { ProviderImage } from "~/components/provider-image";
 import { ArchiveNotice } from "~/components/archive-notice";
 import { getAppContext } from "~/lib/appContext";
 import {
-  articleClusterWhere,
   clanekHttpStatus,
   clanekIndexing,
-  isArchivedCluster,
-  latestProductionRunIdSql,
+  clanekPath,
+  clusterOwnCategory,
+  findClusterForClanek,
+  resolveClanekArchive,
 } from "~/lib/articleClusterLookup";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 
@@ -73,68 +73,20 @@ export type ArticlePageData = {
   uniqueCategories: string[];
   heroImageUrl: string;
   archived: boolean;
+  newerClusterPath: string | null;
+  canonicalPath: string | null;
+  canonicalCategory: string | null;
 };
-
-async function fetchClusterData({
-  db,
-  articleId,
-}: {
-  db: Database;
-  articleId: string;
-}) {
-  return await db.query.clusterV2.findFirst({
-    where: articleClusterWhere(articleId),
-    with: {
-      articleClusters: {
-        with: {
-          article: {
-            columns: {
-              id: true,
-              title: true,
-              url: true,
-              publishedAt: true,
-              summary: true,
-              categories: true,
-              newsProviderKey: true,
-              imageUrls: true,
-              author: true,
-              isPaywalled: true,
-            },
-            with: { newsProvider: true },
-          },
-        },
-      },
-    },
-  });
-}
-
-async function fetchLatestProductionRunId(
-  db: Database,
-): Promise<number | null> {
-  const result = await db.execute<{ id: number | string }>(
-    latestProductionRunIdSql(),
-  );
-  const raw = result.rows[0]?.id;
-  if (typeof raw === "number" && Number.isInteger(raw)) return raw;
-  if (typeof raw === "string" && /^[1-9]\d*$/.test(raw)) {
-    const id = Number(raw);
-    if (Number.isSafeInteger(id)) return id;
-  }
-  return null;
-}
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
   const { db, measurer } = getAppContext(context);
 
-  const [cluster, latestProductionRunId] = await Promise.all([
-    measurer.time("fetchClusterData", () =>
-      fetchClusterData({ db, articleId }),
-    ),
-    measurer.time("fetchLatestProductionRunId", () =>
-      fetchLatestProductionRunId(db),
-    ),
-  ]);
+  // One pg Client cannot run two queries at once. Resolve the cluster first
+  // so a missing row never starts the selection lookup.
+  const cluster = await measurer.time("fetchClusterData", () =>
+    findClusterForClanek(db, articleId),
+  );
 
   if (!cluster) {
     throw new Response("Article Not Found", {
@@ -151,6 +103,22 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const allCategories = articles.flatMap((a) => a.categories || []);
   const uniqueCategories = Array.from(new Set(allCategories));
   const heroImageUrl = extractHeroImage(articles);
+  const canonicalCategory = clusterOwnCategory(articles);
+  const timeRange = articleTimeRange(articles.map((item) => item.publishedAt));
+  const archive = await measurer.time("resolveClanekArchive", () =>
+    resolveClanekArchive(
+      db,
+      {
+        id: cluster.id,
+        runId: cluster.runId,
+        createdAt: cluster.createdAt,
+        articleIds: articles.map((item) => item.id),
+        newestPublishedAt: timeRange?.newest ?? null,
+        category: canonicalCategory,
+      },
+      new Date(),
+    ),
+  );
 
   return {
     cluster: {
@@ -160,7 +128,10 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     },
     uniqueCategories,
     heroImageUrl,
-    archived: isArchivedCluster(cluster.runId, latestProductionRunId),
+    archived: archive.archived,
+    newerClusterPath: archive.newerClusterPath,
+    canonicalCategory,
+    canonicalPath: clanekPath(canonicalCategory, articleId),
   } satisfies ArticlePageData;
 }
 
@@ -180,7 +151,7 @@ function articleTimeRange(publishedAt: string[]) {
 }
 
 export default function ArticlePage({ loaderData }: Route.ComponentProps) {
-  const { cluster, uniqueCategories, archived } = loaderData;
+  const { cluster, uniqueCategories, archived, newerClusterPath } = loaderData;
   const timeRange = articleTimeRange(
     cluster.articles.map((article) => article.publishedAt),
   );
@@ -218,7 +189,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
         <ShareButtons />
       </div>
 
-      {archived ? <ArchiveNotice /> : null}
+      {archived ? <ArchiveNotice newerTo={newerClusterPath} /> : null}
 
       <h1 className="text-primary mb-8 line-clamp-3 text-xl leading-normal font-bold tracking-tight text-balance md:text-3xl md:leading-tight lg:text-4xl">
         {cluster.title}
@@ -619,12 +590,22 @@ export function meta({
     });
   }
 
-  const { cluster, uniqueCategories, heroImageUrl } = loaderData;
+  const {
+    cluster,
+    uniqueCategories,
+    heroImageUrl,
+    canonicalPath,
+    canonicalCategory,
+  } = loaderData;
   const title = cluster.title;
-  const category = params.category;
+  const category =
+    canonicalCategory && isCategoryKey(canonicalCategory)
+      ? canonicalCategory
+      : params.category;
   const categoryLabel = isCategoryKey(category)
     ? CATEGORY_SEO[category].title.replace(" | Vidik", "")
     : category;
+  const pathname = canonicalPath ?? location.pathname;
 
   const providers = Array.from(
     new Map(
@@ -645,13 +626,13 @@ export function meta({
     "medijska pristranskost",
   ].join(", ");
 
-  const pageUrl = new URL(location.pathname, SITE_URL).href;
+  const pageUrl = new URL(pathname, SITE_URL).href;
 
   return getSeoMetas({
     title: `${title} | Vidik`,
     description,
     image: heroImageUrl || undefined,
-    pathname: location.pathname,
+    pathname,
     keywords,
     ogType: "article",
     publishedTime: timeRange?.publishedTime,
@@ -683,7 +664,7 @@ export function meta({
       breadcrumbJsonLd([
         { name: "Domov", path: "/" },
         { name: categoryLabel, path: `/${category}` },
-        { name: title, path: location.pathname },
+        { name: title, path: pathname },
       ]),
     ],
   });

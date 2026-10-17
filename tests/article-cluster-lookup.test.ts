@@ -1,18 +1,25 @@
-import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PgDialect } from "drizzle-orm/pg-core";
+import type { SQL } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { ArchiveNotice } from "~/components/archive-notice";
+import type { Database } from "~/lib/db";
 import {
   ARCHIVE_LABEL,
   ARCHIVE_MESSAGE,
+  CLUSTERER_WINDOW_MS,
   INT4_MAX,
+  NEWER_CLUSTER_LABEL,
   articleClusterWhere,
   clanekHttpStatus,
   clanekIndexing,
+  clanekPath,
+  clusterOwnCategory,
+  findClusterForClanek,
   isArchivedCluster,
-  latestProductionRunIdSql,
+  isWithinClustererWindow,
+  resolveClanekArchive,
   parseArticleClusterKey,
 } from "~/lib/articleClusterLookup";
 import { getSeoMetas, SITE_URL } from "~/lib/seo";
@@ -20,11 +27,20 @@ import { getSeoMetas, SITE_URL } from "~/lib/seo";
 const DIGIT_SLUG =
   "18-tisoc-let-stare-figurice-in-druge-skrivnosti-kamene-dobe-2026-10-17-16-13-17";
 const TIMESTAMP_SLUG = "zaporedje-odstopov-2026-10-17-16-13-523";
+const NOW = new Date("2026-10-17T19:15:00.000Z");
+const REMINTED_AT = new Date("2026-10-17T19:04:00.000Z");
+const OLD_ARTICLE_AT = new Date(NOW.getTime() - CLUSTERER_WINDOW_MS - 60_000);
 
 const dialect = new PgDialect();
 
 function compile(query: Parameters<PgDialect["sqlToQuery"]>[0]) {
   return dialect.sqlToQuery(query);
+}
+
+function executorDb(
+  execute: (query: SQL) => Promise<{ rows: Array<Record<string, unknown>> }>,
+) {
+  return { execute } as unknown as Database;
 }
 
 describe("parseArticleClusterKey", () => {
@@ -99,39 +115,199 @@ describe("article cluster lookup sql", () => {
     expect(compiled.sql).not.toMatch(/slug/i);
     expect(compiled.sql).not.toMatch(/\blike\b/i);
   });
+});
 
-  it("keeps the latest-run lookup separate from the cluster predicate", () => {
-    const compiled = compile(latestProductionRunIdSql());
-    expect(compiled.sql).toMatch(/is_production/i);
-    expect(compiled.sql).toMatch(/order by/i);
-    expect(compiled.sql).toMatch(/limit/i);
-    expect(compiled.sql).not.toMatch(/\blike\b/i);
-    expect(compiled.sql).not.toMatch(/cluster_v2/i);
+describe("findClusterForClanek", () => {
+  it("looks up a digit-leading slug and does not query selection on a miss", async () => {
+    let where: SQL | undefined;
+    let executed = 0;
+    const db = {
+      query: {
+        clusterV2: {
+          findFirst: async (args: { where: SQL }) => {
+            where = args.where;
+            return undefined;
+          },
+        },
+      },
+      execute: async () => {
+        executed += 1;
+        return { rows: [] };
+      },
+    } as unknown as Database;
+
+    const cluster = await findClusterForClanek(db, DIGIT_SLUG);
+
+    expect(cluster).toBeUndefined();
+    expect(executed).toBe(0);
+    expect(compile(where!).params).toStrictEqual([DIGIT_SLUG]);
+    expect(compile(where!).sql).not.toMatch(/\blike\b/i);
   });
 });
 
 describe("archived clanek pages", () => {
-  it("marks a cluster outside the latest production run as archived", () => {
-    expect(isArchivedCluster(4, 9)).toBe(true);
-    expect(isArchivedCluster(9, 9)).toBe(false);
-    expect(isArchivedCluster(9, null)).toBe(true);
+  const oldInput = {
+    id: 4,
+    runId: 14,
+    createdAt: "2026-10-01T00:00:00.000Z",
+    articleIds: [10, 11],
+    newestPublishedAt: OLD_ARTICLE_AT,
+    category: "politika",
+  };
+
+  it("keeps a story inside the clusterer window, including a run re-minted minutes later", () => {
+    expect(isWithinClustererWindow(REMINTED_AT, NOW)).toBe(true);
+    expect(
+      isArchivedCluster({
+        newestPublishedAt: REMINTED_AT,
+        now: NOW,
+        latestProductionRunId: 15,
+        inCurrentSelection: false,
+      }),
+    ).toBe(false);
+  });
+
+  it("does not archive when the latest run is missing or the articles are still selected", () => {
+    expect(
+      isArchivedCluster({
+        newestPublishedAt: OLD_ARTICLE_AT,
+        now: NOW,
+        latestProductionRunId: null,
+        inCurrentSelection: false,
+      }),
+    ).toBe(false);
+    expect(
+      isArchivedCluster({
+        newestPublishedAt: OLD_ARTICLE_AT,
+        now: NOW,
+        latestProductionRunId: 15,
+        inCurrentSelection: true,
+      }),
+    ).toBe(false);
+    expect(
+      isArchivedCluster({
+        newestPublishedAt: OLD_ARTICLE_AT,
+        now: NOW,
+        latestProductionRunId: 15,
+        inCurrentSelection: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("does not query selection for a cluster that is still in the window", async () => {
+    let executed = 0;
+    const result = await resolveClanekArchive(
+      executorDb(async () => {
+        executed += 1;
+        return { rows: [] };
+      }),
+      { ...oldInput, newestPublishedAt: REMINTED_AT },
+      NOW,
+    );
+
+    expect(result).toStrictEqual({ archived: false, newerClusterPath: null });
+    expect(executed).toBe(0);
+  });
+
+  it("does not archive an old cluster when its articles are in the latest run", async () => {
+    const queries: ReturnType<typeof compile>[] = [];
+    const result = await resolveClanekArchive(
+      executorDb(async (query) => {
+        queries.push(compile(query));
+        return {
+          rows: [{ latest_run_id: 15, in_current_selection: true }],
+        };
+      }),
+      oldInput,
+      NOW,
+    );
+
+    expect(result).toStrictEqual({ archived: false, newerClusterPath: null });
+    expect(queries).toHaveLength(1);
+    expect(queries[0]?.params).toStrictEqual(expect.arrayContaining([10, 11]));
+    expect(queries[0]?.sql).not.toMatch(/\blike\b/i);
+    expect(queries[0]?.sql).toMatch(/is_production/i);
+  });
+
+  it("does not archive the cluster from the latest run itself", async () => {
+    let executed = 0;
+    const result = await resolveClanekArchive(
+      executorDb(async () => {
+        executed += 1;
+        return { rows: [{ latest_run_id: 14, in_current_selection: false }] };
+      }),
+      oldInput,
+      NOW,
+    );
+
+    expect(result.archived).toBe(false);
+    expect(executed).toBe(1);
+  });
+
+  it("does not archive when the latest-run query returns no row", async () => {
+    let executed = 0;
+    const result = await resolveClanekArchive(
+      executorDb(async () => {
+        executed += 1;
+        return { rows: [] };
+      }),
+      oldInput,
+      NOW,
+    );
+
+    expect(result.archived).toBe(false);
+    expect(executed).toBe(1);
+  });
+
+  it("archives an old cluster outside the current selection and links a newer copy", async () => {
+    const queries: ReturnType<typeof compile>[] = [];
+    let executed = 0;
+    const result = await resolveClanekArchive(
+      executorDb(async (query) => {
+        executed += 1;
+        queries.push(compile(query));
+        if (executed === 1) {
+          return {
+            rows: [{ latest_run_id: 15, in_current_selection: false }],
+          };
+        }
+        return {
+          rows: [{ slug: "novejsa-zgodba", id: 99, category: "politika" }],
+        };
+      }),
+      { ...oldInput, runId: 14 },
+      NOW,
+    );
+
+    expect(result).toStrictEqual({
+      archived: true,
+      newerClusterPath: "/politika/clanek/novejsa-zgodba",
+    });
+    expect(queries).toHaveLength(2);
+    expect(queries.every((query) => !/\blike\b/i.test(query.sql))).toBe(true);
   });
 
   it("returns 200 when the row exists and 404 only when it does not", () => {
-    expect(isArchivedCluster(4, 9)).toBe(true);
     expect(clanekHttpStatus(true)).toBe(200);
     expect(clanekHttpStatus(false)).toBe(404);
   });
 
-  it("stays indexable and self-canonical when the cluster is archived", () => {
-    const pathname = `/slovenija/clanek/${DIGIT_SLUG}`;
+  it("stays indexable and canonicalizes to the cluster category", () => {
+    expect(
+      clusterOwnCategory([
+        { categories: ["sport"] },
+        { categories: ["politika"] },
+      ]),
+    ).toBe("sport");
+    const pathname = clanekPath("politika", TIMESTAMP_SLUG);
+    expect(pathname).toBe(`/politika/clanek/${TIMESTAMP_SLUG}`);
     expect(clanekIndexing(true)).toStrictEqual({ noindex: false });
     expect(clanekIndexing(false)).toStrictEqual({ noindex: true });
 
     const metas = getSeoMetas({
       title: "Naslov | Vidik",
       description: "Opis",
-      pathname,
+      pathname: pathname ?? "/",
       noindex: clanekIndexing(true).noindex,
     });
     const robots = metas.find(
@@ -149,28 +325,19 @@ describe("archived clanek pages", () => {
     expect(canonical).toStrictEqual({
       tagName: "link",
       rel: "canonical",
-      href: new URL(pathname, SITE_URL).href,
+      href: new URL(`/politika/clanek/${TIMESTAMP_SLUG}`, SITE_URL).href,
     });
   });
 
-  it("renders a Slovenian Arhiv notice", () => {
-    const html = renderToStaticMarkup(createElement(ArchiveNotice));
+  it("renders a Slovenian Arhiv notice and links a newer copy", () => {
+    const html = renderToStaticMarkup(
+      createElement(ArchiveNotice, {
+        newerTo: "/politika/clanek/novejsa-zgodba",
+      }),
+    );
     expect(html).toContain(ARCHIVE_LABEL);
     expect(html).toContain(ARCHIVE_MESSAGE);
-    expect(html).toContain("arhivirana");
-  });
-});
-
-describe("article route", () => {
-  it("does not parseInt the param or filter the cluster query", () => {
-    const source = readFileSync(
-      new URL("../app/routes/article.tsx", import.meta.url),
-      "utf8",
-    );
-    expect(source.includes("parseInt")).toBe(false);
-    expect(source.includes("db.transaction")).toBe(false);
-    expect(source.includes("articleClusterWhere")).toBe(true);
-    expect(source).not.toMatch(/interval\s+'/);
-    expect(source).not.toMatch(/latest_run/i);
+    expect(html).toContain(NEWER_CLUSTER_LABEL);
+    expect(html).toContain('href="/politika/clanek/novejsa-zgodba"');
   });
 });
