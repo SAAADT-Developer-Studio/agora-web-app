@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { readFileSync } from "node:fs";
 import {
   chooseResolvedStory,
   classifyStoryParam,
@@ -11,9 +12,13 @@ import {
   parseInt4Id,
   persistedStoryStatus,
   pickClosestStory,
-  rethrowUnlessTimeout,
+  REDIRECT_CACHE_CONTROL,
+  shouldStorePageCache,
   slugifyTitle,
+  storyCanonicalDecision,
+  timeoutResolution,
 } from "../app/lib/articleUrl.ts";
+import { sitemapIdBounds } from "../app/lib/sitemapChunks.ts";
 
 const STAMP = new Date("2026-10-17T16:13:00.000Z");
 
@@ -36,6 +41,7 @@ describe("run-stamp parsing", () => {
     assert.equal(parsed.kind, "slug");
     if (parsed.kind !== "slug") return;
     assert.equal(parsed.runStamp, null);
+    assert.equal(parsed.bootstrapRunId, null);
     assert.equal(
       chooseResolvedStory({
         directStoryId: null,
@@ -59,6 +65,7 @@ describe("run-stamp parsing", () => {
     assert.equal(parsed.kind, "slug");
     if (parsed.kind !== "slug") return;
     assert.equal(parsed.runStamp, null);
+    assert.equal(parsed.bootstrapRunId, null);
   });
 
   it("bounds the slug range to ±3 days for the btree", () => {
@@ -182,21 +189,186 @@ describe("closest-date selection", () => {
 });
 
 describe("statement timeout", () => {
-  it("turns a Postgres statement timeout into an unresolved lookup", () => {
+  it("turns a Postgres statement timeout into a retryable 503", () => {
     const error = Object.assign(
       new Error("canceling statement due to statement timeout"),
       { code: "57014" },
     );
     assert.equal(isStatementTimeout(error), true);
     assert.equal(isStatementTimeout({ cause: error }), true);
-    assert.equal(rethrowUnlessTimeout(error), null);
+    assert.deepEqual(timeoutResolution(error), { kind: "unavailable" });
   });
 
-  it("does not swallow other database errors", () => {
-    assert.throws(
-      () => rethrowUnlessTimeout(Object.assign(new Error("boom"), { code: "42P01" })),
-      /boom/,
+  it("does not treat other database errors as a timeout", () => {
+    assert.equal(
+      timeoutResolution(Object.assign(new Error("boom"), { code: "42P01" })),
+      null,
     );
+  });
+});
+
+describe("bootstrap slugs", () => {
+  it("maps {title}-{runId}-{index} to a cluster_run id", () => {
+    const parsed = parseArticleParam("naslov-42-3");
+    assert.equal(parsed.kind, "slug");
+    if (parsed.kind !== "slug") return;
+    assert.equal(parsed.titleSlug, "naslov");
+    assert.equal(parsed.runStamp, null);
+    assert.equal(parsed.bootstrapRunId, 42);
+  });
+
+  it("prefers a real run stamp over the bootstrap form", () => {
+    const parsed = parseArticleParam(
+      "zaporedje-odstopov-2026-10-17-16-13-523",
+    );
+    assert.equal(parsed.kind, "slug");
+    if (parsed.kind !== "slug") return;
+    assert.equal(parsed.titleSlug, "zaporedje-odstopov");
+    assert.equal(parsed.runStamp?.toISOString(), STAMP.toISOString());
+    assert.equal(parsed.bootstrapRunId, null);
+  });
+
+  it("does not treat an overflowing run id as a bootstrap run", () => {
+    const parsed = parseArticleParam("naslov-99999999999-1");
+    assert.equal(parsed.kind, "slug");
+    if (parsed.kind !== "slug") return;
+    assert.equal(parsed.bootstrapRunId, null);
+    assert.equal(parsed.runStamp, null);
+  });
+});
+
+describe("single-fetch navigation", () => {
+  it("loads .data and /_.data story URLs instead of redirecting", () => {
+    assert.deepEqual(
+      storyCanonicalDecision({
+        pathname: "/zgodba/7279.data",
+        rawId: "7279",
+      }),
+      { type: "load", id: 7279 },
+    );
+    assert.deepEqual(
+      storyCanonicalDecision({
+        pathname: "/zgodba/7279/_.data",
+        rawId: "7279",
+      }),
+      { type: "load", id: 7279 },
+    );
+    assert.deepEqual(
+      storyCanonicalDecision({
+        pathname: "/zgodba/7279.data",
+        rawId: "7279.data",
+      }),
+      { type: "load", id: 7279 },
+    );
+  });
+
+  it("redirects non-canonical document paths and loads the canonical one", () => {
+    assert.deepEqual(
+      storyCanonicalDecision({
+        pathname: "/zgodba/07732",
+        rawId: "07732",
+      }),
+      { type: "redirect", location: "/zgodba/7732" },
+    );
+    assert.deepEqual(
+      storyCanonicalDecision({
+        pathname: "/zgodba/7732/",
+        rawId: "7732",
+        search: "?x=1",
+      }),
+      { type: "redirect", location: "/zgodba/7732?x=1" },
+    );
+    assert.deepEqual(
+      storyCanonicalDecision({
+        pathname: "/zgodba/7732",
+        rawId: "7732",
+      }),
+      { type: "load", id: 7732 },
+    );
+  });
+
+  it("keeps redirects and single-fetch responses out of the page cache", () => {
+    assert.equal(REDIRECT_CACHE_CONTROL.includes("max-age=300"), true);
+    assert.equal(REDIRECT_CACHE_CONTROL.includes("86400"), false);
+    assert.equal(shouldStorePageCache("/zgodba/7279.data", 200, null), false);
+    assert.equal(shouldStorePageCache("/zgodba/7279/_.data", 202, null), false);
+    assert.equal(
+      shouldStorePageCache("/zgodba/7732", 301, REDIRECT_CACHE_CONTROL),
+      false,
+    );
+    assert.equal(shouldStorePageCache("/slovenija/clanek/x", 301, null), false);
+    assert.equal(
+      shouldStorePageCache("/slovenija/clanek/x", 503, "no-store"),
+      false,
+    );
+    assert.equal(
+      shouldStorePageCache("/zgodba/7732", 410, "public, max-age=300"),
+      true,
+    );
+  });
+});
+
+describe("sitemap id windows", () => {
+  it("chunks by stable id ranges", () => {
+    assert.deepEqual(sitemapIdBounds(1), {
+      minExclusive: 0,
+      maxInclusive: 5000,
+    });
+    assert.deepEqual(sitemapIdBounds(2), {
+      minExclusive: 5000,
+      maxInclusive: 10000,
+    });
+    assert.equal(sitemapIdBounds(0), null);
+  });
+});
+
+describe("resolver SQL", () => {
+  const resolver = readFileSync(
+    new URL("../app/lib/services/resolveArticle.ts", import.meta.url),
+    "utf8",
+  );
+  const stories = readFileSync(
+    new URL("../app/lib/services/publicStories.ts", import.meta.url),
+    "utf8",
+  );
+
+  it("uses the slug btree and a statement timeout only on the fallback", () => {
+    assert.equal(/\bLIKE\b/.test(resolver), false);
+    assert.match(resolver, /slug\} >= \$\{bounds\.lower\}/);
+    assert.match(resolver, /slug\} < \$\{bounds\.upper\}/);
+    assert.match(resolver, /set_config\('statement_timeout'/);
+    const lookup = resolver.slice(
+      resolver.indexOf("export async function resolveClanekToStoryId"),
+    );
+    assert.ok(lookup.indexOf("readExact") < lookup.indexOf("resolveFallback"));
+    assert.equal(lookup.includes("db.transaction"), false);
+  });
+
+  it("retries a missing story_summary table in a new transaction", () => {
+    const lookup = resolver.slice(
+      resolver.indexOf("export async function resolveClanekToStoryId"),
+    );
+    const firstCatch = lookup.indexOf("} catch (error) {");
+    const retry = lookup.indexOf("resolveFallback(db, titleSlug, stamp, false)");
+    assert.ok(firstCatch > 0);
+    assert.ok(retry > firstCatch);
+    assert.match(lookup, /if \(!isUndefinedTable\(error\)\) throw error/);
+    assert.match(lookup, /kind: "unavailable"/);
+  });
+
+  it("prefilters title matches with the last-article index", () => {
+    assert.match(resolver, /lastArticlePublishedAt\} >= \$\{startIso\}/);
+    assert.match(resolver, /ss\.story_id = s\.id/);
+  });
+
+  it("pages sitemaps by id and filters news before aggregating", () => {
+    assert.equal(stories.includes("OFFSET"), false);
+    assert.match(stories, /story\.id\} > \$\{bounds\.minExclusive\}/);
+    assert.match(stories, /story\.id\} <= \$\{bounds\.maxInclusive\}/);
+    const news = stories.slice(stories.indexOf("if (options.since)"));
+    const whereAt = news.indexOf("lastArticlePublishedAt} >= ${since}");
+    const groupAt = news.indexOf("GROUP BY");
+    assert.ok(whereAt > 0 && whereAt < groupAt);
   });
 });
 

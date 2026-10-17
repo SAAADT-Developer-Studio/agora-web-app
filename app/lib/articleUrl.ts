@@ -15,6 +15,10 @@ export const MATCH_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 const LEGACY_RUN_SUFFIX =
   /^(?<titleSlug>.+)-(?<stamp>\d{4}-\d{2}-\d{2}-\d{2}-\d{2})-(?<index>\d+)$/;
 
+/** Bootstrap clustering: `{slugify(title)}-{cluster_run.id}-{index}`. */
+const BOOTSTRAP_RUN_SUFFIX =
+  /^(?<titleSlug>.+)-(?<runId>\d+)-(?<index>\d+)$/;
+
 export type ParsedArticleParam =
   | { kind: "cluster-id"; id: number; raw: string }
   | { kind: "invalid-id"; raw: string }
@@ -24,10 +28,18 @@ export type ParsedArticleParam =
       raw: string;
       /**
        * Set when the param ends in a real clustering-run stamp.
-       * Title fallbacks run only in that case.
+       * Title fallbacks run only in that case, or when `bootstrapRunId`
+       * maps to `cluster_run.created_at`.
        */
       runStamp: Date | null;
+      /** Set for `{title}-{runId}-{index}` slugs that are not run stamps. */
+      bootstrapRunId: number | null;
     };
+
+/** Browser/CDN cache for document 301s. Data requests are not redirected. */
+export const REDIRECT_CACHE_CONTROL = "public, max-age=300";
+
+export const UNAVAILABLE_RETRY_AFTER = "120";
 
 export type StoryCandidate = {
   storyId: number;
@@ -105,10 +117,31 @@ export function parseArticleParam(articleId: string): ParsedArticleParam {
       titleSlug: legacy.groups.titleSlug,
       raw: articleId,
       runStamp: parseRunStamp(legacy.groups.stamp),
+      bootstrapRunId: null,
     };
   }
 
-  return { kind: "slug", titleSlug: articleId, raw: articleId, runStamp: null };
+  const bootstrap = BOOTSTRAP_RUN_SUFFIX.exec(articleId);
+  if (bootstrap?.groups?.titleSlug && bootstrap.groups.runId) {
+    const runId = parseInt4Id(bootstrap.groups.runId);
+    if (runId != null) {
+      return {
+        kind: "slug",
+        titleSlug: bootstrap.groups.titleSlug,
+        raw: articleId,
+        runStamp: null,
+        bootstrapRunId: runId,
+      };
+    }
+  }
+
+  return {
+    kind: "slug",
+    titleSlug: articleId,
+    raw: articleId,
+    runStamp: null,
+    bootstrapRunId: null,
+  };
 }
 
 /** Title portion of a `cluster_v2.slug`, without the run timestamp and index. */
@@ -256,10 +289,80 @@ export function isStatementTimeout(error: unknown): boolean {
   return false;
 }
 
-/** Timeouts become "unresolved" (HTTP 410). Every other error propagates. */
-export function rethrowUnlessTimeout(error: unknown): null {
-  if (isStatementTimeout(error)) return null;
-  throw error;
+export type ClanekResolution =
+  | { kind: "story"; id: number }
+  | { kind: "gone" }
+  | { kind: "unavailable" };
+
+/** Timeouts are 503s. Anything else propagates. */
+export function timeoutResolution(error: unknown): ClanekResolution | null {
+  if (isStatementTimeout(error)) return { kind: "unavailable" };
+  return null;
+}
+
+/**
+ * React Router single-fetch URLs end in `.data` or `/_.data`.
+ * Those must not be compared to the document canonical path.
+ */
+export function isSingleFetchPath(pathname: string): boolean {
+  return pathname.endsWith(".data");
+}
+
+export function stripSingleFetchSuffix(pathname: string): string {
+  if (pathname.endsWith("/_.data")) {
+    return pathname.slice(0, -"/_.data".length) || "/";
+  }
+  if (pathname.endsWith(".data")) {
+    return pathname.slice(0, -".data".length) || "/";
+  }
+  return pathname;
+}
+
+export type StoryNavigation =
+  | { type: "not-found" }
+  | { type: "load"; id: number }
+  | { type: "redirect"; location: string };
+
+/**
+ * Document URLs with leading zeros or a trailing slash redirect.
+ * `.data` navigations load the story and never redirect, or the client loops.
+ */
+export function storyCanonicalDecision(input: {
+  pathname: string;
+  rawId: string | undefined;
+  search?: string;
+}): StoryNavigation {
+  const rawId = input.rawId
+    ? stripSingleFetchSuffix(input.rawId)
+    : input.rawId;
+  const classified = classifyStoryParam(rawId);
+  if (classified.type === "not-found") return classified;
+  if (isSingleFetchPath(input.pathname)) {
+    return { type: "load", id: classified.id };
+  }
+  const canonical = storyPath(classified.id);
+  const path = stripSingleFetchSuffix(input.pathname);
+  if (path !== canonical) {
+    return {
+      type: "redirect",
+      location: `${canonical}${input.search ?? ""}`,
+    };
+  }
+  return { type: "load", id: classified.id };
+}
+
+/** Worker page cache. Redirects and single-fetch responses are never stored. */
+export function shouldStorePageCache(
+  pathname: string,
+  status: number,
+  cacheControl: string | null,
+): boolean {
+  if (pathname.startsWith("/dev")) return false;
+  if (isSingleFetchPath(pathname)) return false;
+  if (status === 503) return false;
+  if (status >= 300 && status < 400) return false;
+  if (cacheControl != null && /\bno-store\b/.test(cacheControl)) return false;
+  return true;
 }
 
 export function isUndefinedTable(error: unknown): boolean {

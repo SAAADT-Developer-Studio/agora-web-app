@@ -1,16 +1,21 @@
-import { sql } from "drizzle-orm";
-import { articleCluster, clusterV2, storyArticle } from "~/drizzle/schema";
+import { sql, type SQL } from "drizzle-orm";
+import {
+  articleCluster,
+  clusterRun,
+  clusterV2,
+  story,
+  storyArticle,
+} from "~/drizzle/schema";
 import {
   chooseResolvedStory,
   clusterSlugBounds,
   clusterSlugPattern,
-  clusterTitleSlug,
   INT4_MAX,
+  isStatementTimeout,
   isUndefinedTable,
   parseArticleParam,
-  rethrowUnlessTimeout,
   slugifyTitle,
-  type ParsedArticleParam,
+  type ClanekResolution,
   type StoryCandidate,
 } from "~/lib/articleUrl";
 import type { Database } from "~/lib/db";
@@ -19,7 +24,7 @@ const STATEMENT_TIMEOUT = "1500ms";
 
 type Queryable = Pick<Database, "execute">;
 
-type ClusterRef = { id: number; slug: string | null };
+type ExactHit = { slug: string | null; storyId: number | null };
 
 type TitleRow = { story_id: number; title: string | null; at: Date | string };
 
@@ -37,68 +42,49 @@ function asDate(value: unknown): Date | null {
   return null;
 }
 
-async function findClusterById(
-  db: Queryable,
-  id: number,
-): Promise<ClusterRef | null> {
-  const result = await db.execute<{ id: number; slug: string | null }>(sql`
-    SELECT ${clusterV2.id} AS id, ${clusterV2.slug} AS slug
+/** Equality on the slug unique index, plus the dominant story, in one query. */
+export function exactSlugQuery(slug: string): SQL {
+  return sql`
+    SELECT
+      ${clusterV2.slug} AS slug,
+      ${storyArticle.storyId} AS story_id
     FROM ${clusterV2}
-    WHERE ${clusterV2.id} = ${id}
-    LIMIT 1
-  `);
-  const row = result.rows[0];
-  return row ? { id: row.id, slug: row.slug } : null;
-}
-
-async function findClusterBySlug(
-  db: Queryable,
-  slug: string,
-): Promise<ClusterRef | null> {
-  const result = await db.execute<{ id: number; slug: string | null }>(sql`
-    SELECT ${clusterV2.id} AS id, ${clusterV2.slug} AS slug
-    FROM ${clusterV2}
-    WHERE ${clusterV2.slug} = ${slug}
-    LIMIT 1
-  `);
-  const row = result.rows[0];
-  return row ? { id: row.id, slug: row.slug } : null;
-}
-
-/** Story that owns the most member articles of this cluster. Lowest id wins ties. */
-async function dominantStoryId(
-  db: Queryable,
-  clusterId: number,
-): Promise<number | null> {
-  const result = await db.execute<{ story_id: number }>(sql`
-    SELECT ${storyArticle.storyId} AS story_id
-    FROM ${articleCluster}
-    INNER JOIN ${storyArticle}
+    LEFT JOIN ${articleCluster}
+      ON ${articleCluster.clusterId} = ${clusterV2.id}
+    LEFT JOIN ${storyArticle}
       ON ${storyArticle.articleId} = ${articleCluster.articleId}
-    WHERE ${articleCluster.clusterId} = ${clusterId}
-    GROUP BY ${storyArticle.storyId}
-    ORDER BY count(*) DESC, ${storyArticle.storyId} ASC
+    WHERE ${clusterV2.slug} = ${slug}
+    GROUP BY ${clusterV2.slug}, ${storyArticle.storyId}
+    ORDER BY ${storyArticle.storyId} IS NULL, count(*) DESC, ${storyArticle.storyId} ASC
     LIMIT 1
-  `);
-  return asId(result.rows[0]?.story_id);
+  `;
+}
+
+export function exactIdQuery(id: number): SQL {
+  return sql`
+    SELECT
+      ${clusterV2.slug} AS slug,
+      ${storyArticle.storyId} AS story_id
+    FROM ${clusterV2}
+    LEFT JOIN ${articleCluster}
+      ON ${articleCluster.clusterId} = ${clusterV2.id}
+    LEFT JOIN ${storyArticle}
+      ON ${storyArticle.articleId} = ${articleCluster.articleId}
+    WHERE ${clusterV2.id} = ${id}
+    GROUP BY ${clusterV2.slug}, ${storyArticle.storyId}
+    ORDER BY ${storyArticle.storyId} IS NULL, count(*) DESC, ${storyArticle.storyId} ASC
+    LIMIT 1
+  `;
 }
 
 /**
- * One index range scan: clusters with this title slug whose run stamp is
- * within ±3 days, joined to the story that owns each cluster.
+ * Btree range on `cluster_v2.slug`. `last_article` is not involved.
+ * The regex keeps a longer title that sorts inside the window from matching.
  */
-async function nearbyStories(
-  db: Queryable,
-  titleSlug: string,
-  stamp: Date,
-): Promise<StoryCandidate[]> {
+export function nearbySlugQuery(titleSlug: string, stamp: Date): SQL {
   const bounds = clusterSlugBounds(titleSlug, stamp);
   const pattern = clusterSlugPattern(titleSlug);
-  const result = await db.execute<{
-    slug: string;
-    story_id: number;
-    n: number | string;
-  }>(sql`
+  return sql`
     SELECT
       ${clusterV2.slug} AS slug,
       ${storyArticle.storyId} AS story_id,
@@ -112,7 +98,86 @@ async function nearbyStories(
       AND ${clusterV2.slug} < ${bounds.upper}
       AND ${clusterV2.slug} ~ ${pattern}
     GROUP BY ${clusterV2.slug}, ${storyArticle.storyId}
+  `;
+}
+
+/**
+ * Story rows in the stamp window, prefiltered by the existing
+ * `ix_story_last_article_published_at` index. Summaries are reached through
+ * `ix_story_summary_story_id_id` (story_id), not a created_at scan of the
+ * whole summary table.
+ */
+export function titleWindowQuery(
+  start: Date,
+  end: Date,
+  includeSummaries: boolean,
+): SQL {
+  const startIso = start.toISOString();
+  const endIso = end.toISOString();
+  if (!includeSummaries) {
+    return sql`
+      SELECT
+        ${story.id} AS story_id,
+        ${story.title} AS title,
+        ${story.createdAt} AS at
+      FROM ${story}
+      WHERE ${story.lastArticlePublishedAt} >= ${startIso}::timestamptz
+        AND ${story.createdAt} >= ${startIso}::timestamptz
+        AND ${story.createdAt} <= ${endIso}::timestamptz
+    `;
+  }
+  return sql`
+    SELECT ss.story_id AS story_id, ss.title AS title, ss.created_at AS at
+    FROM ${story} s
+    INNER JOIN story_summary ss ON ss.story_id = s.id
+    WHERE s.last_article_published_at >= ${startIso}::timestamptz
+      AND ss.created_at >= ${startIso}::timestamptz
+      AND ss.created_at <= ${endIso}::timestamptz
+    UNION ALL
+    SELECT
+      ${story.id} AS story_id,
+      ${story.title} AS title,
+      ${story.createdAt} AS at
+    FROM ${story}
+    WHERE ${story.lastArticlePublishedAt} >= ${startIso}::timestamptz
+      AND ${story.createdAt} >= ${startIso}::timestamptz
+      AND ${story.createdAt} <= ${endIso}::timestamptz
+      AND NOT EXISTS (
+        SELECT 1 FROM story_summary ss WHERE ss.story_id = ${story.id}
+      )
+  `;
+}
+
+async function readExact(db: Queryable, query: SQL): Promise<ExactHit | null> {
+  const result = await db.execute<{
+    slug: string | null;
+    story_id: number | null;
+  }>(query);
+  const row = result.rows[0];
+  if (!row) return null;
+  return { slug: row.slug, storyId: asId(row.story_id) };
+}
+
+async function runCreatedAt(db: Queryable, runId: number): Promise<Date | null> {
+  const result = await db.execute<{ created_at: string | Date }>(sql`
+    SELECT ${clusterRun.createdAt} AS created_at
+    FROM ${clusterRun}
+    WHERE ${clusterRun.id} = ${runId}
+    LIMIT 1
   `);
+  return asDate(result.rows[0]?.created_at);
+}
+
+async function nearbyStories(
+  db: Queryable,
+  titleSlug: string,
+  stamp: Date,
+): Promise<StoryCandidate[]> {
+  const result = await db.execute<{
+    slug: string;
+    story_id: number;
+    n: number | string;
+  }>(nearbySlugQuery(titleSlug, stamp));
 
   const candidates: StoryCandidate[] = [];
   for (const row of result.rows) {
@@ -126,64 +191,17 @@ async function nearbyStories(
   return candidates;
 }
 
-async function readTitleRows(
-  db: Queryable,
-  start: Date,
-  end: Date,
-  includeSummaries: boolean,
-): Promise<TitleRow[]> {
-  const startIso = start.toISOString();
-  const endIso = end.toISOString();
-  if (!includeSummaries) {
-    const result = await db.execute<TitleRow>(sql`
-      SELECT
-        id AS story_id,
-        title,
-        created_at AS at
-      FROM story
-      WHERE created_at >= ${startIso}::timestamptz
-        AND created_at <= ${endIso}::timestamptz
-    `);
-    return result.rows;
-  }
-
-  const result = await db.execute<TitleRow>(sql`
-    SELECT story_id, title, created_at AS at
-    FROM story_summary
-    WHERE created_at >= ${startIso}::timestamptz
-      AND created_at <= ${endIso}::timestamptz
-    UNION ALL
-    SELECT s.id AS story_id, s.title, s.created_at AS at
-    FROM story s
-    WHERE s.created_at >= ${startIso}::timestamptz
-      AND s.created_at <= ${endIso}::timestamptz
-      AND NOT EXISTS (
-        SELECT 1 FROM story_summary ss WHERE ss.story_id = s.id
-      )
-  `);
-  return result.rows;
-}
-
-/**
- * Titles that were current near the run stamp.
- * Historical `story_summary` rows keep headlines after `story.title` is overwritten.
- * Stories that never received a summary still match on their original title.
- */
 async function titleCandidates(
   db: Queryable,
   stamp: Date,
+  includeSummaries: boolean,
 ): Promise<{ storyId: number; at: Date; slug: string }[]> {
   const bounds = clusterSlugBounds("unused", stamp);
-  let rows: TitleRow[];
-  try {
-    rows = await readTitleRows(db, bounds.start, bounds.end, true);
-  } catch (error) {
-    if (!isUndefinedTable(error)) throw error;
-    rows = await readTitleRows(db, bounds.start, bounds.end, false);
-  }
-
+  const result = await db.execute<TitleRow>(
+    titleWindowQuery(bounds.start, bounds.end, includeSummaries),
+  );
   const titles: { storyId: number; at: Date; slug: string }[] = [];
-  for (const row of rows) {
+  for (const row of result.rows) {
     const storyId = asId(row.story_id);
     const at = asDate(row.at);
     const title = row.title?.trim();
@@ -193,76 +211,96 @@ async function titleCandidates(
   return titles;
 }
 
-async function resolveInTransaction(
-  db: Queryable,
-  parsed: ParsedArticleParam,
+async function withFallbackTimeout<T>(
+  db: Database,
+  fn: (tx: Queryable) => Promise<T>,
+): Promise<T> {
+  return db.transaction(
+    async (tx) => {
+      await tx.execute(
+        sql`SELECT set_config('statement_timeout', ${STATEMENT_TIMEOUT}, true)`,
+      );
+      return fn(tx);
+    },
+    { accessMode: "read only" },
+  );
+}
+
+async function resolveFallback(
+  db: Database,
+  titleSlug: string,
+  stamp: Date,
+  includeSummaries: boolean,
 ): Promise<number | null> {
-  if (parsed.kind === "invalid-id") return null;
-
-  let cluster: ClusterRef | null = null;
-  let titleSlug: string | null = null;
-  let stamp: Date | null = null;
-
-  if (parsed.kind === "cluster-id") {
-    cluster = await findClusterById(db, parsed.id);
-    if (cluster?.slug) {
-      const fromSlug = parseArticleParam(cluster.slug);
-      if (fromSlug.kind === "slug") {
-        titleSlug = fromSlug.titleSlug;
-        stamp = fromSlug.runStamp;
-      } else {
-        titleSlug = clusterTitleSlug(cluster.slug);
-      }
-    }
-  } else {
-    titleSlug = parsed.titleSlug;
-    stamp = parsed.runStamp;
-    cluster = await findClusterBySlug(db, parsed.raw);
-  }
-
-  const direct =
-    cluster == null ? null : await dominantStoryId(db, cluster.id);
-
-  // No run stamp: equality lookup only. A prefix scan cannot use the slug index.
-  if (stamp == null || !titleSlug) return direct;
-
-  const nearby = direct == null ? await nearbyStories(db, titleSlug, stamp) : [];
-  const titles =
-    direct == null && nearby.length === 0
-      ? await titleCandidates(db, stamp)
-      : [];
-
-  return chooseResolvedStory({
-    directStoryId: direct,
-    stamp,
-    titleSlug,
-    nearby,
-    titles,
+  return withFallbackTimeout(db, async (tx) => {
+    const nearby = await nearbyStories(tx, titleSlug, stamp);
+    const titles =
+      nearby.length === 0
+        ? await titleCandidates(tx, stamp, includeSummaries)
+        : [];
+    return chooseResolvedStory({
+      directStoryId: null,
+      stamp,
+      titleSlug,
+      nearby,
+      titles,
+    });
   });
 }
 
 /**
  * Resolve a `/:category/clanek/:articleId` param to a permanent story id.
- * Category is irrelevant. Returns null when no story can be resolved, including
- * when a query hits the statement timeout.
+ * Equality lookups stay outside a transaction. The ±3 day fallback is the
+ * only place that sets a statement timeout.
  */
 export async function resolveClanekToStoryId(
   db: Database,
   articleId: string,
-): Promise<number | null> {
+): Promise<ClanekResolution> {
   const parsed = parseArticleParam(articleId);
-  if (parsed.kind === "invalid-id") return null;
+  if (parsed.kind === "invalid-id") return { kind: "gone" };
+
+  const exact =
+    parsed.kind === "cluster-id"
+      ? await readExact(db, exactIdQuery(parsed.id))
+      : await readExact(db, exactSlugQuery(parsed.raw));
+  if (exact?.storyId != null) return { kind: "story", id: exact.storyId };
+
+  let titleSlug: string | null =
+    parsed.kind === "slug" ? parsed.titleSlug : null;
+  let stamp: Date | null = parsed.kind === "slug" ? parsed.runStamp : null;
+  let bootstrapRunId: number | null =
+    parsed.kind === "slug" ? parsed.bootstrapRunId : null;
+
+  if (exact?.slug) {
+    const fromSlug = parseArticleParam(exact.slug);
+    if (fromSlug.kind === "slug") {
+      titleSlug = fromSlug.titleSlug;
+      stamp = fromSlug.runStamp ?? stamp;
+      bootstrapRunId = fromSlug.bootstrapRunId ?? bootstrapRunId;
+    }
+  }
+
+  if (stamp == null && bootstrapRunId != null) {
+    stamp = await runCreatedAt(db, bootstrapRunId);
+  }
+  if (stamp == null || !titleSlug) return { kind: "gone" };
 
   try {
-    return await db.transaction(async (tx) => {
-      await tx.execute(sql`SET TRANSACTION READ ONLY`);
-      await tx.execute(
-        sql`SET LOCAL statement_timeout = ${sql.raw(`'${STATEMENT_TIMEOUT}'`)}`,
-      );
-      return resolveInTransaction(tx, parsed);
-    });
+    const storyId = await resolveFallback(db, titleSlug, stamp, true);
+    return storyId == null ? { kind: "gone" } : { kind: "story", id: storyId };
   } catch (error) {
-    return rethrowUnlessTimeout(error);
+    if (isStatementTimeout(error)) return { kind: "unavailable" };
+    if (!isUndefinedTable(error)) throw error;
+  }
+
+  // The first transaction is already rolled back. Retry without story_summary.
+  try {
+    const storyId = await resolveFallback(db, titleSlug, stamp, false);
+    return storyId == null ? { kind: "gone" } : { kind: "story", id: storyId };
+  } catch (error) {
+    if (isStatementTimeout(error)) return { kind: "unavailable" };
+    throw error;
   }
 }
 

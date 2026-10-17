@@ -1,6 +1,9 @@
 import { sql } from "drizzle-orm";
 import { article, story, storyArticle } from "~/drizzle/schema";
 import type { Database } from "~/lib/db";
+import { SITEMAP_CHUNK_SIZE, sitemapIdBounds } from "~/lib/sitemapChunks";
+
+export { SITEMAP_CHUNK_SIZE };
 
 export type PublicStory = {
   id: number;
@@ -9,9 +12,6 @@ export type PublicStory = {
   /** Earliest of story.created_at and the first member article. */
   publishedAt: Date;
 };
-
-/** Google allows 50,000 URLs per file. Chunk well under that. */
-export const SITEMAP_CHUNK_SIZE = 5_000;
 
 const NEWS_SITEMAP_LIMIT = 1000;
 
@@ -36,7 +36,7 @@ function asId(value: unknown): number | null {
 
 function asPage(value: unknown): number | null {
   const page = typeof value === "number" ? value : Number(value);
-  return Number.isInteger(page) && page >= 0 ? page : null;
+  return Number.isInteger(page) && page >= 1 ? page : null;
 }
 
 /** One entry per sitemap file of permanent story URLs. Pages are 1-based. */
@@ -45,22 +45,16 @@ export async function listStorySitemapChunks(
 ): Promise<StorySitemapChunk[]> {
   const size = SITEMAP_CHUNK_SIZE;
   const result = await db.execute<{ page: number; lastmod: string | Date }>(sql`
-    WITH numbered AS (
-      SELECT
-        ${story.lastArticlePublishedAt} AS lastmod,
-        (row_number() OVER (
-          ORDER BY ${story.lastArticlePublishedAt} DESC, ${story.id} DESC
-        ) - 1) / ${sql.raw(String(size))} AS page
-      FROM ${story}
-      WHERE EXISTS (
-        SELECT 1 FROM ${storyArticle}
-        WHERE ${storyArticle.storyId} = ${story.id}
-      )
+    SELECT
+      ((${story.id} - 1) / ${sql.raw(String(size))}) + 1 AS page,
+      max(${story.lastArticlePublishedAt}) AS lastmod
+    FROM ${story}
+    WHERE EXISTS (
+      SELECT 1 FROM ${storyArticle}
+      WHERE ${storyArticle.storyId} = ${story.id}
     )
-    SELECT page, max(lastmod) AS lastmod
-    FROM numbered
-    GROUP BY page
-    ORDER BY page
+    GROUP BY 1
+    ORDER BY 1
   `);
 
   const chunks: StorySitemapChunk[] = [];
@@ -68,7 +62,7 @@ export async function listStorySitemapChunks(
     const page = asPage(row.page);
     const lastmod = asDate(row.lastmod);
     if (page == null || lastmod == null) continue;
-    chunks.push({ page: page + 1, lastmod });
+    chunks.push({ page, lastmod });
   }
   return chunks;
 }
@@ -99,6 +93,7 @@ export async function listPublicStories(
         ON ${storyArticle.storyId} = ${story.id}
       INNER JOIN ${article}
         ON ${article.id} = ${storyArticle.articleId}
+      WHERE ${story.lastArticlePublishedAt} >= ${since}::timestamptz
       GROUP BY
         ${story.id},
         ${story.title},
@@ -114,9 +109,8 @@ export async function listPublicStories(
     return rowsToStories(result.rows);
   }
 
-  const page = options.page ?? 1;
-  if (!Number.isInteger(page) || page < 1 || page > 10_000) return [];
-  const offset = (page - 1) * SITEMAP_CHUNK_SIZE;
+  const bounds = sitemapIdBounds(options.page ?? 1);
+  if (bounds == null) return [];
   const result = await db.execute<{
     id: number;
     title: string;
@@ -129,13 +123,13 @@ export async function listPublicStories(
       ${story.lastArticlePublishedAt} AS lastmod,
       ${story.createdAt} AS published_at
     FROM ${story}
-    WHERE EXISTS (
-      SELECT 1 FROM ${storyArticle}
-      WHERE ${storyArticle.storyId} = ${story.id}
-    )
-    ORDER BY ${story.lastArticlePublishedAt} DESC, ${story.id} DESC
-    LIMIT ${sql.raw(String(SITEMAP_CHUNK_SIZE))}
-    OFFSET ${sql.raw(String(offset))}
+    WHERE ${story.id} > ${bounds.minExclusive}
+      AND ${story.id} <= ${bounds.maxInclusive}
+      AND EXISTS (
+        SELECT 1 FROM ${storyArticle}
+        WHERE ${storyArticle.storyId} = ${story.id}
+      )
+    ORDER BY ${story.id}
   `);
   return rowsToStories(result.rows);
 }

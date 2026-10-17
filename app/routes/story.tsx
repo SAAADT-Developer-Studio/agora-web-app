@@ -11,10 +11,12 @@ import { getAppContext } from "~/lib/appContext";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 import ArticlePage, { type ArticlePageData } from "~/components/article-page";
 import {
-  classifyStoryParam,
   persistedStoryStatus,
+  REDIRECT_CACHE_CONTROL,
+  storyCanonicalDecision,
   storyPath,
 } from "~/lib/articleUrl";
+import { preserveThrownHeaders } from "~/lib/seo/routeHeaders";
 
 const GONE_HEADERS = {
   "X-Robots-Tag": "noindex",
@@ -29,11 +31,7 @@ const NOT_FOUND_HEADERS = {
 export function headers({ errorHeaders, loaderHeaders }: Route.HeadersArgs) {
   // Thrown 301/404/410 responses carry Location, Cache-Control, and
   // X-Robots-Tag. Replacing them with only Cache-Control drops noindex.
-  if (errorHeaders) return errorHeaders;
-  if (loaderHeaders.has("Location")) return loaderHeaders;
-  return {
-    "Cache-Control": "max-age=10, s-maxage=10",
-  };
+  return preserveThrownHeaders({ errorHeaders, loaderHeaders });
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
@@ -101,21 +99,25 @@ export function meta({ loaderData }: Route.MetaArgs) {
 }
 
 export async function loader({ params, request, context }: Route.LoaderArgs) {
-  const classified = classifyStoryParam(params.storyId);
-  if (classified.type === "not-found") {
+  const url = new URL(request.url);
+  // Single-fetch URLs (`/zgodba/7279.data`) must load, not 301. A redirect
+  // on a `.data` request comes back as HTTP 202 and the client loops.
+  const decision = storyCanonicalDecision({
+    pathname: url.pathname,
+    rawId: params.storyId,
+    search: url.search,
+  });
+  if (decision.type === "not-found") {
     throw new Response("Not Found", {
       status: 404,
       statusText: "Not Found",
       headers: NOT_FOUND_HEADERS,
     });
   }
-
-  const url = new URL(request.url);
-  const canonical = storyPath(classified.id);
-  if (classified.type === "redirect" || url.pathname !== canonical) {
-    throw redirect(`${canonical}${url.search}`, {
+  if (decision.type === "redirect") {
+    throw redirect(decision.location, {
       status: 301,
-      headers: { "Cache-Control": "public, max-age=86400" },
+      headers: { "Cache-Control": REDIRECT_CACHE_CONTROL },
     });
   }
 
@@ -123,7 +125,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 
   const story = await measurer.time("fetchStoryData", () =>
     db.query.story.findFirst({
-      where: (s, { eq }) => eq(s.id, classified.id),
+      where: (s, { eq }) => eq(s.id, decision.id),
       with: {
         storyArticles: {
           with: {

@@ -12,6 +12,9 @@ export function ErrorComponent({ error }: { error: unknown }) {
     if (error.status === 410) {
       message = "410";
       details = "Ta zgodba ni več na voljo.";
+    } else if (error.status === 503) {
+      message = "503";
+      details = "Storitev trenutno ni na voljo. Poskusite znova čez nekaj minut.";
     } else if (error.status === 404) {
       message = "404";
       details = "Stran ni bila najdena.";
