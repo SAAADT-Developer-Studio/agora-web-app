@@ -31,7 +31,15 @@ import { useState, useEffect } from "react";
 import { cn } from "~/lib/utils";
 import { getCarouselArticleIds } from "~/utils/getCarouselArticleIds";
 import { ProviderImage } from "~/components/provider-image";
+import { ArchiveNotice } from "~/components/archive-notice";
 import { getAppContext } from "~/lib/appContext";
+import {
+  articleClusterWhere,
+  clanekHttpStatus,
+  clanekIndexing,
+  isArchivedCluster,
+  latestProductionRunIdSql,
+} from "~/lib/articleClusterLookup";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 
 export function headers({}: Route.HeadersArgs) {
@@ -64,6 +72,7 @@ export type ArticlePageData = {
   };
   uniqueCategories: string[];
   heroImageUrl: string;
+  archived: boolean;
 };
 
 async function fetchClusterData({
@@ -74,12 +83,7 @@ async function fetchClusterData({
   articleId: string;
 }) {
   return await db.query.clusterV2.findFirst({
-    where: (clusterV2, { eq }) => {
-      if (Number.isInteger(Number.parseInt(articleId))) {
-        return eq(clusterV2.id, Number.parseInt(articleId));
-      }
-      return eq(clusterV2.slug, articleId);
-    },
+    where: articleClusterWhere(articleId),
     with: {
       articleClusters: {
         with: {
@@ -104,16 +108,38 @@ async function fetchClusterData({
   });
 }
 
+async function fetchLatestProductionRunId(
+  db: Database,
+): Promise<number | null> {
+  const result = await db.execute<{ id: number | string }>(
+    latestProductionRunIdSql(),
+  );
+  const raw = result.rows[0]?.id;
+  if (typeof raw === "number" && Number.isInteger(raw)) return raw;
+  if (typeof raw === "string" && /^[1-9]\d*$/.test(raw)) {
+    const id = Number(raw);
+    if (Number.isSafeInteger(id)) return id;
+  }
+  return null;
+}
+
 export async function loader({ params, context }: Route.LoaderArgs) {
   const articleId = params.articleId;
   const { db, measurer } = getAppContext(context);
 
-  const cluster = await measurer.time("fetchClusterData", () =>
-    fetchClusterData({ db, articleId }),
-  );
+  const [cluster, latestProductionRunId] = await Promise.all([
+    measurer.time("fetchClusterData", () =>
+      fetchClusterData({ db, articleId }),
+    ),
+    measurer.time("fetchLatestProductionRunId", () =>
+      fetchLatestProductionRunId(db),
+    ),
+  ]);
 
   if (!cluster) {
-    throw new Response("Article Not Found", { status: 404 });
+    throw new Response("Article Not Found", {
+      status: clanekHttpStatus(false),
+    });
   }
 
   const articles = cluster.articleClusters.map((ac) => ac.article);
@@ -134,14 +160,30 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     },
     uniqueCategories,
     heroImageUrl,
+    archived: isArchivedCluster(cluster.runId, latestProductionRunId),
   } satisfies ArticlePageData;
 }
 
+function articleTimeRange(publishedAt: string[]) {
+  const times = publishedAt
+    .map((value) => new Date(value).getTime())
+    .filter((time) => Number.isFinite(time));
+  if (times.length === 0) return null;
+  const oldestMs = Math.min(...times);
+  const newestMs = Math.max(...times);
+  return {
+    oldest: new Date(oldestMs),
+    newest: new Date(newestMs),
+    publishedTime: new Date(oldestMs).toISOString(),
+    modifiedTime: new Date(newestMs).toISOString(),
+  };
+}
+
 export default function ArticlePage({ loaderData }: Route.ComponentProps) {
-  const { cluster, uniqueCategories } = loaderData;
-  const dates = cluster.articles.map((a) => new Date(a.publishedAt));
-  const oldestDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-  const newestDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+  const { cluster, uniqueCategories, archived } = loaderData;
+  const timeRange = articleTimeRange(
+    cluster.articles.map((article) => article.publishedAt),
+  );
 
   const uniqueProviders = Array.from(
     new Set(cluster.articles.map((a) => a.newsProviderKey)),
@@ -176,6 +218,8 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
         <ShareButtons />
       </div>
 
+      {archived ? <ArchiveNotice /> : null}
+
       <h1 className="text-primary mb-8 line-clamp-3 text-xl leading-normal font-bold tracking-tight text-balance md:text-3xl md:leading-tight lg:text-4xl">
         {cluster.title}
       </h1>
@@ -196,8 +240,8 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
       <ArticleInfoBanner
         providerCount={uniqueProviders.length}
         articleCount={cluster.articles.length}
-        oldestDate={oldestDate}
-        newestDate={newestDate}
+        oldestDate={timeRange?.oldest ?? null}
+        newestDate={timeRange?.newest ?? null}
       />
 
       <div className="mb-8">
@@ -220,7 +264,7 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
       <ArticleBottomBanner
         articleCount={cluster.articles.length}
         providerCount={uniqueProviders.length}
-        newestDate={newestDate}
+        newestDate={timeRange?.newest ?? null}
       />
     </article>
   );
@@ -234,8 +278,8 @@ function ArticleInfoBanner({
 }: {
   providerCount: number;
   articleCount: number;
-  oldestDate: Date;
-  newestDate: Date;
+  oldestDate: Date | null;
+  newestDate: Date | null;
 }) {
   return (
     <InfoCard className="mb-12">
@@ -281,10 +325,12 @@ function ArticleInfoBanner({
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Calendar className="h-6 w-6" />
-            <Timespan oldestDate={oldestDate} newestDate={newestDate} />
-          </div>
+          {oldestDate && newestDate ? (
+            <div className="flex items-center gap-3">
+              <Calendar className="h-6 w-6" />
+              <Timespan oldestDate={oldestDate} newestDate={newestDate} />
+            </div>
+          ) : null}
           <div className="flex items-center gap-3"></div>
         </div>
       </div>
@@ -349,7 +395,7 @@ function ArticleBottomBanner({
 }: {
   articleCount: number;
   providerCount: number;
-  newestDate: Date;
+  newestDate: Date | null;
 }) {
   return (
     <InfoCard className="mt-12 text-center">
@@ -374,13 +420,19 @@ function ArticleBottomBanner({
             plural: "različnih virov",
           })}
         </strong>
-        . Nazadnje posodobljeno{" "}
-        {newestDate.toLocaleDateString("sl-SI", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })}
         .
+        {newestDate ? (
+          <>
+            {" "}
+            Nazadnje posodobljeno{" "}
+            {newestDate.toLocaleDateString("sl-SI", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+            .
+          </>
+        ) : null}
       </p>
     </InfoCard>
   );
@@ -562,7 +614,7 @@ export function meta({
       title: "Članek ni najden | Vidik",
       description: "Oprostite, iskani članek ni bil najden.",
       pathname: location.pathname,
-      noindex: true,
+      noindex: clanekIndexing(false).noindex,
       includeSiteSchema: false,
     });
   }
@@ -580,11 +632,9 @@ export function meta({
     ).values(),
   );
 
-  const publishedTimes = cluster.articles.map((a) =>
-    new Date(a.publishedAt).getTime(),
+  const timeRange = articleTimeRange(
+    cluster.articles.map((article) => article.publishedAt),
   );
-  const publishedTime = new Date(Math.min(...publishedTimes)).toISOString();
-  const modifiedTime = new Date(Math.max(...publishedTimes)).toISOString();
 
   const description = `Primerjava poročanja ${providers.length} slovenskih medijev o temi »${title}«. Viri: ${providers.slice(0, 5).join(", ")}${providers.length > 5 ? " in drugi" : ""}.`;
 
@@ -604,27 +654,32 @@ export function meta({
     pathname: location.pathname,
     keywords,
     ogType: "article",
-    publishedTime,
-    modifiedTime,
+    publishedTime: timeRange?.publishedTime,
+    modifiedTime: timeRange?.modifiedTime,
     section: categoryLabel,
     authors: providers,
+    noindex: clanekIndexing(true).noindex,
     jsonLd: [
-      newsArticleJsonLd({
-        headline: title,
-        description,
-        image: heroImageUrl || undefined,
-        url: pageUrl,
-        datePublished: publishedTime,
-        dateModified: modifiedTime,
-        keywords: uniqueCategories,
-        section: categoryLabel,
-        sources: cluster.articles.map((a) => ({
-          title: a.title,
-          url: a.url,
-          publishedAt: new Date(a.publishedAt).toISOString(),
-          providerName: a.newsProvider.name,
-        })),
-      }),
+      ...(timeRange
+        ? [
+            newsArticleJsonLd({
+              headline: title,
+              description,
+              image: heroImageUrl || undefined,
+              url: pageUrl,
+              datePublished: timeRange.publishedTime,
+              dateModified: timeRange.modifiedTime,
+              keywords: uniqueCategories,
+              section: categoryLabel,
+              sources: cluster.articles.map((a) => ({
+                title: a.title,
+                url: a.url,
+                publishedAt: new Date(a.publishedAt).toISOString(),
+                providerName: a.newsProvider.name,
+              })),
+            }),
+          ]
+        : []),
       breadcrumbJsonLd([
         { name: "Domov", path: "/" },
         { name: categoryLabel, path: `/${category}` },
