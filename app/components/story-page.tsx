@@ -164,7 +164,6 @@ export default function StoryPage({ data }: { data: StoryPageData }) {
             articles={articles}
             onCaptionClick={showAll}
             title={story.title}
-            storyId={story.id}
           />
 
           {story.bullets.length > 0 && (
@@ -746,12 +745,10 @@ function HeroImageCarousel({
   articles,
   onCaptionClick,
   title,
-  storyId,
 }: {
   articles: StoryArticle[];
   onCaptionClick: () => void;
   title: string;
-  storyId: number;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -785,7 +782,6 @@ function HeroImageCarousel({
           src={fallbackArticleImage}
           alt={title}
           className="h-full w-full object-cover"
-          style={{ viewTransitionName: `article-image-${storyId}` }}
         />
       </figure>
     );
@@ -801,13 +797,19 @@ function HeroImageCarousel({
           src={item.imageUrl}
           alt={title}
           className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1800 ease-in-out"
-          style={{
-            viewTransitionName:
-              index === currentIndex ? `article-image-${storyId}` : undefined,
-            opacity: index === currentIndex ? 1 : 0,
-          }}
+          style={{ opacity: index === currentIndex ? 1 : 0 }}
         />
       ))}
+      {carouselItems.length > 1 && (
+        // On narrow screens the dots sit top right so the caption keeps the
+        // full width.
+        <CarouselDots
+          count={carouselItems.length}
+          currentIndex={currentIndex}
+          onSelect={setCurrentIndex}
+          className="absolute top-3 right-3 rounded-full bg-black/35 px-2 py-1.5 backdrop-blur-sm sm:hidden"
+        />
+      )}
       <figcaption className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-3 pt-16 md:p-4 md:pt-20">
         <a
           key={current.id}
@@ -819,25 +821,46 @@ function HeroImageCarousel({
             className="size-6 shrink-0 rounded-full border-2 border-white/80 bg-white object-contain"
             provider={current.provider}
           />
-          <span className="line-clamp-1">{current.title}</span>
+          <span className="line-clamp-2 sm:line-clamp-1">{current.title}</span>
         </a>
         {carouselItems.length > 1 && (
-          <div className="flex shrink-0 gap-1">
-            {carouselItems.map((item, index) => (
-              <button
-                key={item.id}
-                type="button"
-                aria-label={`Slika ${index + 1}`}
-                onClick={() => setCurrentIndex(index)}
-                className={cn(
-                  "h-1.5 rounded-full bg-white transition-all",
-                  index === currentIndex ? "w-4" : "w-1.5 opacity-50",
-                )}
-              />
-            ))}
-          </div>
+          <CarouselDots
+            count={carouselItems.length}
+            currentIndex={currentIndex}
+            onSelect={setCurrentIndex}
+            className="mb-2.5 hidden sm:flex"
+          />
         )}
       </figcaption>
     </figure>
+  );
+}
+
+function CarouselDots({
+  count,
+  currentIndex,
+  onSelect,
+  className,
+}: {
+  count: number;
+  currentIndex: number;
+  onSelect: (index: number) => void;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex shrink-0 gap-1", className)}>
+      {Array.from({ length: count }, (_, index) => (
+        <button
+          key={index}
+          type="button"
+          aria-label={`Slika ${index + 1}`}
+          onClick={() => onSelect(index)}
+          className={cn(
+            "h-1.5 rounded-full bg-white transition-all",
+            index === currentIndex ? "w-4" : "w-1.5 opacity-50",
+          )}
+        />
+      ))}
+    </div>
   );
 }
