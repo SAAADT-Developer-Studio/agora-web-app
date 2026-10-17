@@ -175,7 +175,7 @@ export default function StoryPage({ data }: { data: StoryPageData }) {
             <BiasDistribution
               biasDistribution={getBiasDistribution(articles)}
               providers={providers}
-              className="min-h-80"
+              minRows={3}
             />
           </div>
         </aside>
