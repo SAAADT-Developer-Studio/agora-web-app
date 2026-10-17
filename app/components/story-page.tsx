@@ -1,5 +1,6 @@
 import type { InferSelectModel } from "drizzle-orm";
 import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { Link } from "react-router";
 import {
   ArrowUpRight,
@@ -27,7 +28,8 @@ import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { getCarouselArticleIds } from "~/utils/getCarouselArticleIds";
 import { groupByDay } from "~/utils/groupByDay";
 import { resolvePlural } from "~/utils/resolvePlural";
-import type { SocialMention } from "~/utils/socialPost";
+import { biasSide, type BiasSide } from "~/utils/biasSide";
+import type { StoryMention } from "~/utils/socialPost";
 import type { StoryBullet } from "~/utils/storySummary";
 import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";
 
@@ -54,7 +56,7 @@ export type StoryPageData = {
   };
   /** Newest first. */
   articles: StoryArticle[];
-  mentions: (SocialMention & { articleIds: number[] })[];
+  mentions: StoryMention[];
   uniqueCategories: string[];
   heroImageUrl: string;
 };
@@ -77,25 +79,22 @@ const shortDateFormatter = new Intl.DateTimeFormat("sl-SI", {
   month: "short",
 });
 
-type BiasSide = "all" | "left" | "center" | "right";
+type SideFilter = "all" | BiasSide;
 
-const biasSides: { key: BiasSide; label: string; dot: string }[] = [
-  { key: "all", label: "Vsi", dot: "" },
-  { key: "left", label: "Leva", dot: "bg-[#FA2D36]" },
-  { key: "center", label: "Center", dot: "bg-gray-300" },
-  { key: "right", label: "Desna", dot: "bg-[#2D7EFF]" },
+/** `dot` is the bias rating whose colour marks the filter chip. */
+const biasSides: { key: SideFilter; label: string; dot: string | null }[] = [
+  { key: "all", label: "Vsi", dot: null },
+  { key: "left", label: "Leva", dot: "left" },
+  { key: "center", label: "Center", dot: "center" },
+  { key: "right", label: "Desna", dot: "right" },
 ];
-
-function biasSide(biasRating: string | null): BiasSide | null {
-  if (biasRating === "left" || biasRating === "center-left") return "left";
-  if (biasRating === "center") return "center";
-  if (biasRating === "right" || biasRating === "center-right") return "right";
-  return null;
-}
 
 export default function StoryPage({ data }: { data: StoryPageData }) {
   const { story, articles, mentions, uniqueCategories } = data;
-  const [side, setSide] = useState<BiasSide>("all");
+  const [side, setSide] = useState<SideFilter>("all");
+  // Render the unfiltered timeline before the browser follows an #article-
+  // anchor, so a linked article hidden by the bias filter exists to scroll to.
+  const showAll = () => flushSync(() => setSide("all"));
 
   const articlesById = new Map(articles.map((a) => [a.id, a]));
   const providers = uniqueProviders(articles);
@@ -163,6 +162,7 @@ export default function StoryPage({ data }: { data: StoryPageData }) {
 
           <HeroImageCarousel
             articles={articles}
+            onCaptionClick={showAll}
             title={story.title}
             storyId={story.id}
           />
@@ -171,7 +171,7 @@ export default function StoryPage({ data }: { data: StoryPageData }) {
             <KeyPoints
               bullets={story.bullets}
               articlesById={articlesById}
-              onSourceClick={() => setSide("all")}
+              onSourceClick={showAll}
             />
           )}
         </div>
@@ -402,11 +402,11 @@ function CoverageTimeline({
   mentionCounts,
 }: {
   articles: StoryArticle[];
-  side: BiasSide;
-  onSideChange: (side: BiasSide) => void;
+  side: SideFilter;
+  onSideChange: (side: SideFilter) => void;
   mentionCounts: Map<number, number>;
 }) {
-  const counts = new Map<BiasSide, number>([["all", articles.length]]);
+  const counts = new Map<SideFilter, number>([["all", articles.length]]);
   for (const article of articles) {
     const key = biasSide(article.newsProvider.biasRating);
     if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -454,7 +454,11 @@ function CoverageTimeline({
                     : "text-primary/60 hover:text-primary",
                 )}
               >
-                {dot && <span className={cn("size-2 rounded-full", dot)} />}
+                {dot && (
+                  <span
+                    className={cn("size-2 rounded-full", biasKeyToColor(dot))}
+                  />
+                )}
                 {label}
                 <span className="text-primary/40 tabular-nums">{count}</span>
               </button>
@@ -501,7 +505,6 @@ function StoryArticleCard({
   mentionCount: number;
 }) {
   const publishedAt = new Date(article.publishedAt);
-  const title = article.title.replaceAll("&quot;", '"');
   const image = article.imageUrls?.find(
     (url) => !url.toLowerCase().endsWith(".mp4"),
   );
@@ -560,7 +563,7 @@ function StoryArticleCard({
         </div>
 
         <h4 className="text-primary group-hover:text-electricblue line-clamp-2 text-base leading-snug font-semibold text-pretty transition-colors md:text-lg">
-          {title}
+          {article.title}
           <ArrowUpRight className="ml-1 inline size-4 opacity-0 transition-opacity group-hover:opacity-60" />
         </h4>
 
@@ -741,10 +744,12 @@ const MAX_CAROUSEL_ITEMS = 8;
 
 function HeroImageCarousel({
   articles,
+  onCaptionClick,
   title,
   storyId,
 }: {
   articles: StoryArticle[];
+  onCaptionClick: () => void;
   title: string;
   storyId: number;
 }) {
@@ -807,6 +812,7 @@ function HeroImageCarousel({
         <a
           key={current.id}
           href={`#article-${current.id}`}
+          onClick={onCaptionClick}
           className="animate-in fade-in slide-in-from-bottom-1 flex min-w-0 items-center gap-2 text-sm font-semibold text-white duration-700"
         >
           <ProviderImage

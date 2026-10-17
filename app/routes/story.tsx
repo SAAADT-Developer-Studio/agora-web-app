@@ -151,8 +151,13 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   const members = story.storyArticles.map((sa) => sa.article_articleId);
   members.sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
+  // Members without the relations the page doesn't render; scraped titles
+  // can still carry escaped quotes.
   const articles = members.map(
-    ({ articleSocialPosts: _, categories: __, ...article }) => article,
+    ({ articleSocialPosts: _, categories: __, ...article }) => ({
+      ...article,
+      title: article.title.replaceAll("&quot;", '"'),
+    }),
   );
   const summary = story.storySummaries.at(0);
   const newest = Date.parse(members[0].publishedAt);

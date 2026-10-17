@@ -34,14 +34,19 @@ export function parseSocialPost(post: SocialPostRow): SocialMention {
   };
 }
 
+export type StoryMention = SocialMention & {
+  /** Story articles the post links to. */
+  articleIds: number[];
+};
+
 /** Every post linked from the story's articles, once each, newest first. */
 export function collectSocialMentions(
   articles: {
     id: number;
     articleSocialPosts: { socialPost: SocialPostRow }[];
   }[],
-): (SocialMention & { articleIds: number[] })[] {
-  const byId = new Map<number, SocialMention & { articleIds: number[] }>();
+): StoryMention[] {
+  const byId = new Map<number, StoryMention>();
   for (const article of articles) {
     for (const { socialPost } of article.articleSocialPosts) {
       const existing = byId.get(socialPost.id);
