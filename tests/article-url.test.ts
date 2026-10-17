@@ -1,5 +1,4 @@
-import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { describe, expect, it } from "vitest";
 import {
   clusterTitleSlug,
   parseArticleParam,
@@ -12,44 +11,39 @@ describe("parseArticleParam", () => {
     const slug =
       "18-tisoc-let-stare-figurice-in-druge-skrivnosti-kamene-dobe-2026-10-17-16-13-17";
     const parsed = parseArticleParam(slug);
-    assert.equal(parsed.kind, "slug");
+    expect(parsed.kind).toBe("slug");
     if (parsed.kind !== "slug") return;
-    assert.equal(
-      parsed.titleSlug,
+    expect(parsed.titleSlug).toBe(
       "18-tisoc-let-stare-figurice-in-druge-skrivnosti-kamene-dobe",
     );
-    assert.notEqual(parsed.titleSlug, "18");
+    expect(parsed.titleSlug).not.toBe("18");
   });
 
   it("does not treat a timestamp-shaped slug as cluster id 2026", () => {
     const parsed = parseArticleParam(
       "zaporedje-odstopov-2026-10-17-16-13-523",
     );
-    assert.equal(parsed.kind, "slug");
+    expect(parsed.kind).toBe("slug");
     if (parsed.kind !== "slug") return;
-    assert.equal(parsed.titleSlug, "zaporedje-odstopov");
+    expect(parsed.titleSlug).toBe("zaporedje-odstopov");
   });
 
   it("accepts an all-digit legacy cluster id", () => {
     const parsed = parseArticleParam("523");
-    assert.deepEqual(parsed, { kind: "cluster-id", id: 523, raw: "523" });
+    expect(parsed).toEqual({ kind: "cluster-id", id: 523, raw: "523" });
   });
 
   it("strips only the run suffix from a title that contains a year", () => {
-    const slug =
-      "kulturni-bon-2025-kdo-ga-bo-dobil-2026-07-31-02-54-9";
-    assert.equal(
-      clusterTitleSlug(slug),
-      "kulturni-bon-2025-kdo-ga-bo-dobil",
-    );
+    const slug = "kulturni-bon-2025-kdo-ga-bo-dobil-2026-07-31-02-54-9";
+    expect(clusterTitleSlug(slug)).toBe("kulturni-bon-2025-kdo-ga-bo-dobil");
   });
 });
 
 describe("storyPath", () => {
   it("is the permanent story url with no category or run timestamp", () => {
-    assert.equal(storyPath(91), "/zgodba/91");
-    assert.equal(storyPath(91).includes("2026"), false);
-    assert.equal(storyPath(91).includes("clanek"), false);
+    expect(storyPath(91)).toBe("/zgodba/91");
+    expect(storyPath(91).includes("2026")).toBe(false);
+    expect(storyPath(91).includes("clanek")).toBe(false);
   });
 });
 
@@ -65,15 +59,18 @@ describe("renderNewsSitemap", () => {
       },
     ]);
 
-    assert.match(xml, /xmlns:news="http:\/\/www\.google\.com\/schemas\/sitemap-news\/0\.9"/);
-    assert.match(xml, /<loc>https:\/\/vidik\.si\/zgodba\/91<\/loc>/);
-    assert.match(xml, /<news:name>Vidik<\/news:name>/);
-    assert.match(xml, /<news:language>sl<\/news:language>/);
-    assert.match(
-      xml,
+    expect(xml).toMatch(
+      /xmlns:news="http:\/\/www\.google\.com\/schemas\/sitemap-news\/0\.9"/,
+    );
+    expect(xml).toMatch(/<loc>https:\/\/vidik\.si\/zgodba\/91<\/loc>/);
+    expect(xml).toMatch(/<news:name>Vidik<\/news:name>/);
+    expect(xml).toMatch(/<news:language>sl<\/news:language>/);
+    expect(xml).toMatch(
       /<news:publication_date>2026-10-17T14:13:00.000Z<\/news:publication_date>/,
     );
-    assert.match(xml, /<news:title>Tornado na Siciliji &amp; okolica<\/news:title>/);
-    assert.equal(xml.includes("/clanek/"), false);
+    expect(xml).toMatch(
+      /<news:title>Tornado na Siciliji &amp; okolica<\/news:title>/,
+    );
+    expect(xml.includes("/clanek/")).toBe(false);
   });
 });

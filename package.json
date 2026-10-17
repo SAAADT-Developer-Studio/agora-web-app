@@ -10,7 +10,7 @@
     "preview": "pnpm run build && vite preview",
     "typecheck": "npm run cf-typegen && react-router typegen && tsc -b",
     "lint": "oxlint .",
-    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test": "vitest run",
     "audit:clanek-urls": "node scripts/audit-clanek-urls.mjs",
     "lint:fix": "oxlint . --fix",
     "db:pull": "drizzle-kit pull",
@@ -63,6 +63,7 @@
     "typescript": "^7.0.2",
     "vite": "^8.2.0",
     "vite-plugin-devtools-json": "^1.1.0",
+    "vitest": "5.0.5",
     "wrangler": "^4.119.0"
   },
   "packageManager": "pnpm@10.13.1"

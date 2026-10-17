@@ -1,6 +1,5 @@
-import assert from "node:assert/strict";
-import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
 import {
   chooseResolvedStory,
   classifyStoryParam,
@@ -27,22 +26,21 @@ describe("run-stamp parsing", () => {
     const slug =
       "18-tisoc-let-stare-figurice-in-druge-skrivnosti-kamene-dobe-2026-10-17-16-13-17";
     const parsed = parseArticleParam(slug);
-    assert.equal(parsed.kind, "slug");
+    expect(parsed.kind).toBe("slug");
     if (parsed.kind !== "slug") return;
-    assert.equal(
-      parsed.titleSlug,
+    expect(parsed.titleSlug).toBe(
       "18-tisoc-let-stare-figurice-in-druge-skrivnosti-kamene-dobe",
     );
-    assert.equal(parsed.runStamp?.toISOString(), STAMP.toISOString());
+    expect(parsed.runStamp?.toISOString()).toBe(STAMP.toISOString());
   });
 
   it("does not run title fallbacks for a slug without a run stamp", () => {
     const parsed = parseArticleParam("qa-nonexistent-story-check-2");
-    assert.equal(parsed.kind, "slug");
+    expect(parsed.kind).toBe("slug");
     if (parsed.kind !== "slug") return;
-    assert.equal(parsed.runStamp, null);
-    assert.equal(parsed.bootstrapRunId, null);
-    assert.equal(
+    expect(parsed.runStamp).toBe(null);
+    expect(parsed.bootstrapRunId).toBe(null);
+    expect(
       chooseResolvedStory({
         directStoryId: null,
         stamp: parsed.runStamp,
@@ -56,37 +54,38 @@ describe("run-stamp parsing", () => {
           },
         ],
       }),
-      null,
-    );
+    ).toBe(null);
   });
 
   it("ignores an impossible calendar date in the stamp", () => {
     const parsed = parseArticleParam("naslov-2026-99-99-99-99-1");
-    assert.equal(parsed.kind, "slug");
+    expect(parsed.kind).toBe("slug");
     if (parsed.kind !== "slug") return;
-    assert.equal(parsed.runStamp, null);
-    assert.equal(parsed.bootstrapRunId, null);
+    expect(parsed.runStamp).toBe(null);
+    expect(parsed.bootstrapRunId).toBe(null);
   });
 
   it("bounds the slug range to ±3 days for the btree", () => {
     const bounds = clusterSlugBounds("cene-goriv", STAMP);
     const onStamp = "cene-goriv-2026-10-17-16-13-523";
     const weekBefore = "cene-goriv-2026-10-10-16-13-1";
-    assert.equal(bounds.lower <= onStamp && onStamp < bounds.upper, true);
-    assert.equal(weekBefore < bounds.lower, true);
-    assert.equal(bounds.end.getTime() - bounds.start.getTime(), MATCH_WINDOW_MS * 2);
+    expect(bounds.lower <= onStamp && onStamp < bounds.upper).toBe(true);
+    expect(weekBefore < bounds.lower).toBe(true);
+    expect(bounds.end.getTime() - bounds.start.getTime()).toBe(
+      MATCH_WINDOW_MS * 2,
+    );
   });
 });
 
 describe("int4 bounds", () => {
   it("accepts the int4 maximum and rejects the value above it", () => {
-    assert.equal(parseInt4Id(String(INT4_MAX)), INT4_MAX);
-    assert.equal(parseInt4Id(String(INT4_MAX + 1)), null);
-    assert.equal(parseArticleParam("99999999999").kind, "invalid-id");
-    assert.equal(parseArticleParam("2147483648").kind, "invalid-id");
-    assert.equal(parseArticleParam("0").kind, "invalid-id");
+    expect(parseInt4Id(String(INT4_MAX))).toBe(INT4_MAX);
+    expect(parseInt4Id(String(INT4_MAX + 1))).toBe(null);
+    expect(parseArticleParam("99999999999").kind).toBe("invalid-id");
+    expect(parseArticleParam("2147483648").kind).toBe("invalid-id");
+    expect(parseArticleParam("0").kind).toBe("invalid-id");
     const max = parseArticleParam(String(INT4_MAX));
-    assert.deepEqual(max, {
+    expect(max).toEqual({
       kind: "cluster-id",
       id: INT4_MAX,
       raw: String(INT4_MAX),
@@ -96,23 +95,23 @@ describe("int4 bounds", () => {
 
 describe("404 vs 410", () => {
   it("404s junk, overflow, and never-issued ids before querying", () => {
-    assert.deepEqual(classifyStoryParam("abc"), { type: "not-found" });
-    assert.deepEqual(classifyStoryParam("-1"), { type: "not-found" });
-    assert.deepEqual(classifyStoryParam("99999999999"), { type: "not-found" });
-    assert.deepEqual(classifyStoryParam(undefined), { type: "not-found" });
+    expect(classifyStoryParam("abc")).toEqual({ type: "not-found" });
+    expect(classifyStoryParam("-1")).toEqual({ type: "not-found" });
+    expect(classifyStoryParam("99999999999")).toEqual({ type: "not-found" });
+    expect(classifyStoryParam(undefined)).toEqual({ type: "not-found" });
   });
 
   it("redirects leading zeros and loads a canonical id", () => {
-    assert.deepEqual(classifyStoryParam("07732"), {
+    expect(classifyStoryParam("07732")).toEqual({
       type: "redirect",
       id: 7732,
     });
-    assert.deepEqual(classifyStoryParam("7732"), { type: "load", id: 7732 });
+    expect(classifyStoryParam("7732")).toEqual({ type: "load", id: 7732 });
   });
 
   it("410s only a story row that has no articles left", () => {
-    assert.equal(persistedStoryStatus(0), 410);
-    assert.equal(persistedStoryStatus(3), 200);
+    expect(persistedStoryStatus(0)).toBe(410);
+    expect(persistedStoryStatus(3)).toBe(200);
   });
 });
 
@@ -139,17 +138,16 @@ describe("closest-date selection", () => {
       ],
       stamp,
     );
-    assert.equal(chosen, 1);
+    expect(chosen).toBe(1);
   });
 
   it("falls through when every candidate is outside ±3 days", () => {
-    assert.equal(
+    expect(
       pickClosestStory(
         [{ storyId: 8, at: new Date("2026-10-10T16:13:00.000Z") }],
         STAMP,
       ),
-      null,
-    );
+    ).toBe(null);
   });
 
   it("uses a historical title inside the window and ignores a newer week", () => {
@@ -171,11 +169,11 @@ describe("closest-date selection", () => {
         },
       ],
     });
-    assert.equal(chosen, 41);
+    expect(chosen).toBe(41);
   });
 
   it("keeps a direct article-membership match", () => {
-    assert.equal(
+    expect(
       chooseResolvedStory({
         directStoryId: 7,
         stamp: STAMP,
@@ -183,8 +181,7 @@ describe("closest-date selection", () => {
         nearby: [{ storyId: 8, at: STAMP, weight: 5 }],
         titles: [],
       }),
-      7,
-    );
+    ).toBe(7);
   });
 });
 
@@ -194,131 +191,121 @@ describe("statement timeout", () => {
       new Error("canceling statement due to statement timeout"),
       { code: "57014" },
     );
-    assert.equal(isStatementTimeout(error), true);
-    assert.equal(isStatementTimeout({ cause: error }), true);
-    assert.deepEqual(timeoutResolution(error), { kind: "unavailable" });
+    expect(isStatementTimeout(error)).toBe(true);
+    expect(isStatementTimeout({ cause: error })).toBe(true);
+    expect(timeoutResolution(error)).toEqual({ kind: "unavailable" });
   });
 
   it("does not treat other database errors as a timeout", () => {
-    assert.equal(
+    expect(
       timeoutResolution(Object.assign(new Error("boom"), { code: "42P01" })),
-      null,
-    );
+    ).toBe(null);
   });
 });
 
 describe("bootstrap slugs", () => {
   it("maps {title}-{runId}-{index} to a cluster_run id", () => {
     const parsed = parseArticleParam("naslov-42-3");
-    assert.equal(parsed.kind, "slug");
+    expect(parsed.kind).toBe("slug");
     if (parsed.kind !== "slug") return;
-    assert.equal(parsed.titleSlug, "naslov");
-    assert.equal(parsed.runStamp, null);
-    assert.equal(parsed.bootstrapRunId, 42);
+    expect(parsed.titleSlug).toBe("naslov");
+    expect(parsed.runStamp).toBe(null);
+    expect(parsed.bootstrapRunId).toBe(42);
   });
 
   it("prefers a real run stamp over the bootstrap form", () => {
     const parsed = parseArticleParam(
       "zaporedje-odstopov-2026-10-17-16-13-523",
     );
-    assert.equal(parsed.kind, "slug");
+    expect(parsed.kind).toBe("slug");
     if (parsed.kind !== "slug") return;
-    assert.equal(parsed.titleSlug, "zaporedje-odstopov");
-    assert.equal(parsed.runStamp?.toISOString(), STAMP.toISOString());
-    assert.equal(parsed.bootstrapRunId, null);
+    expect(parsed.titleSlug).toBe("zaporedje-odstopov");
+    expect(parsed.runStamp?.toISOString()).toBe(STAMP.toISOString());
+    expect(parsed.bootstrapRunId).toBe(null);
   });
 
   it("does not treat an overflowing run id as a bootstrap run", () => {
     const parsed = parseArticleParam("naslov-99999999999-1");
-    assert.equal(parsed.kind, "slug");
+    expect(parsed.kind).toBe("slug");
     if (parsed.kind !== "slug") return;
-    assert.equal(parsed.bootstrapRunId, null);
-    assert.equal(parsed.runStamp, null);
+    expect(parsed.bootstrapRunId).toBe(null);
+    expect(parsed.runStamp).toBe(null);
   });
 });
 
 describe("single-fetch navigation", () => {
   it("loads .data and /_.data story URLs instead of redirecting", () => {
-    assert.deepEqual(
+    expect(
       storyCanonicalDecision({
         pathname: "/zgodba/7279.data",
         rawId: "7279",
       }),
-      { type: "load", id: 7279 },
-    );
-    assert.deepEqual(
+    ).toEqual({ type: "load", id: 7279 });
+    expect(
       storyCanonicalDecision({
         pathname: "/zgodba/7279/_.data",
         rawId: "7279",
       }),
-      { type: "load", id: 7279 },
-    );
-    assert.deepEqual(
+    ).toEqual({ type: "load", id: 7279 });
+    expect(
       storyCanonicalDecision({
         pathname: "/zgodba/7279.data",
         rawId: "7279.data",
       }),
-      { type: "load", id: 7279 },
-    );
+    ).toEqual({ type: "load", id: 7279 });
   });
 
   it("redirects non-canonical document paths and loads the canonical one", () => {
-    assert.deepEqual(
+    expect(
       storyCanonicalDecision({
         pathname: "/zgodba/07732",
         rawId: "07732",
       }),
-      { type: "redirect", location: "/zgodba/7732" },
-    );
-    assert.deepEqual(
+    ).toEqual({ type: "redirect", location: "/zgodba/7732" });
+    expect(
       storyCanonicalDecision({
         pathname: "/zgodba/7732/",
         rawId: "7732",
         search: "?x=1",
       }),
-      { type: "redirect", location: "/zgodba/7732?x=1" },
-    );
-    assert.deepEqual(
+    ).toEqual({ type: "redirect", location: "/zgodba/7732?x=1" });
+    expect(
       storyCanonicalDecision({
         pathname: "/zgodba/7732",
         rawId: "7732",
       }),
-      { type: "load", id: 7732 },
-    );
+    ).toEqual({ type: "load", id: 7732 });
   });
 
   it("keeps redirects and single-fetch responses out of the page cache", () => {
-    assert.equal(REDIRECT_CACHE_CONTROL.includes("max-age=300"), true);
-    assert.equal(REDIRECT_CACHE_CONTROL.includes("86400"), false);
-    assert.equal(shouldStorePageCache("/zgodba/7279.data", 200, null), false);
-    assert.equal(shouldStorePageCache("/zgodba/7279/_.data", 202, null), false);
-    assert.equal(
+    expect(REDIRECT_CACHE_CONTROL.includes("max-age=300")).toBe(true);
+    expect(REDIRECT_CACHE_CONTROL.includes("86400")).toBe(false);
+    expect(shouldStorePageCache("/zgodba/7279.data", 200, null)).toBe(false);
+    expect(shouldStorePageCache("/zgodba/7279/_.data", 202, null)).toBe(false);
+    expect(
       shouldStorePageCache("/zgodba/7732", 301, REDIRECT_CACHE_CONTROL),
+    ).toBe(false);
+    expect(shouldStorePageCache("/slovenija/clanek/x", 301, null)).toBe(false);
+    expect(shouldStorePageCache("/slovenija/clanek/x", 503, "no-store")).toBe(
       false,
     );
-    assert.equal(shouldStorePageCache("/slovenija/clanek/x", 301, null), false);
-    assert.equal(
-      shouldStorePageCache("/slovenija/clanek/x", 503, "no-store"),
-      false,
-    );
-    assert.equal(
+    expect(
       shouldStorePageCache("/zgodba/7732", 410, "public, max-age=300"),
-      true,
-    );
+    ).toBe(true);
   });
 });
 
 describe("sitemap id windows", () => {
   it("chunks by stable id ranges", () => {
-    assert.deepEqual(sitemapIdBounds(1), {
+    expect(sitemapIdBounds(1)).toEqual({
       minExclusive: 0,
       maxInclusive: 5000,
     });
-    assert.deepEqual(sitemapIdBounds(2), {
+    expect(sitemapIdBounds(2)).toEqual({
       minExclusive: 5000,
       maxInclusive: 10000,
     });
-    assert.equal(sitemapIdBounds(0), null);
+    expect(sitemapIdBounds(0)).toBe(null);
   });
 });
 
@@ -333,15 +320,17 @@ describe("resolver SQL", () => {
   );
 
   it("uses the slug btree and a statement timeout only on the fallback", () => {
-    assert.equal(/\bLIKE\b/.test(resolver), false);
-    assert.match(resolver, /slug\} >= \$\{bounds\.lower\}/);
-    assert.match(resolver, /slug\} < \$\{bounds\.upper\}/);
-    assert.match(resolver, /set_config\('statement_timeout'/);
+    expect(/\bLIKE\b/.test(resolver)).toBe(false);
+    expect(resolver).toMatch(/slug\} >= \$\{bounds\.lower\}/);
+    expect(resolver).toMatch(/slug\} < \$\{bounds\.upper\}/);
+    expect(resolver).toMatch(/set_config\('statement_timeout'/);
     const lookup = resolver.slice(
       resolver.indexOf("export async function resolveClanekToStoryId"),
     );
-    assert.ok(lookup.indexOf("readExact") < lookup.indexOf("resolveFallback"));
-    assert.equal(lookup.includes("db.transaction"), false);
+    expect(
+      lookup.indexOf("readExact") < lookup.indexOf("resolveFallback"),
+    ).toBeTruthy();
+    expect(lookup.includes("db.transaction")).toBe(false);
   });
 
   it("retries a missing story_summary table in a new transaction", () => {
@@ -350,33 +339,33 @@ describe("resolver SQL", () => {
     );
     const firstCatch = lookup.indexOf("} catch (error) {");
     const retry = lookup.indexOf("resolveFallback(db, titleSlug, stamp, false)");
-    assert.ok(firstCatch > 0);
-    assert.ok(retry > firstCatch);
-    assert.match(lookup, /if \(!isUndefinedTable\(error\)\) throw error/);
-    assert.match(lookup, /kind: "unavailable"/);
+    expect(firstCatch > 0).toBeTruthy();
+    expect(retry > firstCatch).toBeTruthy();
+    expect(lookup).toMatch(/if \(!isUndefinedTable\(error\)\) throw error/);
+    expect(lookup).toMatch(/kind: "unavailable"/);
   });
 
   it("prefilters title matches with the last-article index", () => {
-    assert.match(resolver, /lastArticlePublishedAt\} >= \$\{startIso\}/);
-    assert.match(resolver, /ss\.story_id = s\.id/);
+    expect(resolver).toMatch(/lastArticlePublishedAt\} >= \$\{startIso\}/);
+    expect(resolver).toMatch(/ss\.story_id = s\.id/);
   });
 
   it("pages sitemaps by id and filters news before aggregating", () => {
-    assert.equal(stories.includes("OFFSET"), false);
-    assert.match(stories, /story\.id\} > \$\{bounds\.minExclusive\}/);
-    assert.match(stories, /story\.id\} <= \$\{bounds\.maxInclusive\}/);
+    expect(stories.includes("OFFSET")).toBe(false);
+    expect(stories).toMatch(/story\.id\} > \$\{bounds\.minExclusive\}/);
+    expect(stories).toMatch(/story\.id\} <= \$\{bounds\.maxInclusive\}/);
     const news = stories.slice(stories.indexOf("if (options.since)"));
     const whereAt = news.indexOf("lastArticlePublishedAt} >= ${since}");
     const groupAt = news.indexOf("GROUP BY");
-    assert.ok(whereAt > 0 && whereAt < groupAt);
+    expect(whereAt > 0 && whereAt < groupAt).toBeTruthy();
   });
 });
 
 describe("clusterer slugify", () => {
   it("drops đ the way Python ascii-ignore does, and keeps decomposed letters", () => {
-    assert.equal(slugifyTitle("Međimurje"), "meimurje");
-    assert.equal(slugifyTitle("Lođa in čmrlj"), "loa-in-cmrlj");
-    assert.equal(slugifyTitle("čšž"), "csz");
-    assert.equal(slugifyTitle("Cene goriv"), "cene-goriv");
+    expect(slugifyTitle("Međimurje")).toBe("meimurje");
+    expect(slugifyTitle("Lođa in čmrlj")).toBe("loa-in-cmrlj");
+    expect(slugifyTitle("čšž")).toBe("csz");
+    expect(slugifyTitle("Cene goriv")).toBe("cene-goriv");
   });
 });
