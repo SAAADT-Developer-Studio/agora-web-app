@@ -10,6 +10,7 @@
     "preview": "pnpm run build && vite preview",
     "typecheck": "npm run cf-typegen && react-router typegen && tsc -b",
     "lint": "oxlint .",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
     "lint:fix": "oxlint . --fix",
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio"

@@ -9,11 +9,16 @@ export function ErrorComponent({ error }: { error: unknown }) {
   const showHomeLink = useLocation().pathname !== "/";
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Napaka";
-    details =
-      error.status === 404
-        ? "Stran ni bila najdena."
-        : error.statusText || details;
+    if (error.status === 410) {
+      message = "410";
+      details = "Ta zgodba ni več na voljo.";
+    } else if (error.status === 404) {
+      message = "404";
+      details = "Stran ni bila najdena.";
+    } else {
+      message = "Napaka";
+      details = error.statusText || details;
+    }
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
     stack = error.stack;

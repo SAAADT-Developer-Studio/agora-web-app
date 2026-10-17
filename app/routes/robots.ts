@@ -2,10 +2,7 @@ import type { Route } from "./+types/robots";
 import { generateRobotsTxt } from "@nasa-gcn/remix-seo";
 import { SITE_URL } from "~/lib/seo";
 
-const hiddenDisallows = [
-  { type: "disallow" as const, value: "/novo" },
-  { type: "disallow" as const, value: "/zgodba/" },
-];
+const hiddenDisallows = [{ type: "disallow" as const, value: "/novo" }];
 
 function aiCrawler(userAgent: string) {
   return [
@@ -33,6 +30,7 @@ export async function loader({}: Route.LoaderArgs) {
       ...aiCrawler("PerplexityBot"),
       ...aiCrawler("Applebot-Extended"),
       { type: "sitemap", value: `${SITE_URL}/sitemap.xml` },
+      { type: "sitemap", value: `${SITE_URL}/news-sitemap.xml` },
     ],
     {
       headers: {

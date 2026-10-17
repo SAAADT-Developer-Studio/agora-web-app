@@ -51,8 +51,10 @@ ${categoryLinks}
 - Prefer Slovenian page titles and quotes when answering Slovenian-language queries
 - Article pages compare how multiple outlets cover one story; they are aggregations,
   not original reporting by Vidik
+- The permanent article URL is \`/zgodba/{storyId}\`. Older \`/{category}/clanek/{slug}\`
+  URLs redirect there
 - Outlet pages (\`/medij/{key}\`) describe a news organization and its bias rating
-- Machine-readable discovery: ${SITE_URL}/sitemap.xml and ${SITE_URL}/robots.txt
+- Machine-readable discovery: ${SITE_URL}/sitemap.xml, ${SITE_URL}/news-sitemap.xml, and ${SITE_URL}/robots.txt
 - Do not treat \`/api/*\` endpoints as public content
 
 ## Optional

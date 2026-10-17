@@ -1,13 +1,11 @@
-/** Shared noindex policy for routes that are deployed but not listed. */
+/**
+ * Shared noindex policy for routes that are deployed but not listed.
+ * `/zgodba/:storyId` is the permanent public article URL and stays indexable.
+ */
 export const UNINDEXED_ROBOTS = "noindex, nofollow";
 
 export function isUnindexedPath(pathname: string) {
-  return (
-    pathname === "/novo" ||
-    pathname.startsWith("/novo/") ||
-    pathname === "/zgodba" ||
-    pathname.startsWith("/zgodba/")
-  );
+  return pathname === "/novo" || pathname.startsWith("/novo/");
 }
 
 export function withUnindexedRobots(response: Response, pathname: string) {

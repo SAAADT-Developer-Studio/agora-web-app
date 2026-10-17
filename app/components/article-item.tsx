@@ -12,7 +12,7 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
-import type { ArticlePageData } from "~/routes/article";
+import type { ArticlePageData } from "~/components/article-page";
 import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";

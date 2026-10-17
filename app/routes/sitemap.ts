@@ -1,21 +1,16 @@
 import { href } from "react-router";
 import { xml } from "remix-utils/responses";
-import { sql } from "drizzle-orm";
 import type { Route } from "./+types/sitemap";
 import { Sitemap } from "~/lib/seo/sitemap";
 import { SITE_URL } from "~/lib/seo";
-import { config, isCategoryKey } from "~/config";
+import { config } from "~/config";
 import type { CacheMeta } from "~/routes/api/populate-cache";
 import { LAST_UPDATED as PRIVACY_LAST_UPDATED } from "~/routes/privacy-policy";
 import { LAST_UPDATED as METHODOLOGY_LAST_UPDATED } from "~/routes/bias-methodology";
 import { getAppContext } from "~/lib/appContext";
+import { storyPath } from "~/lib/articleUrl";
 import { META_CACHE_KEY } from "~/lib/kvCache/keys";
-import {
-  article,
-  articleCluster,
-  clusterRun,
-  clusterV2,
-} from "~/drizzle/schema";
+import { listPublicStories } from "~/lib/services/publicStories";
 
 export async function loader({ context }: Route.LoaderArgs) {
   const { kvCache, db } = getAppContext(context);
@@ -66,53 +61,13 @@ export async function loader({ context }: Route.LoaderArgs) {
     );
   }
 
-  const clusters = await db.execute<{
-    id: number;
-    slug: string | null;
-    created_at: string;
-    category: string | null;
-  }>(sql`
-    WITH latest_run AS (
-      SELECT ${clusterRun.id} AS id
-      FROM ${clusterRun}
-      WHERE ${clusterRun.isProduction} = true
-      ORDER BY ${clusterRun.createdAt} DESC
-      LIMIT 1
-    )
-    SELECT
-      ${clusterV2.id} AS id,
-      ${clusterV2.slug} AS slug,
-      ${clusterV2.createdAt} AS created_at,
-      (
-        SELECT ${article.categories}[1]
-        FROM ${articleCluster}
-        INNER JOIN ${article}
-          ON ${article.id} = ${articleCluster.articleId}
-        WHERE ${articleCluster.clusterId} = ${clusterV2.id}
-          AND ${article.categories}[1] IS NOT NULL
-        LIMIT 1
-      ) AS category
-    FROM ${clusterV2}
-    WHERE ${clusterV2.runId} = (SELECT id FROM latest_run)
-  `);
+  const stories = await listPublicStories(db);
 
-  for (const cluster of clusters.rows) {
-    const category = cluster.category?.toLowerCase();
-    if (!category || !isCategoryKey(category)) continue;
-
-    sitemap.append(
-      new URL(
-        href("/:category/clanek/:articleId", {
-          category,
-          articleId: cluster.slug ?? String(cluster.id),
-        }),
-        origin,
-      ),
-      {
-        lastmod: cluster.created_at ? new Date(cluster.created_at) : lastmod,
-        priority: 0.6,
-      },
-    );
+  for (const storyEntry of stories) {
+    sitemap.append(new URL(storyPath(storyEntry.id), origin), {
+      lastmod: storyEntry.lastmod,
+      priority: 0.6,
+    });
   }
 
   return xml(sitemap.toString(), {

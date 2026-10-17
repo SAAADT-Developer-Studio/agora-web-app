@@ -6,7 +6,6 @@ import {
   newsArticleJsonLd,
   SITE_URL,
 } from "~/lib/seo";
-import { UNINDEXED_ROBOTS } from "~/lib/seo/unindexed";
 import { getAppContext } from "~/lib/appContext";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 import ArticlePage, { type ArticlePageData } from "~/components/article-page";
@@ -14,7 +13,6 @@ import ArticlePage, { type ArticlePageData } from "~/components/article-page";
 export function headers({}: Route.HeadersArgs) {
   return {
     "Cache-Control": "max-age=10, s-maxage=10",
-    "X-Robots-Tag": UNINDEXED_ROBOTS,
   };
 }
 
@@ -24,7 +22,7 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
       title: "Zgodba ni najdena | Vidik",
       description: "Oprostite, iskana zgodba ni bila najdena.",
       pathname: location.pathname,
-      robots: UNINDEXED_ROBOTS,
+      noindex: true,
       includeSiteSchema: false,
     });
   }
@@ -49,7 +47,6 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
     description,
     image: heroImageUrl || undefined,
     pathname: location.pathname,
-    robots: UNINDEXED_ROBOTS,
     keywords: [...uniqueCategories, ...providers.slice(0, 5), "vidik"].join(
       ", ",
     ),
@@ -84,7 +81,11 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
 export async function loader({ params, context }: Route.LoaderArgs) {
   const rawId = params.storyId;
   if (!rawId || !/^\d+$/.test(rawId)) {
-    throw new Response("Story Not Found", { status: 404 });
+    throw new Response("Gone", {
+      status: 410,
+      statusText: "Gone",
+      headers: { "X-Robots-Tag": "noindex" },
+    });
   }
   const storyId = Number.parseInt(rawId, 10);
 
@@ -118,10 +119,23 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   );
 
   if (!story) {
-    throw new Response("Story Not Found", { status: 404 });
+    throw new Response("Gone", {
+      status: 410,
+      statusText: "Gone",
+      headers: { "X-Robots-Tag": "noindex" },
+    });
   }
 
-  const articles = story.storyArticles.map((sa) => sa.article_articleId);
+  const articles = story.storyArticles
+    .map((sa) => sa.article_articleId)
+    .filter((article) => article != null);
+  if (articles.length === 0) {
+    throw new Response("Gone", {
+      status: 410,
+      statusText: "Gone",
+      headers: { "X-Robots-Tag": "noindex" },
+    });
+  }
   articles.sort(
     (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
   );
