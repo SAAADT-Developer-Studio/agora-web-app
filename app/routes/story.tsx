@@ -9,7 +9,12 @@ import {
 import { UNINDEXED_ROBOTS } from "~/lib/seo/unindexed";
 import { getAppContext } from "~/lib/appContext";
 import { extractHeroImage } from "~/utils/extractHeroImage";
-import ArticlePage, { type ArticlePageData } from "~/components/article-page";
+import { collectSocialMentions } from "~/utils/socialPost";
+import { parseStoryBullets } from "~/utils/storySummary";
+import StoryPage, { type StoryPageData } from "~/components/story-page";
+
+/** A story whose newest article is younger than this reads as developing. */
+const DEVELOPING_WINDOW_MS = 3 * 60 * 60 * 1000;
 
 export function headers({}: Route.HeadersArgs) {
   return {
@@ -19,7 +24,7 @@ export function headers({}: Route.HeadersArgs) {
 }
 
 export function meta({ loaderData, location }: Route.MetaArgs) {
-  if (!loaderData?.cluster) {
+  if (!loaderData?.story) {
     return getSeoMetas({
       title: "Zgodba ni najdena | Vidik",
       description: "Oprostite, iskana zgodba ni bila najdena.",
@@ -29,19 +34,19 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
     });
   }
 
-  const { cluster, uniqueCategories, heroImageUrl } = loaderData;
-  const title = cluster.title;
+  const { story, articles, uniqueCategories, heroImageUrl } = loaderData;
+  const title = story.title;
   const providers = Array.from(
     new Map(
-      cluster.articles.map((a) => [a.newsProviderKey, a.newsProvider.name]),
+      articles.map((a) => [a.newsProviderKey, a.newsProvider.name]),
     ).values(),
   );
-  const publishedTimes = cluster.articles.map((a) =>
-    new Date(a.publishedAt).getTime(),
-  );
+  const publishedTimes = articles.map((a) => new Date(a.publishedAt).getTime());
   const publishedTime = new Date(Math.min(...publishedTimes)).toISOString();
   const modifiedTime = new Date(Math.max(...publishedTimes)).toISOString();
-  const description = `Primerjava poročanja ${providers.length} slovenskih medijev o temi »${title}«. Viri: ${providers.slice(0, 5).join(", ")}${providers.length > 5 ? " in drugi" : ""}.`;
+  const description =
+    story.bullets[0]?.text ??
+    `Primerjava poročanja ${providers.length} slovenskih medijev o temi »${title}«. Viri: ${providers.slice(0, 5).join(", ")}${providers.length > 5 ? " in drugi" : ""}.`;
   const pageUrl = new URL(location.pathname, SITE_URL).href;
 
   return getSeoMetas({
@@ -66,7 +71,7 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
         datePublished: publishedTime,
         dateModified: modifiedTime,
         keywords: uniqueCategories,
-        sources: cluster.articles.map((a) => ({
+        sources: articles.map((a) => ({
           title: a.title,
           url: a.url,
           publishedAt: new Date(a.publishedAt).toISOString(),
@@ -93,8 +98,15 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const story = await measurer.time("fetchStoryData", () =>
     db.query.story.findFirst({
       where: (s, { eq }) => eq(s.id, storyId),
+      columns: { id: true, title: true },
       with: {
+        storySummaries: {
+          columns: { title: true, bullets: true },
+          orderBy: (s, { desc }) => [desc(s.id)],
+          limit: 1,
+        },
         storyArticles: {
+          columns: {},
           with: {
             article_articleId: {
               columns: {
@@ -109,7 +121,23 @@ export async function loader({ params, context }: Route.LoaderArgs) {
                 author: true,
                 isPaywalled: true,
               },
-              with: { newsProvider: true },
+              with: {
+                newsProvider: true,
+                articleSocialPosts: {
+                  columns: {},
+                  with: {
+                    socialPost: {
+                      columns: {
+                        id: true,
+                        platform: true,
+                        url: true,
+                        postedAt: true,
+                        platformMetadata: true,
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -117,30 +145,44 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     }),
   );
 
-  if (!story) {
+  if (!story || story.storyArticles.length === 0) {
     throw new Response("Story Not Found", { status: 404 });
   }
 
-  const articles = story.storyArticles.map((sa) => sa.article_articleId);
-  articles.sort(
-    (a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt),
+  const members = story.storyArticles.map((sa) => sa.article_articleId);
+  members.sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
+  // Members without the relations the page doesn't render; scraped titles
+  // can still carry escaped quotes.
+  const articles = members.map(
+    ({ articleSocialPosts: _, categories: __, ...article }) => ({
+      ...article,
+      title: article.title.replaceAll("&quot;", '"'),
+    }),
   );
+  const summary = story.storySummaries.at(0);
+  const newest = Date.parse(members[0].publishedAt);
 
   return {
-    cluster: {
+    story: {
       id: story.id,
-      title: story.title,
-      articles,
+      title: summary?.title ?? story.title,
+      bullets: parseStoryBullets(
+        summary?.bullets,
+        new Set(members.map((a) => a.id)),
+      ),
+      isDeveloping: Date.now() - newest < DEVELOPING_WINDOW_MS,
     },
+    articles,
+    mentions: collectSocialMentions(members),
     uniqueCategories: Array.from(
-      new Set(articles.flatMap((a) => a.categories || [])),
+      new Set(members.flatMap((a) => a.categories || [])),
     ),
     heroImageUrl: extractHeroImage(articles),
-  } satisfies ArticlePageData;
+  } satisfies StoryPageData;
 }
 
-export default function StoryPage({ loaderData }: Route.ComponentProps) {
-  return <ArticlePage loaderData={loaderData} />;
+export default function StoryRoute({ loaderData }: Route.ComponentProps) {
+  return <StoryPage data={loaderData} />;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

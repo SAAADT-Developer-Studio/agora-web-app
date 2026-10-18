@@ -1,15 +1,11 @@
 import { defineConfig } from "vitest/config";
 
-/**
- * Unit tests only. The app Vite config loads the Cloudflare and React Router
- * plugins, which these tests do not need.
- */
+// Separate from vite.config.ts so tests don't boot the Cloudflare/React Router plugins.
 export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
   test: {
-    environment: "node",
-    include: ["tests/**/*.test.ts"],
+    include: ["app/**/*.test.ts"],
   },
 });
