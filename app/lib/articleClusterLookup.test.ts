@@ -32,7 +32,7 @@ import {
   resolveClanekArchive,
   parseArticleClusterKey,
 } from "~/lib/articleClusterLookup";
-import { SKIP_PAGE_CACHE_HEADER, shouldStorePageCache } from "~/lib/pageCache";
+import { shouldStorePageCache } from "~/lib/pageCache";
 import { getSeoMetas, SITE_URL } from "~/lib/seo";
 
 const DIGIT_SLUG =
@@ -699,9 +699,14 @@ describe("newer cluster lookup bounds", () => {
 
     const headers = new Headers({
       "Cache-Control": clanekCacheControl(true, true),
-      [SKIP_PAGE_CACHE_HEADER]: "1",
     });
-    expect(shouldStorePageCache("/politika/clanek/arhiv", headers)).toBe(false);
+    expect(shouldStorePageCache("/politika/clanek/arhiv", headers)).toBe(true);
+    expect(
+      shouldStorePageCache(
+        "/politika/clanek/arhiv",
+        new Headers({ "Cache-Control": "no-store" }),
+      ),
+    ).toBe(false);
     expect(
       shouldStorePageCache(
         "/politika/clanek/arhiv",
@@ -724,8 +729,9 @@ describe("newer cluster lookup bounds", () => {
     expect(settled.kinds()).toContain("candidates");
   });
 
-  it("expires a concurrency slot that was not released", async () => {
+  it("expires a concurrency slot from acquire time, not the request clock", async () => {
     vi.spyOn(console, "warn").mockImplementation(() => {});
+    const now = vi.spyOn(Date, "now").mockReturnValue(NOW.getTime());
     let release: (() => void) | undefined;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
@@ -743,39 +749,57 @@ describe("newer cluster lookup bounds", () => {
         resolveClanekArchive(hanging.db, { ...oldInput, id }, NOW),
       ),
     );
-    await vi.waitFor(() => expect(started).toBe(3));
+    try {
+      await vi.waitFor(() => expect(started).toBe(3));
 
-    const stillFull = lookupDb({
-      selection: [{ latest_run_id: 15, in_current_selection: false }],
-      candidates: [{ slug: "prezgodaj", id: 2 }],
-      categories: [{ categories: ["politika"], id: 1 }],
-    });
-    const blocked = await resolveClanekArchive(
-      stillFull.db,
-      { ...oldInput, id: 8 },
-      new Date(NOW.getTime() + NEWER_CLUSTER_SLOT_TTL_MS - 1),
-    );
-    expect(blocked.newerClusterDegraded).toBe(true);
-    expect(stillFull.kinds()).not.toContain("candidates");
+      const byRequestClock = lookupDb({
+        selection: [{ latest_run_id: 15, in_current_selection: false }],
+        candidates: [{ slug: "po-zahtevi", id: 2 }],
+        categories: [{ categories: ["politika"], id: 1 }],
+      });
+      const stillHeld = await resolveClanekArchive(
+        byRequestClock.db,
+        { ...oldInput, id: 8 },
+        new Date(NOW.getTime() + NEWER_CLUSTER_SLOT_TTL_MS + 1_000),
+      );
+      expect(stillHeld.newerClusterDegraded).toBe(true);
+      expect(byRequestClock.kinds()).not.toContain("candidates");
 
-    const expired = lookupDb({
-      selection: [{ latest_run_id: 15, in_current_selection: false }],
-      candidates: [{ slug: "po-poteku", id: 9 }],
-      categories: [{ categories: ["politika"], id: 1 }],
-    });
-    const admitted = await resolveClanekArchive(
-      expired.db,
-      { ...oldInput, id: 9 },
-      new Date(NOW.getTime() + NEWER_CLUSTER_SLOT_TTL_MS),
-    );
-    expect(admitted).toMatchObject({
-      newerClusterDegraded: false,
-      newerClusterPath: "/politika/clanek/po-poteku",
-    });
-    expect(expired.kinds()).toContain("candidates");
+      now.mockReturnValue(NOW.getTime() + NEWER_CLUSTER_SLOT_TTL_MS - 1);
+      const stillFull = lookupDb({
+        selection: [{ latest_run_id: 15, in_current_selection: false }],
+        candidates: [{ slug: "prezgodaj", id: 2 }],
+        categories: [{ categories: ["politika"], id: 1 }],
+      });
+      const blocked = await resolveClanekArchive(
+        stillFull.db,
+        { ...oldInput, id: 8 },
+        NOW,
+      );
+      expect(blocked.newerClusterDegraded).toBe(true);
+      expect(stillFull.kinds()).not.toContain("candidates");
 
-    release?.();
-    await inFlight;
+      now.mockReturnValue(NOW.getTime() + NEWER_CLUSTER_SLOT_TTL_MS);
+      const expired = lookupDb({
+        selection: [{ latest_run_id: 15, in_current_selection: false }],
+        candidates: [{ slug: "po-poteku", id: 9 }],
+        categories: [{ categories: ["politika"], id: 1 }],
+      });
+      const admitted = await resolveClanekArchive(
+        expired.db,
+        { ...oldInput, id: 9 },
+        NOW,
+      );
+      expect(admitted).toMatchObject({
+        newerClusterDegraded: false,
+        newerClusterPath: "/politika/clanek/po-poteku",
+      });
+      expect(expired.kinds()).toContain("candidates");
+    } finally {
+      now.mockRestore();
+      release?.();
+      await inFlight;
+    }
   });
 
   it("bounds the lookup with a local statement timeout inside a transaction", () => {

@@ -158,7 +158,8 @@ export const NEWER_CLUSTER_CACHE_MAX = 2_000;
 
 /**
  * A cancelled request may skip `finally`, so a slot is dropped on the next
- * acquire once it is this old. Longer than `statement_timeout` so a live
+ * acquire once it is this old. Age starts at `Date.now()` when the slot is
+ * taken, not at the request clock. Longer than `statement_timeout` so a live
  * lookup is not double-admitted while Postgres is still running it.
  */
 export const NEWER_CLUSTER_SLOT_TTL_MS = 5_000;
@@ -365,7 +366,8 @@ function expireNewerClusterSlots(nowMs: number): void {
   }
 }
 
-function acquireNewerClusterSlot(nowMs: number): number | null {
+function acquireNewerClusterSlot(): number | null {
+  const nowMs = Date.now();
   expireNewerClusterSlots(nowMs);
   if (newerClusterSlots.size >= NEWER_CLUSTER_MAX_CONCURRENCY) return null;
   const id = nextNewerClusterSlotId;
@@ -474,7 +476,7 @@ async function lookupNewerCluster(
   const cached = readNewerClusterCache(key, nowMs);
   if (cached.hit) return { degraded: false, cluster: cached.value };
 
-  const slot = acquireNewerClusterSlot(nowMs);
+  const slot = acquireNewerClusterSlot();
   if (slot == null) {
     console.warn(
       `[newer-cluster] saturated (${NEWER_CLUSTER_MAX_CONCURRENCY} in flight); skipping newer link for cluster ${input.clusterId}`,
@@ -568,9 +570,10 @@ export function clanekHttpStatus(clusterFound: boolean): 200 | 404 {
 }
 
 /**
- * A settled archive can sit in the edge cache for an hour.
- * A degraded lookup (timeout, error, or a full isolate) must not: the missing
- * link is temporary, so the response is short and has no stale-while-revalidate.
+ * A settled archive can sit in the page cache for an hour.
+ * A degraded lookup (timeout, error, or a full isolate) is cached for 10
+ * seconds with no stale-while-revalidate, so a hot page is not recomputed on
+ * every hit and a recovered lookup replaces it quickly.
  */
 export function clanekCacheControl(
   archived: boolean,
