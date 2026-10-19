@@ -21,7 +21,7 @@ import { resolvePlural } from "~/utils/resolvePlural";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
 import { isSameHour } from "~/utils/isSameHour";
-import { Link } from "react-router";
+import { Link, data } from "react-router";
 import { InfoCard } from "~/components/ui/info-card";
 import { ArticleItem } from "~/components/article-item";
 import { Tooltip, TooltipContent } from "~/components/ui/tooltip";
@@ -33,6 +33,7 @@ import { ProviderImage } from "~/components/provider-image";
 import { ArchiveNotice, NewerCopyNotice } from "~/components/archive-notice";
 import { getAppContext } from "~/lib/appContext";
 import {
+  clanekCacheControl,
   clanekHttpStatus,
   clanekIndexing,
   clanekPath,
@@ -42,9 +43,10 @@ import {
 } from "~/lib/articleClusterLookup";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 
-export function headers({}: Route.HeadersArgs) {
+export function headers({ loaderHeaders }: Route.HeadersArgs) {
+  if (loaderHeaders.has("Cache-Control")) return loaderHeaders;
   return {
-    "Cache-Control": "max-age=10, s-maxage=10",
+    "Cache-Control": clanekCacheControl(false),
   };
 }
 
@@ -120,19 +122,26 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     ),
   );
 
-  return {
-    cluster: {
-      id: cluster.id,
-      title: cluster.title,
-      articles,
+  return data(
+    {
+      cluster: {
+        id: cluster.id,
+        title: cluster.title,
+        articles,
+      },
+      uniqueCategories,
+      heroImageUrl,
+      archived: archive.archived,
+      newerClusterPath: archive.newerClusterPath,
+      canonicalCategory,
+      canonicalPath: clanekPath(canonicalCategory, articleId),
+    } satisfies ArticlePageData,
+    {
+      headers: {
+        "Cache-Control": clanekCacheControl(archive.archived),
+      },
     },
-    uniqueCategories,
-    heroImageUrl,
-    archived: archive.archived,
-    newerClusterPath: archive.newerClusterPath,
-    canonicalCategory,
-    canonicalPath: clanekPath(canonicalCategory, articleId),
-  } satisfies ArticlePageData;
+  );
 }
 
 function articleTimeRange(publishedAt: string[]) {
