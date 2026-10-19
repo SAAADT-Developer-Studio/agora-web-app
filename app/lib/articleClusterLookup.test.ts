@@ -13,6 +13,7 @@ import {
   NEWER_CLUSTER_IDLE_IN_TRANSACTION_TIMEOUT,
   NEWER_CLUSTER_LABEL,
   NEWER_CLUSTER_LOCK_TIMEOUT,
+  NEWER_CLUSTER_SLOT_TTL_MS,
   NEWER_CLUSTER_STATEMENT_TIMEOUT,
   NEWER_LIVE_MESSAGE,
   articleClusterWhere,
@@ -31,6 +32,7 @@ import {
   resolveClanekArchive,
   parseArticleClusterKey,
 } from "~/lib/articleClusterLookup";
+import { shouldStorePageCache } from "~/lib/pageCache";
 import { getSeoMetas, SITE_URL } from "~/lib/seo";
 
 const DIGIT_SLUG =
@@ -297,7 +299,11 @@ describe("archived clanek pages", () => {
       NOW,
     );
 
-    expect(result).toStrictEqual({ archived: false, newerClusterPath: null });
+    expect(result).toStrictEqual({
+      archived: false,
+      newerClusterPath: null,
+      newerClusterDegraded: false,
+    });
     expect(executed).toBe(0);
   });
 
@@ -319,6 +325,7 @@ describe("archived clanek pages", () => {
     expect(result).toStrictEqual({
       archived: false,
       newerClusterPath: "/kriminal/clanek/nina-pecar-ziva",
+      newerClusterDegraded: false,
     });
     const selection = lookup.statements.find(
       (query) => sqlKind(query.sql) === "selection",
@@ -388,6 +395,7 @@ describe("archived clanek pages", () => {
     expect(result).toStrictEqual({
       archived: true,
       newerClusterPath: "/politika/clanek/novejsa-zgodba",
+      newerClusterDegraded: false,
     });
     expect(
       lookup.statements.every((query) => !/\blike\b/i.test(query.sql)),
@@ -449,11 +457,20 @@ describe("archived clanek pages", () => {
     expect(html).toContain('href="/politika/clanek/novejsa-zgodba"');
   });
 
-  it("caches archived pages for an hour and leaves live clanek pages short", () => {
+  it("caches a settled archive for an hour and a degraded lookup only briefly", () => {
     expect(clanekCacheControl(true)).toBe(
       "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400",
     );
+    expect(clanekCacheControl(true, true)).toBe(
+      "public, max-age=10, s-maxage=10",
+    );
+    expect(clanekCacheControl(true, true)).not.toMatch(
+      /stale-while-revalidate/,
+    );
     expect(clanekCacheControl(false)).toBe("max-age=10, s-maxage=10");
+    expect(clanekCacheControl(false, true)).toBe(
+      "public, max-age=10, s-maxage=10",
+    );
   });
 });
 
@@ -481,7 +498,11 @@ describe("newer cluster lookup bounds", () => {
 
     const result = await resolveClanekArchive(lookup.db, oldInput, NOW);
 
-    expect(result).toStrictEqual({ archived: true, newerClusterPath: null });
+    expect(result).toStrictEqual({
+      archived: true,
+      newerClusterPath: null,
+      newerClusterDegraded: true,
+    });
     expect(lookup.kinds()).toContain("begin");
     expect(lookup.kinds()).toContain("rollback");
     expect(lookup.kinds()).not.toContain("commit");
@@ -495,7 +516,10 @@ describe("newer cluster lookup bounds", () => {
       categories: [{ categories: ["politika"], id: 1 }],
     });
     const retried = await resolveClanekArchive(retry.db, oldInput, NOW);
-    expect(retried.newerClusterPath).toBe("/politika/clanek/po-napaki");
+    expect(retried).toMatchObject({
+      newerClusterPath: "/politika/clanek/po-napaki",
+      newerClusterDegraded: false,
+    });
     expect(retry.kinds()).toContain("candidates");
   });
 
@@ -509,7 +533,11 @@ describe("newer cluster lookup bounds", () => {
 
     const result = await resolveClanekArchive(lookup.db, oldInput, NOW);
 
-    expect(result).toStrictEqual({ archived: true, newerClusterPath: null });
+    expect(result).toStrictEqual({
+      archived: true,
+      newerClusterPath: null,
+      newerClusterDegraded: true,
+    });
     expect(lookup.kinds()).toContain("rollback");
     expect(lookup.isOpen()).toBe(false);
   });
@@ -520,7 +548,11 @@ describe("newer cluster lookup bounds", () => {
       candidates: [],
     });
     const missed = await resolveClanekArchive(first.db, oldInput, NOW);
-    expect(missed).toStrictEqual({ archived: true, newerClusterPath: null });
+    expect(missed).toStrictEqual({
+      archived: true,
+      newerClusterPath: null,
+      newerClusterDegraded: false,
+    });
     expect(first.kinds()).toContain("candidates");
 
     const second = lookupDb({
@@ -529,7 +561,11 @@ describe("newer cluster lookup bounds", () => {
       categories: [{ categories: ["sport"], id: 1 }],
     });
     const hit = await resolveClanekArchive(second.db, oldInput, NOW);
-    expect(hit).toStrictEqual({ archived: true, newerClusterPath: null });
+    expect(hit).toStrictEqual({
+      archived: true,
+      newerClusterPath: null,
+      newerClusterDegraded: false,
+    });
     expect(second.kinds()).not.toContain("candidates");
     expect(second.kinds()).not.toContain("begin");
     expect(second.kinds()).toContain("selection");
@@ -611,7 +647,11 @@ describe("newer cluster lookup bounds", () => {
       { ...oldInput, id: 8 },
       NOW,
     );
-    expect(result).toStrictEqual({ archived: true, newerClusterPath: null });
+    expect(result).toStrictEqual({
+      archived: true,
+      newerClusterPath: null,
+      newerClusterDegraded: true,
+    });
     expect(skipped.kinds()).not.toContain("candidates");
     expect(warn.mock.calls.join(" ")).toMatch(/saturated/i);
 
@@ -623,6 +663,143 @@ describe("newer cluster lookup bounds", () => {
       null,
     ]);
     expect(hanging.isOpen()).toBe(false);
+
+    const after = lookupDb({
+      selection: [{ latest_run_id: 15, in_current_selection: false }],
+      candidates: [{ slug: "po-zasicenosti", id: 3 }],
+      categories: [{ categories: ["politika"], id: 1 }],
+    });
+    const recovered = await resolveClanekArchive(
+      after.db,
+      { ...oldInput, id: 8 },
+      NOW,
+    );
+    expect(recovered).toMatchObject({
+      newerClusterPath: "/politika/clanek/po-zasicenosti",
+      newerClusterDegraded: false,
+    });
+    expect(after.kinds()).toContain("candidates");
+  });
+
+  it("does not remember a degraded lookup, and does not give it the archive cache", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const failed = lookupDb({
+      selection: [{ latest_run_id: 15, in_current_selection: false }],
+      failAt: "candidates",
+    });
+    const degraded = await resolveClanekArchive(failed.db, oldInput, NOW);
+    expect(degraded.newerClusterDegraded).toBe(true);
+    expect(degraded.newerClusterPath).toBeNull();
+    expect(
+      clanekCacheControl(degraded.archived, degraded.newerClusterDegraded),
+    ).toBe("public, max-age=10, s-maxage=10");
+    expect(
+      clanekCacheControl(degraded.archived, degraded.newerClusterDegraded),
+    ).not.toMatch(/stale-while-revalidate|3600/);
+
+    const headers = new Headers({
+      "Cache-Control": clanekCacheControl(true, true),
+    });
+    expect(shouldStorePageCache("/politika/clanek/arhiv", headers)).toBe(true);
+    expect(
+      shouldStorePageCache(
+        "/politika/clanek/arhiv",
+        new Headers({ "Cache-Control": "no-store" }),
+      ),
+    ).toBe(false);
+    expect(
+      shouldStorePageCache(
+        "/politika/clanek/arhiv",
+        new Headers({
+          "Cache-Control": clanekCacheControl(true, false),
+        }),
+      ),
+    ).toBe(true);
+
+    const settled = lookupDb({
+      selection: [{ latest_run_id: 15, in_current_selection: false }],
+      candidates: [{ slug: "novejsa-zgodba", id: 99 }],
+      categories: [{ categories: ["politika"], id: 1 }],
+    });
+    const retried = await resolveClanekArchive(settled.db, oldInput, NOW);
+    expect(retried).toMatchObject({
+      newerClusterDegraded: false,
+      newerClusterPath: "/politika/clanek/novejsa-zgodba",
+    });
+    expect(settled.kinds()).toContain("candidates");
+  });
+
+  it("expires a concurrency slot from acquire time, not the request clock", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const now = vi.spyOn(Date, "now").mockReturnValue(NOW.getTime());
+    let release: (() => void) | undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let started = 0;
+    const hanging = lookupDb({
+      selection: [{ latest_run_id: 15, in_current_selection: false }],
+      onCandidates: () => {
+        started += 1;
+        return gate;
+      },
+    });
+    const inFlight = Promise.all(
+      [5, 6, 7].map((id) =>
+        resolveClanekArchive(hanging.db, { ...oldInput, id }, NOW),
+      ),
+    );
+    try {
+      await vi.waitFor(() => expect(started).toBe(3));
+
+      const byRequestClock = lookupDb({
+        selection: [{ latest_run_id: 15, in_current_selection: false }],
+        candidates: [{ slug: "po-zahtevi", id: 2 }],
+        categories: [{ categories: ["politika"], id: 1 }],
+      });
+      const stillHeld = await resolveClanekArchive(
+        byRequestClock.db,
+        { ...oldInput, id: 8 },
+        new Date(NOW.getTime() + NEWER_CLUSTER_SLOT_TTL_MS + 1_000),
+      );
+      expect(stillHeld.newerClusterDegraded).toBe(true);
+      expect(byRequestClock.kinds()).not.toContain("candidates");
+
+      now.mockReturnValue(NOW.getTime() + NEWER_CLUSTER_SLOT_TTL_MS - 1);
+      const stillFull = lookupDb({
+        selection: [{ latest_run_id: 15, in_current_selection: false }],
+        candidates: [{ slug: "prezgodaj", id: 2 }],
+        categories: [{ categories: ["politika"], id: 1 }],
+      });
+      const blocked = await resolveClanekArchive(
+        stillFull.db,
+        { ...oldInput, id: 8 },
+        NOW,
+      );
+      expect(blocked.newerClusterDegraded).toBe(true);
+      expect(stillFull.kinds()).not.toContain("candidates");
+
+      now.mockReturnValue(NOW.getTime() + NEWER_CLUSTER_SLOT_TTL_MS);
+      const expired = lookupDb({
+        selection: [{ latest_run_id: 15, in_current_selection: false }],
+        candidates: [{ slug: "po-poteku", id: 9 }],
+        categories: [{ categories: ["politika"], id: 1 }],
+      });
+      const admitted = await resolveClanekArchive(
+        expired.db,
+        { ...oldInput, id: 9 },
+        NOW,
+      );
+      expect(admitted).toMatchObject({
+        newerClusterDegraded: false,
+        newerClusterPath: "/politika/clanek/po-poteku",
+      });
+      expect(expired.kinds()).toContain("candidates");
+    } finally {
+      now.mockRestore();
+      release?.();
+      await inFlight;
+    }
   });
 
   it("bounds the lookup with a local statement timeout inside a transaction", () => {
@@ -642,6 +819,9 @@ describe("newer cluster lookup bounds", () => {
     );
     expect(from.indexOf("article_cluster")).toBeLessThan(
       from.indexOf("cluster_v2"),
+    );
+    expect(candidates.sql).toMatch(
+      /order by .+"created_at" desc, .+"id" desc/i,
     );
     expect(candidates.sql).toMatch(/limit 1/i);
     expect(candidates.sql).not.toMatch(/lateral/i);
@@ -896,5 +1076,39 @@ describe("newer cluster query equivalence", () => {
       legacyNewerCluster(withoutEight, input),
     );
     expect(indexedNewerCluster(withoutEight, input)).toBe("/kriminal/clanek/9");
+  });
+
+  it("breaks a created_at tie by the higher cluster id", () => {
+    const tied: Fixture = {
+      memberships: [
+        { articleId: 10, clusterId: 4 },
+        { articleId: 10, clusterId: 8 },
+        { articleId: 10, clusterId: 30 },
+      ],
+      clusters: [
+        { id: 4, slug: "ta-zgodba", createdAt: "2026-10-01T00:00:00.000Z" },
+        { id: 8, slug: "nizji-id", createdAt: "2026-10-20T00:00:00.000Z" },
+        { id: 30, slug: "visji-id", createdAt: "2026-10-20T00:00:00.000Z" },
+      ],
+      articles: [
+        {
+          id: 10,
+          publishedAt: "2026-10-02T00:00:00.000Z",
+          categories: ["politika"],
+        },
+      ],
+    };
+    const tiedInput: LookupInput = {
+      articleIds: [10],
+      clusterId: 4,
+      createdAt: "2026-10-01T00:00:00.000Z",
+      fallbackCategory: "sport",
+    };
+    expect(indexedNewerCluster(tied, tiedInput)).toBe(
+      "/politika/clanek/visji-id",
+    );
+    expect(legacyNewerCluster(tied, tiedInput)).toBe(
+      indexedNewerCluster(tied, tiedInput),
+    );
   });
 });

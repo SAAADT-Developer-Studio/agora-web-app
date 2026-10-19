@@ -138,7 +138,10 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     } satisfies ArticlePageData,
     {
       headers: {
-        "Cache-Control": clanekCacheControl(archive.archived),
+        "Cache-Control": clanekCacheControl(
+          archive.archived,
+          archive.newerClusterDegraded,
+        ),
       },
     },
   );
