@@ -156,6 +156,13 @@ export const NEWER_CLUSTER_MAX_CONCURRENCY = 3;
 export const NEWER_CLUSTER_CACHE_TTL_MS = 60 * 60 * 1000;
 export const NEWER_CLUSTER_CACHE_MAX = 2_000;
 
+/**
+ * A cancelled request may skip `finally`, so a slot is dropped on the next
+ * acquire once it is this old. Longer than `statement_timeout` so a live
+ * lookup is not double-admitted while Postgres is still running it.
+ */
+export const NEWER_CLUSTER_SLOT_TTL_MS = 5_000;
+
 type SqlExecutor = Pick<Database, "execute">;
 
 /**
@@ -183,7 +190,7 @@ export function newerClusterCandidatesSql(input: {
     INNER JOIN ${clusterV2}
       ON ${clusterV2.id} = ${articleCluster.clusterId}
     WHERE ${clusterV2.createdAt} > ${input.createdAt}::timestamptz
-    ORDER BY ${clusterV2.createdAt} DESC
+    ORDER BY ${clusterV2.createdAt} DESC, ${clusterV2.id} DESC
     LIMIT 1
   `;
 }
@@ -296,11 +303,17 @@ type CachedNewerCluster = {
 };
 
 const newerClusterCache = new Map<string, CachedNewerCluster>();
-let newerClusterInFlight = 0;
+const newerClusterSlots = new Map<number, number>();
+let nextNewerClusterSlotId = 1;
+
+export type NewerClusterLookup =
+  | { degraded: false; cluster: NewerCluster | null }
+  | { degraded: true };
 
 export function resetNewerClusterLookupForTests(): void {
   newerClusterCache.clear();
-  newerClusterInFlight = 0;
+  newerClusterSlots.clear();
+  nextNewerClusterSlotId = 1;
 }
 
 function newerClusterCacheKey(input: {
@@ -342,6 +355,27 @@ function writeNewerClusterCache(
     if (oldest === undefined) break;
     newerClusterCache.delete(oldest);
   }
+}
+
+function expireNewerClusterSlots(nowMs: number): void {
+  for (const [id, acquiredAt] of newerClusterSlots) {
+    if (nowMs - acquiredAt >= NEWER_CLUSTER_SLOT_TTL_MS) {
+      newerClusterSlots.delete(id);
+    }
+  }
+}
+
+function acquireNewerClusterSlot(nowMs: number): number | null {
+  expireNewerClusterSlots(nowMs);
+  if (newerClusterSlots.size >= NEWER_CLUSTER_MAX_CONCURRENCY) return null;
+  const id = nextNewerClusterSlotId;
+  nextNewerClusterSlotId += 1;
+  newerClusterSlots.set(id, nowMs);
+  return id;
+}
+
+function releaseNewerClusterSlot(id: number): void {
+  newerClusterSlots.delete(id);
 }
 
 function errorSummary(error: unknown): string {
@@ -435,32 +469,32 @@ async function lookupNewerCluster(
   db: SqlExecutor,
   input: { articleIds: number[]; clusterId: number; createdAt: string },
   nowMs: number,
-): Promise<NewerCluster | null> {
+): Promise<NewerClusterLookup> {
   const key = newerClusterCacheKey(input);
   const cached = readNewerClusterCache(key, nowMs);
-  if (cached.hit) return cached.value;
+  if (cached.hit) return { degraded: false, cluster: cached.value };
 
-  if (newerClusterInFlight >= NEWER_CLUSTER_MAX_CONCURRENCY) {
+  const slot = acquireNewerClusterSlot(nowMs);
+  if (slot == null) {
     console.warn(
       `[newer-cluster] saturated (${NEWER_CLUSTER_MAX_CONCURRENCY} in flight); skipping newer link for cluster ${input.clusterId}`,
     );
-    return null;
+    return { degraded: true };
   }
 
-  newerClusterInFlight += 1;
   try {
-    const value = await withBoundedLookupTransaction(db, (tx) =>
+    const cluster = await withBoundedLookupTransaction(db, (tx) =>
       queryNewerCluster(tx, input),
     );
-    writeNewerClusterCache(key, value, nowMs);
-    return value;
+    writeNewerClusterCache(key, cluster, nowMs);
+    return { degraded: false, cluster };
   } catch (error) {
     console.warn(
       `[newer-cluster] lookup failed for cluster ${input.clusterId}; rendering without newer link: ${errorSummary(error)}`,
     );
-    return null;
+    return { degraded: true };
   } finally {
-    newerClusterInFlight -= 1;
+    releaseNewerClusterSlot(slot);
   }
 }
 
@@ -475,9 +509,17 @@ export async function resolveClanekArchive(
     category: string | null;
   },
   now: Date,
-): Promise<{ archived: boolean; newerClusterPath: string | null }> {
+): Promise<{
+  archived: boolean;
+  newerClusterPath: string | null;
+  newerClusterDegraded: boolean;
+}> {
   if (isWithinClustererWindow(input.newestPublishedAt, now)) {
-    return { archived: false, newerClusterPath: null };
+    return {
+      archived: false,
+      newerClusterPath: null,
+      newerClusterDegraded: false,
+    };
   }
 
   const selectionResult = await db.execute<SelectionRow>(
@@ -495,7 +537,7 @@ export async function resolveClanekArchive(
     inCurrentSelection,
   });
   if (input.articleIds.length === 0) {
-    return { archived, newerClusterPath: null };
+    return { archived, newerClusterPath: null, newerClusterDegraded: false };
   }
 
   const newer = await lookupNewerCluster(
@@ -507,10 +549,16 @@ export async function resolveClanekArchive(
     },
     now.getTime(),
   );
+  if (newer.degraded) {
+    return { archived, newerClusterPath: null, newerClusterDegraded: true };
+  }
 
   return {
     archived,
-    newerClusterPath: newer ? newerClusterPath(newer, input.category) : null,
+    newerClusterPath: newer.cluster
+      ? newerClusterPath(newer.cluster, input.category)
+      : null,
+    newerClusterDegraded: false,
   };
 }
 
@@ -519,8 +567,16 @@ export function clanekHttpStatus(clusterFound: boolean): 200 | 404 {
   return clusterFound ? 200 : 404;
 }
 
-/** Archived clanek HTML changes only when a newer copy appears, which we also cache for an hour. */
-export function clanekCacheControl(archived: boolean): string {
+/**
+ * A settled archive can sit in the edge cache for an hour.
+ * A degraded lookup (timeout, error, or a full isolate) must not: the missing
+ * link is temporary, so the response is short and has no stale-while-revalidate.
+ */
+export function clanekCacheControl(
+  archived: boolean,
+  degraded = false,
+): string {
+  if (degraded) return "public, max-age=10, s-maxage=10";
   if (archived) {
     return "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400";
   }

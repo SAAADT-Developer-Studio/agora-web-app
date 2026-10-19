@@ -41,6 +41,7 @@ import {
   findClusterForClanek,
   resolveClanekArchive,
 } from "~/lib/articleClusterLookup";
+import { SKIP_PAGE_CACHE_HEADER } from "~/lib/pageCache";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 
 export function headers({ loaderHeaders }: Route.HeadersArgs) {
@@ -122,6 +123,16 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     ),
   );
 
+  const responseHeaders: Record<string, string> = {
+    "Cache-Control": clanekCacheControl(
+      archive.archived,
+      archive.newerClusterDegraded,
+    ),
+  };
+  if (archive.newerClusterDegraded) {
+    responseHeaders[SKIP_PAGE_CACHE_HEADER] = "1";
+  }
+
   return data(
     {
       cluster: {
@@ -136,11 +147,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
       canonicalCategory,
       canonicalPath: clanekPath(canonicalCategory, articleId),
     } satisfies ArticlePageData,
-    {
-      headers: {
-        "Cache-Control": clanekCacheControl(archive.archived),
-      },
-    },
+    { headers: responseHeaders },
   );
 }
 

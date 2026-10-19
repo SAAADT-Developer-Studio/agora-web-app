@@ -3,6 +3,10 @@ import { createAppLoadContext } from "~/lib/appContext";
 import { KVCache } from "~/lib/kvCache";
 import { getDb } from "~/lib/db";
 import { Measurer } from "~/lib/measurer";
+import {
+  shouldStorePageCache,
+  withoutSkipPageCacheHeader,
+} from "~/lib/pageCache";
 import { withUnindexedRobots } from "~/lib/seo/unindexed";
 
 const requestHandler = createRequestHandler(
@@ -38,7 +42,9 @@ export default {
         );
       }
       response = withUnindexedRobots(response, url.pathname);
-      if (!skipCache) {
+      const storePage = shouldStorePageCache(url.pathname, response.headers);
+      response = withoutSkipPageCacheHeader(response);
+      if (storePage) {
         ctx.waitUntil(cache.put(request, response.clone()));
       }
     } else {
