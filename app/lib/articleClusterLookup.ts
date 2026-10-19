@@ -142,47 +142,64 @@ export function currentSelectionSql(articleIds: number[]): SQL {
 }
 
 /**
- * Newest other cluster that shares an article id, with that cluster's
- * category arrays ordered newest-first for `clusterOwnCategory`.
- * Equality only.
+ * Hard cap for the newer-cluster lookup. `statement_timeout` cancels the
+ * statement; `lock_timeout` stops waiting on a lock; `idle_in_transaction_session_timeout`
+ * aborts the session if the transaction is left open. All are `SET LOCAL`.
  */
-export function newerClusterSql(input: {
+export const NEWER_CLUSTER_STATEMENT_TIMEOUT = "2000ms";
+export const NEWER_CLUSTER_LOCK_TIMEOUT = "500ms";
+export const NEWER_CLUSTER_IDLE_IN_TRANSACTION_TIMEOUT = "2000ms";
+
+/** Per isolate. Extra lookups skip the link instead of queueing on Postgres. */
+export const NEWER_CLUSTER_MAX_CONCURRENCY = 3;
+
+export const NEWER_CLUSTER_CACHE_TTL_MS = 60 * 60 * 1000;
+export const NEWER_CLUSTER_CACHE_MAX = 2_000;
+
+type SqlExecutor = Pick<Database, "execute">;
+
+/**
+ * Newest other cluster that shares an article id.
+ *
+ * Join order is part of the plan. `SET LOCAL join_collapse_limit = 1` (and
+ * hash/merge/seqscan discouraged) keeps it: unnest the page's article ids,
+ * index-scan `uq_article_cluster_run` on `article_id`, then primary-key lookup
+ * on `cluster_v2`. Do not start from `ix_cluster_v2_created_at_id` — that index
+ * walks every cluster kept forever when the cutoff is old.
+ * Categories are a second statement for the one picked id
+ * (`ix_article_cluster_cluster_id`), not a LATERAL over the candidate join.
+ */
+export function newerClusterCandidatesSql(input: {
   articleIds: number[];
   clusterId: number;
   createdAt: string;
 }): SQL {
   return sql`
-    SELECT picked.slug AS slug, picked.id AS id, cats.categories AS categories
-    FROM (
-      SELECT ${clusterV2.id} AS id, ${clusterV2.slug} AS slug
-      FROM ${articleCluster}
-      INNER JOIN ${clusterV2}
-        ON ${clusterV2.id} = ${articleCluster.clusterId}
-      WHERE ${articleCluster.articleId} IN (${idList(input.articleIds)})
-        AND ${clusterV2.id} <> ${input.clusterId}
-        AND ${clusterV2.createdAt} > ${input.createdAt}::timestamptz
-      ORDER BY ${clusterV2.createdAt} DESC
-      LIMIT 1
-    ) AS picked
-    LEFT JOIN LATERAL (
-      SELECT coalesce(
-        json_agg(
-          src.categories
-          ORDER BY src.published_at DESC NULLS LAST, src.id DESC
-        ),
-        '[]'::json
-      ) AS categories
-      FROM (
-        SELECT
-          ${article.categories} AS categories,
-          ${article.publishedAt} AS published_at,
-          ${article.id} AS id
-        FROM ${articleCluster}
-        INNER JOIN ${article}
-          ON ${article.id} = ${articleCluster.articleId}
-        WHERE ${articleCluster.clusterId} = picked.id
-      ) AS src
-    ) AS cats ON true
+    SELECT ${clusterV2.id} AS id, ${clusterV2.slug} AS slug
+    FROM unnest(ARRAY[${idList(input.articleIds)}]::int[]) AS aid(article_id)
+    INNER JOIN ${articleCluster}
+      ON ${articleCluster.articleId} = aid.article_id
+     AND ${articleCluster.clusterId} <> ${input.clusterId}
+    INNER JOIN ${clusterV2}
+      ON ${clusterV2.id} = ${articleCluster.clusterId}
+    WHERE ${clusterV2.createdAt} > ${input.createdAt}::timestamptz
+    ORDER BY ${clusterV2.createdAt} DESC
+    LIMIT 1
+  `;
+}
+
+/** Category rows for one cluster, newest article first. */
+export function newerClusterCategoriesSql(clusterId: number): SQL {
+  return sql`
+    SELECT
+      ${article.categories} AS categories,
+      ${article.publishedAt} AS published_at,
+      ${article.id} AS id
+    FROM ${articleCluster}
+    INNER JOIN ${article}
+      ON ${article.id} = ${articleCluster.articleId}
+    WHERE ${articleCluster.clusterId} = ${clusterId}
+    ORDER BY ${article.publishedAt} DESC NULLS LAST, ${article.id} DESC
   `;
 }
 
@@ -268,24 +285,183 @@ function asText(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-/** Category arrays in the order returned by `newerClusterSql` (newest article first). */
-function articlesInNewestFirstOrder(
-  value: unknown,
-): { categories: string[] | null }[] {
-  let parsed = value;
-  if (typeof parsed === "string") {
-    try {
-      parsed = JSON.parse(parsed) as unknown;
-    } catch {
-      return [];
+function asCategories(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  return value.filter((item): item is string => typeof item === "string");
+}
+
+type CachedNewerCluster = {
+  expiresAt: number;
+  value: NewerCluster | null;
+};
+
+const newerClusterCache = new Map<string, CachedNewerCluster>();
+let newerClusterInFlight = 0;
+
+export function resetNewerClusterLookupForTests(): void {
+  newerClusterCache.clear();
+  newerClusterInFlight = 0;
+}
+
+function newerClusterCacheKey(input: {
+  articleIds: number[];
+  clusterId: number;
+  createdAt: string;
+}): string {
+  const articleIds = [...input.articleIds].sort((a, b) => a - b).join(",");
+  return `${input.clusterId}|${input.createdAt}|${articleIds}`;
+}
+
+function readNewerClusterCache(
+  key: string,
+  nowMs: number,
+): { hit: true; value: NewerCluster | null } | { hit: false } {
+  const entry = newerClusterCache.get(key);
+  if (!entry) return { hit: false };
+  if (entry.expiresAt <= nowMs) {
+    newerClusterCache.delete(key);
+    return { hit: false };
+  }
+  newerClusterCache.delete(key);
+  newerClusterCache.set(key, entry);
+  return { hit: true, value: entry.value };
+}
+
+function writeNewerClusterCache(
+  key: string,
+  value: NewerCluster | null,
+  nowMs: number,
+): void {
+  newerClusterCache.delete(key);
+  newerClusterCache.set(key, {
+    value,
+    expiresAt: nowMs + NEWER_CLUSTER_CACHE_TTL_MS,
+  });
+  while (newerClusterCache.size > NEWER_CLUSTER_CACHE_MAX) {
+    const oldest = newerClusterCache.keys().next().value;
+    if (oldest === undefined) break;
+    newerClusterCache.delete(oldest);
+  }
+}
+
+function errorSummary(error: unknown): string {
+  const parts: string[] = [];
+  const seen = new Set<unknown>();
+  let current: unknown = error;
+  while (current && typeof current === "object" && !seen.has(current)) {
+    seen.add(current);
+    const record = current as {
+      code?: unknown;
+      message?: unknown;
+      cause?: unknown;
+    };
+    const code = typeof record.code === "string" ? record.code : "";
+    const message = typeof record.message === "string" ? record.message : "";
+    if (code || message) parts.push(`${code} ${message}`.trim());
+    current = record.cause;
+  }
+  return parts.at(-1) || parts[0] || "unknown error";
+}
+
+/**
+ * BEGIN … COMMIT/ROLLBACK on this request's single pg Client.
+ * `SET LOCAL` dies with the transaction, so a returned Hyperdrive connection
+ * does not keep the timeout or an open transaction.
+ */
+async function withBoundedLookupTransaction<T>(
+  db: SqlExecutor,
+  fn: (db: SqlExecutor) => Promise<T>,
+): Promise<T> {
+  let finished = false;
+  await db.execute(sql`BEGIN`);
+  try {
+    await db.execute(
+      sql`SET LOCAL statement_timeout = '${sql.raw(NEWER_CLUSTER_STATEMENT_TIMEOUT)}'`,
+    );
+    await db.execute(
+      sql`SET LOCAL lock_timeout = '${sql.raw(NEWER_CLUSTER_LOCK_TIMEOUT)}'`,
+    );
+    await db.execute(
+      sql`SET LOCAL idle_in_transaction_session_timeout = '${sql.raw(NEWER_CLUSTER_IDLE_IN_TRANSACTION_TIMEOUT)}'`,
+    );
+    await db.execute(sql`SET LOCAL join_collapse_limit = 1`);
+    await db.execute(sql`SET LOCAL from_collapse_limit = 1`);
+    await db.execute(sql`SET LOCAL enable_hashjoin = off`);
+    await db.execute(sql`SET LOCAL enable_mergejoin = off`);
+    await db.execute(sql`SET LOCAL enable_seqscan = off`);
+    const result = await fn(db);
+    await db.execute(sql`COMMIT`);
+    finished = true;
+    return result;
+  } finally {
+    if (!finished) {
+      try {
+        await db.execute(sql`ROLLBACK`);
+      } catch (rollbackError) {
+        console.warn(
+          `[newer-cluster] rollback failed: ${errorSummary(rollbackError)}`,
+        );
+      }
     }
   }
-  if (!Array.isArray(parsed)) return [];
-  return parsed.map((categories) => ({
-    categories: Array.isArray(categories)
-      ? categories.filter((item): item is string => typeof item === "string")
-      : null,
-  }));
+}
+
+async function queryNewerCluster(
+  db: SqlExecutor,
+  input: { articleIds: number[]; clusterId: number; createdAt: string },
+): Promise<NewerCluster | null> {
+  const candidates = await db.execute<NewerClusterRow>(
+    newerClusterCandidatesSql(input),
+  );
+  const picked = candidates.rows[0];
+  const id = asId(picked?.id);
+  if (id == null) return null;
+
+  const categories = await db.execute<{ categories?: unknown }>(
+    newerClusterCategoriesSql(id),
+  );
+  return {
+    id,
+    slug: asText(picked?.slug),
+    category: clusterOwnCategory(
+      categories.rows.map((row) => ({
+        categories: asCategories(row.categories),
+      })),
+    ),
+  };
+}
+
+async function lookupNewerCluster(
+  db: SqlExecutor,
+  input: { articleIds: number[]; clusterId: number; createdAt: string },
+  nowMs: number,
+): Promise<NewerCluster | null> {
+  const key = newerClusterCacheKey(input);
+  const cached = readNewerClusterCache(key, nowMs);
+  if (cached.hit) return cached.value;
+
+  if (newerClusterInFlight >= NEWER_CLUSTER_MAX_CONCURRENCY) {
+    console.warn(
+      `[newer-cluster] saturated (${NEWER_CLUSTER_MAX_CONCURRENCY} in flight); skipping newer link for cluster ${input.clusterId}`,
+    );
+    return null;
+  }
+
+  newerClusterInFlight += 1;
+  try {
+    const value = await withBoundedLookupTransaction(db, (tx) =>
+      queryNewerCluster(tx, input),
+    );
+    writeNewerClusterCache(key, value, nowMs);
+    return value;
+  } catch (error) {
+    console.warn(
+      `[newer-cluster] lookup failed for cluster ${input.clusterId}; rendering without newer link: ${errorSummary(error)}`,
+    );
+    return null;
+  } finally {
+    newerClusterInFlight -= 1;
+  }
 }
 
 export async function resolveClanekArchive(
@@ -322,25 +498,15 @@ export async function resolveClanekArchive(
     return { archived, newerClusterPath: null };
   }
 
-  const newerResult = await db.execute<NewerClusterRow>(
-    newerClusterSql({
+  const newer = await lookupNewerCluster(
+    db,
+    {
       articleIds: input.articleIds,
       clusterId: input.id,
       createdAt: input.createdAt,
-    }),
+    },
+    now.getTime(),
   );
-  const newerRow = newerResult.rows[0];
-  const newerId = asId(newerRow?.id);
-  const newer =
-    newerId == null
-      ? null
-      : {
-          id: newerId,
-          slug: asText(newerRow?.slug),
-          category: clusterOwnCategory(
-            articlesInNewestFirstOrder(newerRow?.categories),
-          ),
-        };
 
   return {
     archived,
@@ -351,6 +517,14 @@ export async function resolveClanekArchive(
 /** 404 only when the cluster row is missing. Archive state does not change this. */
 export function clanekHttpStatus(clusterFound: boolean): 200 | 404 {
   return clusterFound ? 200 : 404;
+}
+
+/** Archived clanek HTML changes only when a newer copy appears, which we also cache for an hour. */
+export function clanekCacheControl(archived: boolean): string {
+  if (archived) {
+    return "public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400";
+  }
+  return "max-age=10, s-maxage=10";
 }
 
 /** A found cluster stays indexable, including clusters from older runs. */
