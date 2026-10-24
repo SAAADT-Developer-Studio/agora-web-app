@@ -5,10 +5,20 @@ import {
   articleCluster,
   clusterRun,
   articleSocialPost,
+  newsProvider,
 } from "~/drizzle/schema";
 import { sql } from "drizzle-orm";
+import { BiasRatingKey } from "~/enums/biasRatingKey";
+import {
+  BLINDSPOT_MIN_PERCENT,
+  BLINDSPOT_MIN_RATED,
+  type BlindspotSide,
+} from "~/utils/blindspots";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
-import { extractHeroImage } from "~/utils/extractHeroImage";
+import {
+  extractCarouselImages,
+  extractHeroImage,
+} from "~/utils/extractHeroImage";
 import {
   defineCategoryMap,
   CategoryKey,
@@ -43,7 +53,24 @@ export type ArticleType = {
   providerKeys: string[];
   /** Set only by the hidden story listing (`/novo`). Public listings omit it and link to clanek. */
   to?: string;
+  /** Lead images for the hero carousel, `image.src` first. Absent in older KV entries. */
+  images?: string[];
+  /** ISO time of the newest member article. Absent in KV entries cached before it existed. */
+  lastPublishedAt?: string;
 };
+
+/** ISO time of the newest article, or undefined when none carry a date. */
+export function newestPublishedAt(articles: { publishedAt: string | null }[]) {
+  let newest: string | undefined;
+  for (const { publishedAt } of articles) {
+    if (
+      publishedAt &&
+      (!newest || Date.parse(publishedAt) > Date.parse(newest))
+    )
+      newest = publishedAt;
+  }
+  return newest && new Date(newest).toISOString();
+}
 
 const CATEGORY_PRIORITY = defineCategoryMap({
   politika: 6,
@@ -99,12 +126,37 @@ export function emptyArticlesByCategory(): ArticlesByCategory {
   ) as ArticlesByCategory;
 }
 
+/**
+ * Per-cluster rated / left / right article counts for the ranking queries.
+ * DISTINCT because the social-post and provider joins fan rows out.
+ */
+export const biasCountColumns = sql`
+  count(DISTINCT ${article.id}) FILTER (WHERE ${newsProvider.biasRating} IS NOT NULL) as rated_count,
+  count(DISTINCT ${article.id}) FILTER (
+    WHERE ${newsProvider.biasRating} IN (${BiasRatingKey.Left}, ${BiasRatingKey.CenterLeft})
+  ) as left_count,
+  count(DISTINCT ${article.id}) FILTER (
+    WHERE ${newsProvider.biasRating} IN (${BiasRatingKey.Right}, ${BiasRatingKey.CenterRight})
+  ) as right_count
+`;
+
+/** Limits a ranking query to one side's blindspots; no-op without a side. */
+export function blindspotFilter(side?: BlindspotSide) {
+  if (!side) return sql``;
+  const sideCount = side === "left" ? sql`left_count` : sql`right_count`;
+  return sql`WHERE rated_count >= ${BLINDSPOT_MIN_RATED}
+    AND round(${sideCount} * 100.0 / rated_count) >= ${BLINDSPOT_MIN_PERCENT}`;
+}
+
 export async function getHomeArticles({
   db,
   count,
+  side,
 }: {
   db: Database;
   count: number;
+  /** Only this side's blindspots, still in ranking order. */
+  side?: BlindspotSide;
 }): Promise<ArticleType[]> {
   // TODO: maybe pass in clusterRunId as param?
   const topClusterIds = await db.execute(sql`
@@ -135,11 +187,13 @@ export async function getHomeArticles({
       ${recencyScoreExpr} as recency_score,
       ${categoryScoreExpr} as category_score,
       count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count,
-      max(pc.provider_article_count) as max_provider_articles
+      max(pc.provider_article_count) as max_provider_articles,
+      ${biasCountColumns}
     FROM ${clusterV2}
     INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
     INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
     LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
+    LEFT JOIN ${newsProvider} ON ${article.newsProviderKey} = ${newsProvider.key}
     LEFT JOIN provider_counts pc ON pc.cluster_id = ${clusterV2.id}
     WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
     GROUP BY ${clusterV2.id}
@@ -154,6 +208,9 @@ export async function getHomeArticles({
       category_score,
       social_post_count,
       max_provider_articles,
+      rated_count,
+      left_count,
+      right_count,
       CASE
         WHEN MAX(sum_llm_rank) OVER () > 0
         THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
@@ -182,6 +239,7 @@ export async function getHomeArticles({
       * (1 - GREATEST(0, (max_provider_articles::float / NULLIF(article_count, 0)) - 0.4))
     ) as combined_score
   FROM normalized_scores
+  ${blindspotFilter(side)}
   ORDER BY combined_score DESC
   LIMIT ${count}
 `);
@@ -307,7 +365,12 @@ async function common(
       articleClusters: {
         with: {
           article: {
-            columns: { id: true, imageUrls: true, categories: true },
+            columns: {
+              id: true,
+              imageUrls: true,
+              categories: true,
+              publishedAt: true,
+            },
             with: { newsProvider: true },
           },
         },
@@ -352,6 +415,8 @@ async function common(
       showTags: true,
       numberOfArticles: clusterArticles.length,
       providerKeys: Array.from(providerKeys),
+      images: extractCarouselImages(clusterArticles),
+      lastPublishedAt: newestPublishedAt(clusterArticles),
     };
   });
 

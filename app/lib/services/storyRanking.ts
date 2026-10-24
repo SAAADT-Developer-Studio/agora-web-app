@@ -2,17 +2,25 @@ import type { Database } from "~/lib/db";
 import {
   article,
   articleSocialPost,
+  newsProvider,
   story,
   storyArticle,
 } from "~/drizzle/schema";
 import { sql } from "drizzle-orm";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
-import { extractHeroImage } from "~/utils/extractHeroImage";
+import {
+  extractCarouselImages,
+  extractHeroImage,
+} from "~/utils/extractHeroImage";
 import { config, defineCategoryMap, type CategoryKeyValue } from "~/config";
 import {
+  biasCountColumns,
+  blindspotFilter,
   emptyArticlesByCategory,
+  newestPublishedAt,
   type ArticleType,
 } from "~/lib/services/ranking";
+import { BLINDSPOTS_PER_SIDE, type BlindspotSide } from "~/utils/blindspots";
 
 const CATEGORY_PRIORITY = defineCategoryMap({
   politika: 6,
@@ -63,9 +71,12 @@ const recentStoriesFilter = sql`${story.lastArticlePublishedAt} > now() - interv
 export async function getStoryHomeArticles({
   db,
   count,
+  side,
 }: {
   db: Database;
   count: number;
+  /** Only this side's blindspots, still in ranking order. */
+  side?: BlindspotSide;
 }): Promise<ArticleType[]> {
   const topStoryIds = await db.execute(sql`
   WITH provider_counts AS (
@@ -88,11 +99,13 @@ export async function getStoryHomeArticles({
       ${recencyScoreExpr} as recency_score,
       ${categoryScoreExpr} as category_score,
       count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count,
-      max(pc.provider_article_count) as max_provider_articles
+      max(pc.provider_article_count) as max_provider_articles,
+      ${biasCountColumns}
     FROM ${story}
     INNER JOIN ${storyArticle} ON ${story.id} = ${storyArticle.storyId}
     INNER JOIN ${article} ON ${storyArticle.articleId} = ${article.id}
     LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
+    LEFT JOIN ${newsProvider} ON ${article.newsProviderKey} = ${newsProvider.key}
     LEFT JOIN provider_counts pc ON pc.story_id = ${story.id}
     WHERE ${recentStoriesFilter}
     GROUP BY ${story.id}
@@ -107,6 +120,9 @@ export async function getStoryHomeArticles({
       category_score,
       social_post_count,
       max_provider_articles,
+      rated_count,
+      left_count,
+      right_count,
       CASE
         WHEN MAX(sum_llm_rank) OVER () > 0
         THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
@@ -135,6 +151,7 @@ export async function getStoryHomeArticles({
       * (1 - GREATEST(0, (max_provider_articles::float / NULLIF(article_count, 0)) - 0.4))
     ) as combined_score
   FROM normalized_scores
+  ${blindspotFilter(side)}
   ORDER BY combined_score DESC
   LIMIT ${count}
 `);
@@ -253,7 +270,12 @@ async function hydrateStories(
       storyArticles: {
         with: {
           article_articleId: {
-            columns: { id: true, imageUrls: true, categories: true },
+            columns: {
+              id: true,
+              imageUrls: true,
+              categories: true,
+              publishedAt: true,
+            },
             with: { newsProvider: true },
           },
         },
@@ -291,6 +313,8 @@ async function hydrateStories(
       numberOfArticles: storyArticles.length,
       providerKeys: Array.from(providerKeys),
       to: `/zgodba/${s.id}`,
+      images: extractCarouselImages(storyArticles),
+      lastPublishedAt: newestPublishedAt(storyArticles),
     };
   });
 }
@@ -321,5 +345,19 @@ export async function fetchStoryHomeArticlesData({ db }: { db: Database }) {
   return {
     home: homeArticles,
     ...byCategory,
+    // Searched across the whole window: one-sided stories rarely rank high.
+    // A hero story can repeat here — the section answers a different question.
+    blindspots: {
+      left: await getStoryHomeArticles({
+        db,
+        count: BLINDSPOTS_PER_SIDE,
+        side: "left",
+      }),
+      right: await getStoryHomeArticles({
+        db,
+        count: BLINDSPOTS_PER_SIDE,
+        side: "right",
+      }),
+    },
   };
 }
