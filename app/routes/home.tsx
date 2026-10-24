@@ -1,38 +1,22 @@
 import type { Route } from "./+types/home";
-import { eq, isNotNull, sql, and, inArray } from "drizzle-orm";
-import { lazy, type ReactNode } from "react";
 
-import HeroArticles from "~/components/hero-articles";
-import CategorySection from "~/components/category-section";
+import { HomeFeed } from "~/components/home-feed";
 import { getSeoMetas } from "~/lib/seo";
-import {
-  fetchInflationMonthlyYoY_SI,
-  fetchSloveniaGDP,
-} from "~/lib/services/external";
 import {
   emptyArticlesByCategory,
   getCategoryArticles,
   getHomeArticles,
 } from "~/lib/services/ranking";
-import { getProviderStats } from "~/lib/services/homePageProviderStats";
-import { ProviderStatsCard } from "~/components/provider-stats-card";
-import { config, defineCategoryMap } from "~/config";
+import { fetchRandomProviders } from "~/lib/services/randomProviders";
+import { config } from "~/config";
 import type { Database } from "~/lib/db";
-
-const EconomyCard = lazy(() =>
-  import("~/components/economy-card").then((module) => ({
-    default: module.EconomyCard,
-  })),
-);
-import { resolvePromises } from "~/utils/resolvePromises";
 import { getEnv } from "~/utils/getEnv";
+import { BLINDSPOTS_PER_SIDE } from "~/utils/blindspots";
 import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { ErrorComponent } from "~/components/error-component";
-import { VotingCard } from "~/components/voting-card";
 import { getAppContext } from "~/lib/appContext";
 import { HOME_CACHE_KEY } from "~/lib/kvCache/keys";
-import { article, newsProvider } from "~/drizzle/schema";
 
 export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
@@ -75,85 +59,21 @@ export async function fetchHomeArticlesData({ db }: { db: Database }) {
   return {
     home: homeArticles,
     ...byCategory,
+    // Searched across the whole run: one-sided stories rarely rank high.
+    // A hero story can repeat here — the section answers a different question.
+    blindspots: {
+      left: await getHomeArticles({
+        db,
+        count: BLINDSPOTS_PER_SIDE,
+        side: "left",
+      }),
+      right: await getHomeArticles({
+        db,
+        count: BLINDSPOTS_PER_SIDE,
+        side: "right",
+      }),
+    },
   };
-}
-export async function fetchRandomProviders({ db }: { db: Database }) {
-  const now = new Date();
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    0,
-    0,
-    0,
-    0,
-  );
-  const cols = {
-    name: newsProvider.name,
-    key: newsProvider.key,
-    url: newsProvider.url,
-    rank: newsProvider.rank,
-    biasRating: newsProvider.biasRating,
-    articlesCountToday: sql<number>`
-      (
-        select count(*)
-        from ${article} a
-        where a.${article.newsProviderKey} = ${newsProvider.key}
-          and a.${article.publishedAt} >= ${startOfToday}
-      )
-    `.as("articles_count_today"),
-  };
-
-  const rank0Promise = db
-    .select(cols)
-    .from(newsProvider)
-    .where(and(eq(newsProvider.rank, 0), isNotNull(newsProvider.biasRating)))
-    .orderBy(sql`RANDOM()`)
-    .limit(1);
-
-  const rank1Promise = db
-    .select(cols)
-    .from(newsProvider)
-    .where(and(eq(newsProvider.rank, 1), isNotNull(newsProvider.biasRating)))
-    .orderBy(sql`RANDOM()`)
-    .limit(1);
-
-  const rank2Promise = db
-    .select(cols)
-    .from(newsProvider)
-    .where(and(eq(newsProvider.rank, 2), isNotNull(newsProvider.biasRating)))
-    .orderBy(sql`RANDOM()`)
-    .limit(1);
-
-  const rank3Promise = db
-    .select(cols)
-    .from(newsProvider)
-    .where(
-      and(
-        inArray(newsProvider.rank, [3, 4]),
-        isNotNull(newsProvider.biasRating),
-      ),
-    )
-    .orderBy(sql`RANDOM()`)
-    .limit(1);
-
-  const [rank0, rank1, rank2, rank3] = await Promise.all([
-    rank0Promise,
-    rank1Promise,
-    rank2Promise,
-    rank3Promise,
-  ]);
-
-  const allProviders = [...rank0, ...rank1, ...rank2, ...rank3];
-
-  return allProviders.map((p) => ({
-    name: p.name,
-    key: p.key,
-    url: p.url,
-    rank: p.rank,
-    biasRating: p.biasRating,
-    articleCountToday: Number(p.articlesCountToday ?? 0),
-  }));
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
@@ -175,18 +95,12 @@ export async function loader({ context }: Route.LoaderArgs) {
   );
 
   const randomProviders = fetchRandomProviders({ db });
-  const gdpSeries = fetchSloveniaGDP();
-  const inflationSeries = fetchInflationMonthlyYoY_SI();
-  const providerStats = getProviderStats({ count: 9, db });
 
   const maxAge = await getMaxAge(kvCache);
 
   return data(
     {
       articles,
-      gdpSeries,
-      inflationSeries,
-      providerStats,
       randomProviders,
       env: getEnv(),
     },
@@ -199,44 +113,11 @@ export async function loader({ context }: Route.LoaderArgs) {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const {
-    articles,
-    gdpSeries,
-    inflationSeries,
-    providerStats,
-    randomProviders,
-  } = loaderData;
-
-  // Explicit null for categories without a side card — adding a CategoryKey
-  // forces a decision here via defineCategoryMap.
-  const homeSideSections = defineCategoryMap<ReactNode | null>({
-    politika: <VotingCard randomProviders={randomProviders} />,
-    gospodarstvo: (
-      <EconomyCard gdpSeries={gdpSeries} inflationSeries={inflationSeries} />
-    ),
-    kriminal: <ProviderStatsCard providerStatsPromise={providerStats} />,
-    lokalno: null,
-    sport: null,
-    "tehnologija-znanost": null,
-    kultura: null,
-    zdravje: null,
-    okolje: null,
-  });
-
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
-      <HeroArticles articles={articles.home} />
-
-      {config.categories.map((category) => (
-        <CategorySection
-          key={category.key}
-          articles={articles[category.key]}
-          categoryKey={category.key}
-          dividerText={category.name}
-          sideSection={homeSideSections[category.key] ?? undefined}
-        />
-      ))}
-    </div>
+    <HomeFeed
+      articles={loaderData.articles}
+      randomProviders={loaderData.randomProviders}
+    />
   );
 }
 

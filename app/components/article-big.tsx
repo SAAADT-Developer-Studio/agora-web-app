@@ -1,72 +1,89 @@
-import Tag from "./ui/tag";
-import CoverageBarBig from "./coverage-bar big";
-import { Sources } from "./sources";
-import { href, Link } from "react-router";
-import { useMediaQuery } from "~/hooks/use-media-query";
+import { useEffect, useState } from "react";
+import { Link } from "react-router";
+import { cn } from "~/lib/utils";
 import type { ArticleType } from "~/lib/services/ranking";
+import {
+  CategoryChip,
+  storyHref,
+  tileClassName,
+  tileImageClassName,
+} from "./article";
+import { BiasBar, StoryMetaLine } from "./story-meta";
 
-export default function ArticleBig({
-  id,
-  slug,
-  image,
-  title,
-  tags,
-  biasDistribution,
-  numberOfArticles,
-  providerKeys,
-  to,
-}: ArticleType) {
-  const imageUrl = image.src;
+const CYCLE_MS = 4500;
 
-  const isLarge = useMediaQuery("(min-width: 64rem)");
+export default function ArticleBig(article: ArticleType) {
+  const { image, title, tags, biasDistribution, providerKeys } = article;
+  const images = article.images?.length ? article.images : [image.src];
+  const current = useImageCycle(images.length);
 
   return (
     <Link
-      to={
-        to ??
-        href("/:category/clanek/:articleId", {
-          category: tags[0].toLowerCase(),
-          articleId: slug ?? id,
-        })
-      }
+      to={storyHref(article)}
       prefetch="intent"
-      className="contents w-full"
-      // Only the clanek page picks up the shared image; /novo links to stories.
-      viewTransition={isLarge && !to}
+      className={cn(
+        tileClassName,
+        "h-[340px] sm:col-span-2 sm:row-span-2 md:h-[500px]",
+      )}
     >
-      <article className="group relative flex h-[300px] w-full cursor-pointer flex-col gap-4 overflow-hidden rounded-md sm:col-span-2 sm:row-span-2 md:h-[500px]">
-        <link rel="preload" as="image" fetchPriority="high" href={image.src} />
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-400 group-hover:scale-103"
+      {images.map((src, index) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          fetchPriority={index === 0 ? "high" : "low"}
+          loading={index === 0 ? "eager" : "lazy"}
+          decoding="async"
+          className={tileImageClassName}
           style={{
-            backgroundImage: `url(${imageUrl})`,
-            viewTransitionName: to ? undefined : `article-image-${id}`,
+            opacity: index === current ? 1 : 0,
+            transition: "opacity 1800ms ease-in-out, scale 500ms ease-out",
           }}
         />
-        <div className="text-vidikwhite relative z-10 flex h-full w-full flex-col items-center justify-between rounded-md [background-image:linear-gradient(to_top,rgba(0,0,0,0.7)_0%,rgba(0,0,0,0.55)_15%,rgba(0,0,0,0)_50%)] font-bold">
-          <div className="flex w-full items-center justify-between p-2">
-            <div className="flex max-h-[25px] flex-wrap gap-2 overflow-hidden">
-              {tags.map((tag) => (
-                <Tag key={tag} text={tag} />
-              ))}
-            </div>
+      ))}
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 via-45% to-black/0"
+      />
 
-            <Sources
-              numberOfArticles={numberOfArticles}
-              providerKeys={providerKeys}
-            />
-          </div>
-          <div className="flex w-full flex-col items-start justify-center p-2">
-            <div className="flex w-full items-center justify-between">
-              <p className="my-1 line-clamp-2 w-full overflow-clip text-sm leading-5 md:my-4 md:text-2xl md:leading-8">
-                {title}
-              </p>
-            </div>
+      <div className="relative flex gap-1.5 p-4 md:p-6">
+        {tags.slice(0, 2).map((tag) => (
+          <CategoryChip key={tag} tag={tag} />
+        ))}
+      </div>
 
-            <CoverageBarBig {...biasDistribution} />
-          </div>
-        </div>
-      </article>
+      <div className="relative flex flex-col gap-3 p-4 md:gap-4 md:p-6">
+        <h2 className="max-w-[34ch] text-[1.4rem] leading-[1.15] font-bold tracking-tight text-balance md:text-[2.1rem] md:leading-[1.1]">
+          {title}
+        </h2>
+        <StoryMetaLine
+          providerKeys={providerKeys}
+          numberOfArticles={article.numberOfArticles}
+          lastPublishedAt={article.lastPublishedAt}
+          className="text-sm text-white/80"
+          stackClassName="size-6 border-black/40"
+        />
+        <BiasBar distribution={biasDistribution} labels />
+      </div>
     </Link>
   );
+}
+
+/** Index of the visible image; holds still for reduced motion or one image. */
+function useImageCycle(count: number) {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const still =
+      count <= 1 ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (still) return undefined;
+    const interval = setInterval(
+      () => setCurrent((prev) => (prev + 1) % count),
+      CYCLE_MS,
+    );
+    return () => clearInterval(interval);
+  }, [count]);
+
+  return current % Math.max(count, 1);
 }

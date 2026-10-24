@@ -215,7 +215,6 @@ export default function ArticlePage({ loaderData }: Route.ComponentProps) {
         <HeroImageCarousel
           articles={cluster.articles}
           title={cluster.title}
-          clusterId={cluster.id}
           className="md:col-span-2"
         />
         <BiasDistribution
@@ -491,12 +490,10 @@ function ShareButtons() {
 function HeroImageCarousel({
   articles,
   title,
-  clusterId,
   className,
 }: {
   articles: ArticlePageData["cluster"]["articles"];
   title: string;
-  clusterId: number;
   className?: string;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -540,10 +537,6 @@ function HeroImageCarousel({
             alt={title}
             className="h-full w-full object-cover transition-opacity duration-1800 ease-in-out"
             style={{
-              viewTransitionName:
-                index === currentIndex
-                  ? `article-image-${clusterId}`
-                  : undefined,
               opacity: index === currentIndex ? 1 : 0,
               position: index === currentIndex ? "relative" : "absolute",
               top: 0,
