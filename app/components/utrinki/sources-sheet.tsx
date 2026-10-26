@@ -96,7 +96,6 @@ export function SourcesSheet({
             "fixed right-0 bottom-0 left-0 z-50 mx-auto flex w-full max-w-[390px] flex-col overflow-hidden rounded-t-[20px] bg-[#414141] text-[#f3f8fe] shadow-[0px_-8px_32px_-4px_rgba(0,0,0,0.28)] outline-none",
             expanded ? "h-dvh rounded-none" : "h-[min(76dvh,640px)]",
           )}
-          aria-describedby="utrinki-sheet-summary"
           onPointerDown={(event) => {
             if (!(event.target instanceof HTMLElement)) return;
             const handle = event.target.closest("[data-sheet-handle]");
@@ -134,12 +133,9 @@ export function SourcesSheet({
                   <img src={closeIcon} alt="" width={16} height={16} />
                 </DialogPrimitive.Close>
               </div>
-              <p
-                id="utrinki-sheet-summary"
-                className="px-4 pt-1 text-[13px] text-[#f3f8fe]/70"
-              >
+              <DialogPrimitive.Description className="px-4 pt-1 text-[13px] text-[#f3f8fe]/70">
                 {story.coverageLabel} · {story.spanLabel}
-              </p>
+              </DialogPrimitive.Description>
               <BiasBar bias={bias} className="px-4 pt-3" />
               <div
                 role="tablist"
