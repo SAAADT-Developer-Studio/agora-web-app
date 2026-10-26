@@ -6,17 +6,8 @@ import logoNoText from "~/assets/logo-no-text.svg";
 import sourcesIcon from "~/assets/utrinki/sources.svg";
 import shareIcon from "~/assets/utrinki/share.svg";
 import arrowIcon from "~/assets/utrinki/arrow.svg";
-import {
-  CategoryRail,
-  ReelChrome,
-  ReelProgress,
-} from "~/components/utrinki/chrome";
 import { ProviderStack } from "~/components/utrinki/provider-mark";
-import {
-  updatedKicker,
-  type UtrinkiCategory,
-  type UtrinkiStory,
-} from "~/lib/utrinki/model";
+import { updatedKicker, type UtrinkiStory } from "~/lib/utrinki/model";
 
 function ActionButton({
   label,
@@ -44,11 +35,6 @@ function ActionButton({
 
 export function StoryCard({
   story,
-  category,
-  pendingCategory,
-  draft = false,
-  progressIndex,
-  progressCount,
   saved,
   onOpenSources,
   onOpenSaved,
@@ -58,11 +44,6 @@ export function StoryCard({
   onHide,
 }: {
   story: UtrinkiStory;
-  category: UtrinkiCategory;
-  pendingCategory?: UtrinkiCategory | null;
-  draft?: boolean;
-  progressIndex: number;
-  progressCount: number;
   saved: boolean;
   onOpenSources: () => void;
   onOpenSaved: () => void;
@@ -96,19 +77,6 @@ export function StoryCard({
         </div>
       )}
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.12)_42%,rgba(0,0,0,0.96)_100%)]" />
-      <div className="absolute inset-x-0 top-0 z-20">
-        <ReelChrome category={category} />
-        <div className="pt-3.5">
-          <CategoryRail
-            category={category}
-            pending={pendingCategory}
-            draft={draft}
-          />
-        </div>
-        <div className="px-4 pt-4">
-          <ReelProgress index={progressIndex} count={progressCount} />
-        </div>
-      </div>
       <div
         className="relative z-10 mt-auto flex flex-col gap-3 px-4 pb-[max(16px,env(safe-area-inset-bottom))]"
         onPointerDown={(event) => {
@@ -125,7 +93,10 @@ export function StoryCard({
         }}
       >
         <div className="pr-[80px]">
-          <p className="text-[12px] font-semibold tracking-[0.5px] text-[#0084e5] uppercase">
+          <p
+            className="text-[12px] font-semibold tracking-[0.5px] text-[#0084e5] uppercase"
+            suppressHydrationWarning
+          >
             {story.categoryLabel} · {updatedKicker(story.updatedAt)}
           </p>
           <h2

@@ -171,6 +171,13 @@ export function hideStory(map: HiddenMap, id: number, now: number): HiddenMap {
   );
 }
 
+export function unhideStory(map: HiddenMap, id: number): HiddenMap {
+  if (!map[String(id)]) return map;
+  const next = { ...map };
+  delete next[String(id)];
+  return next;
+}
+
 export function toggleSaved(
   map: SavedMap,
   story: {
@@ -208,7 +215,12 @@ export function toggleSaved(
 export function readScroll(
   storage: Pick<Storage, "getItem">,
 ): ScrollState | null {
-  const raw = storage.getItem(UTRINKI_SCROLL_KEY);
+  let raw: string | null;
+  try {
+    raw = storage.getItem(UTRINKI_SCROLL_KEY);
+  } catch {
+    return null;
+  }
   if (!raw) return null;
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -231,5 +243,9 @@ export function writeScroll(
   storage: Pick<Storage, "setItem">,
   state: ScrollState,
 ) {
-  storage.setItem(UTRINKI_SCROLL_KEY, JSON.stringify(state));
+  try {
+    storage.setItem(UTRINKI_SCROLL_KEY, JSON.stringify(state));
+  } catch {
+    // Session storage can throw in private mode. The reel still works.
+  }
 }

@@ -8,12 +8,17 @@ import {
   type ReactNode,
 } from "react";
 import { ChevronUp } from "lucide-react";
-import { useFetcher, useNavigation } from "react-router";
+import { useNavigation } from "react-router";
 import { toast } from "sonner";
 import { StoryCard } from "~/components/utrinki/story-card";
 import { SourcesSheet } from "~/components/utrinki/sources-sheet";
 import { SavedSheet } from "~/components/utrinki/saved-sheet";
 import { EndCard } from "~/components/utrinki/end-card";
+import {
+  CategoryRail,
+  ReelChrome,
+  ReelProgress,
+} from "~/components/utrinki/chrome";
 import { captureReel, dwellBucket } from "~/lib/utrinki/analytics";
 import { useUtrinkiStore } from "~/lib/utrinki/use-utrinki-store";
 import {
@@ -23,8 +28,10 @@ import {
   type SavedMap,
 } from "~/lib/utrinki/store";
 import {
+  appendUniqueStories,
+  isUtrinkiPage,
   parseUtrinkiQuery,
-  utrinkiPageHref,
+  utrinkiDataHref,
   type UtrinkiCategory,
   type UtrinkiPage,
   type UtrinkiStory,
@@ -65,7 +72,6 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   const store = useUtrinkiStore();
   const reduced = usePrefersReducedMotion();
   const navigation = useNavigation();
-  const fetcher = useFetcher<UtrinkiPage>();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<UtrinkiStory[][]>([page.stories]);
   const [hasMore, setHasMore] = useState(page.hasMore);
@@ -75,10 +81,17 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   );
   const [sourcesId, setSourcesId] = useState<number | null>(null);
   const [savedOpen, setSavedOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [olderStatus, setOlderStatus] = useState<"idle" | "loading" | "error">(
+    "idle",
+  );
   const [orderSeen, setOrderSeen] = useState(store.seen);
   const seenRef = useRef(store.seen);
   seenRef.current = store.seen;
   const loadedPages = useRef(new Set<number>([page.page]));
+  const latestPage = useRef(page.page);
+  const requestGen = useRef(0);
+  const inflightPage = useRef<number | null>(null);
   const wantMore = useRef(false);
   const dwell = useRef<{
     id: number;
@@ -93,10 +106,14 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   }, [navigation.location, navigation.state]);
 
   useEffect(() => {
+    requestGen.current += 1;
+    inflightPage.current = null;
     loadedPages.current = new Set([page.page]);
+    latestPage.current = page.page;
     setPages([page.stories]);
     setHasMore(page.hasMore);
     setActiveIndex(0);
+    setOlderStatus("idle");
     setSeenThisVisit(new Set());
     setOrderSeen(seenRef.current);
   }, [page.category, page.page, page.stories, page.hasMore]);
@@ -108,14 +125,45 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     });
   }, [store.seen]);
 
-  useEffect(() => {
-    const data = fetcher.data;
-    if (!data || data.category !== page.category) return;
-    if (loadedPages.current.has(data.page)) return;
-    loadedPages.current.add(data.page);
-    setPages((current) => [...current, data.stories]);
-    setHasMore(data.hasMore);
-  }, [fetcher.data, page.category]);
+  const fetchPage = useCallback(
+    async (next: number) => {
+      if (
+        loadedPages.current.has(next) ||
+        next < 0 ||
+        inflightPage.current !== null
+      ) {
+        return;
+      }
+      const generation = requestGen.current;
+      inflightPage.current = next;
+      setOlderStatus("loading");
+      try {
+        const response = await fetch(
+          utrinkiDataHref(page.category, next, Boolean(page.draft)),
+          { headers: { Accept: "application/json" } },
+        );
+        if (generation !== requestGen.current) return;
+        if (!response.ok) throw new Error("utrinki page failed");
+        const body: unknown = await response.json();
+        if (generation !== requestGen.current) return;
+        if (!isUtrinkiPage(body) || body.category !== page.category) {
+          throw new Error("utrinki page failed");
+        }
+        loadedPages.current.add(body.page);
+        latestPage.current = body.page;
+        setPages((current) => appendUniqueStories(current, body.stories));
+        setHasMore(body.hasMore);
+        setOlderStatus("idle");
+      } catch {
+        if (generation !== requestGen.current) return;
+        wantMore.current = false;
+        setOlderStatus("error");
+      } finally {
+        if (inflightPage.current === next) inflightPage.current = null;
+      }
+    },
+    [page.category, page.draft],
+  );
 
   const hidden = store.hidden;
   const seenForOrder = useMemo(() => {
@@ -207,14 +255,10 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
       saved.page > page.page &&
       saved.page < page.page + 4 &&
       hasMore &&
-      fetcher.state === "idle"
+      olderStatus === "idle"
     ) {
-      const next = page.page + pages.length;
-      if (next <= saved.page) {
-        void fetcher.load(
-          utrinkiPageHref(page.category, next, Boolean(page.draft)),
-        );
-      }
+      const next = latestPage.current + 1;
+      if (next <= saved.page) void fetchPage(next);
     }
     // Restore once per loaded set.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -288,7 +332,7 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target instanceof HTMLElement ? event.target : null;
       if (target?.closest("[data-chip-rail], input, textarea")) return;
-      if (sourcesId !== null || savedOpen) return;
+      if (sourcesId !== null || savedOpen || menuOpen) return;
       const last = visible.length;
       if (
         event.key === "ArrowDown" ||
@@ -317,6 +361,7 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   }, [
     activeIndex,
     reduced,
+    menuOpen,
     savedOpen,
     scrollToIndex,
     sourcesId,
@@ -329,11 +374,26 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     (sourcesId === activeStory?.id ? activeStory : null);
 
   function loadOlder() {
-    const next = page.page + pages.length;
     wantMore.current = true;
-    void fetcher.load(
-      utrinkiPageHref(page.category, next, Boolean(page.draft)),
-    );
+    void fetchPage(latestPage.current + 1);
+  }
+
+  function hideStoryFromFeed(story: UtrinkiStory) {
+    store.hide(story.id);
+    setSourcesId(null);
+    toast("Sklop je skrit.", {
+      action: {
+        label: "Razveljavi",
+        onClick: () => {
+          store.unhide(story.id);
+          window.setTimeout(() => {
+            scrollerRef.current
+              ?.querySelector<HTMLElement>(`[data-story-id="${story.id}"]`)
+              ?.scrollIntoView({ block: "start", behavior: "auto" });
+          }, 0);
+        },
+      },
+    });
   }
 
   function toggleSave(story: UtrinkiStory) {
@@ -365,17 +425,48 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     }
   }
 
+  const onEndCard = activeIndex >= visible.length;
+  const topBar = (
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
+      <div className="pointer-events-auto">
+        <ReelChrome
+          category={page.category}
+          onHide={
+            activeStory && !onEndCard
+              ? () => hideStoryFromFeed(activeStory)
+              : undefined
+          }
+          onMenuOpenChange={setMenuOpen}
+        />
+      </div>
+      <div className="pointer-events-auto pt-3.5">
+        <CategoryRail
+          category={page.category}
+          pending={pendingCategory}
+          draft={page.draft}
+        />
+      </div>
+      {visible.length > 0 && (
+        <div className="px-4 pt-4">
+          <ReelProgress
+            index={progress.end ? progress.count - 1 : progress.index}
+            count={progress.count}
+            complete={progress.end}
+          />
+        </div>
+      )}
+    </div>
+  );
+
   if (visible.length === 0) {
     return (
       <Shell>
+        {topBar}
         <EndCard
-          category={page.category}
-          pendingCategory={pendingCategory}
-          draft={page.draft}
-          progressCount={1}
           imageUrl={null}
-          hasMore={hasMore}
-          loading={fetcher.state !== "idle"}
+          hasMore={false}
+          loading={false}
+          empty={page.stories.length === 0}
           onOlder={loadOlder}
           onFirst={() => scrollToIndex(0)}
         />
@@ -388,10 +479,11 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
 
   return (
     <Shell>
+      {topBar}
       <h1 className="sr-only">Utrinki</h1>
       <button
         type="button"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-[4.5rem] focus:left-4 focus:z-30 focus:rounded-full focus:bg-[#0084e5] focus:px-3 focus:py-2 focus:text-[14px] focus:font-semibold"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-[8.5rem] focus:left-4 focus:z-40 focus:rounded-full focus:bg-[#0084e5] focus:px-3 focus:py-2 focus:text-[14px] focus:font-semibold"
         onClick={() => scrollToIndex(Math.min(activeIndex + 1, visible.length))}
       >
         Naslednji sklop
@@ -411,56 +503,28 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
             ? `${activeStory.title}. Sklop ${progress.end ? progress.count : progress.index + 1} od ${progress.count}.`
             : "Konec sklopa."}
         </p>
-        {visible.map((story, index) => {
-          let cursor = 0;
-          let localIndex = 0;
-          let localCount = progress.count;
-          for (const chunk of orderedPages) {
-            if (index < cursor + chunk.length) {
-              localIndex = index - cursor;
-              localCount = chunk.length;
-              break;
-            }
-            cursor += chunk.length;
-          }
-          return (
-            <div key={story.id} data-feed-index={index}>
-              <StoryCard
-                story={story}
-                category={page.category}
-                pendingCategory={pendingCategory}
-                draft={page.draft}
-                progressIndex={localIndex}
-                progressCount={localCount}
-                saved={Boolean(store.saved[String(story.id)])}
-                onOpenSources={() => openSources(story)}
-                onOpenSaved={() => openSaved(story)}
-                onToggleSave={() => toggleSave(story)}
-                onShare={() => void shareStory(story)}
-                onOpenStory={() =>
-                  captureReel("reel_open_story", { story_id: story.id })
-                }
-                onHide={() => {
-                  store.hide(story.id);
-                  setSourcesId(null);
-                }}
-              />
-            </div>
-          );
-        })}
+        {visible.map((story, index) => (
+          <div key={story.id} data-feed-index={index} data-story-id={story.id}>
+            <StoryCard
+              story={story}
+              saved={Boolean(store.saved[String(story.id)])}
+              onOpenSources={() => openSources(story)}
+              onOpenSaved={() => openSaved(story)}
+              onToggleSave={() => toggleSave(story)}
+              onShare={() => void shareStory(story)}
+              onOpenStory={() =>
+                captureReel("reel_open_story", { story_id: story.id })
+              }
+              onHide={() => hideStoryFromFeed(story)}
+            />
+          </div>
+        ))}
         <div data-feed-index={visible.length}>
           <EndCard
-            category={page.category}
-            pendingCategory={pendingCategory}
-            draft={page.draft}
-            progressCount={
-              progress.end
-                ? progress.count
-                : orderedPages.at(-1)?.length || progress.count
-            }
             imageUrl={visible.at(-1)?.imageUrl ?? null}
             hasMore={hasMore}
-            loading={fetcher.state !== "idle"}
+            loading={olderStatus === "loading"}
+            failed={olderStatus === "error"}
             onOlder={loadOlder}
             onFirst={() => scrollToIndex(0)}
           />

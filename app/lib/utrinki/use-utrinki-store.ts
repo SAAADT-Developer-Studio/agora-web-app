@@ -5,6 +5,7 @@ import {
   hideStory,
   pruneMap,
   rememberSeen,
+  unhideStory,
   sanitizeHidden,
   sanitizeHint,
   sanitizeSaved,
@@ -91,6 +92,11 @@ export function useUtrinkiStore() {
     },
     hide(id: number) {
       const next = hideStory(hiddenRef.current, id, Date.now());
+      hiddenRef.current = next;
+      setHiddenRaw(next);
+    },
+    unhide(id: number) {
+      const next = unhideStory(hiddenRef.current, id);
       hiddenRef.current = next;
       setHiddenRaw(next);
     },

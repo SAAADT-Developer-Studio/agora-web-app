@@ -6,7 +6,10 @@ import {
   formatCoverageSpan,
   parseUtrinkiQuery,
   toUtrinkiStory,
+  appendUniqueStories,
+  shortAgo,
   updatedKicker,
+  utrinkiDataHref,
   utrinkiPageHref,
   utrinkiWindow,
   type UtrinkiMember,
@@ -183,6 +186,30 @@ describe("utrinki loader", () => {
     });
     expect(exact.hasMore).toBe(false);
     expect(exact.stories.map((story) => story.id)).toEqual([1, 2]);
+  });
+
+  it("drops stories that are already on the reel and shortens the sheet clock", () => {
+    const first = [{ id: 1 } as UtrinkiStory, { id: 2 } as UtrinkiStory];
+    const appended = appendUniqueStories(
+      [first],
+      [{ id: 2 } as UtrinkiStory, { id: 3 } as UtrinkiStory],
+    );
+    expect(appended.map((chunk) => chunk.map((story) => story.id))).toEqual([
+      [1, 2],
+      [3],
+    ]);
+    expect(appendUniqueStories(appended, [{ id: 3 } as UtrinkiStory])).toBe(
+      appended,
+    );
+    expect(
+      shortAgo(
+        "2026-10-25T09:00:00.000Z",
+        Date.parse("2026-10-25T12:00:00.000Z"),
+      ),
+    ).toBe("pred 3 h");
+    expect(utrinkiDataHref("politika", 2, true)).toBe(
+      "/api/utrinki?kategorija=politika&stran=2&osnutek=1",
+    );
   });
 
   it("buckets dwell time for reel_view", () => {

@@ -146,6 +146,16 @@ export function updatedKicker(updatedAt: string, now = Date.now()) {
   return `POSODOBLJENO PRED ${Math.floor(hours / 24)} D`;
 }
 
+/** Sheet row clock, matching the frame: "pred 3 h". */
+export function shortAgo(iso: string, now = Date.now()) {
+  const mins = Math.floor((now - Date.parse(iso)) / 60000);
+  if (!Number.isFinite(mins)) return "pred kratkim";
+  if (mins < 60) return `pred ${Math.max(mins, 1)} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 48) return `pred ${hours} h`;
+  return `pred ${Math.floor(hours / 24)} d`;
+}
+
 export function parseUtrinkiQuery(searchParams: URLSearchParams): {
   category: UtrinkiCategory;
   page: number;
@@ -188,6 +198,46 @@ export function utrinkiPageHref(
   if (draft) params.set("osnutek", "1");
   const query = params.toString();
   return query ? `/utrinki?${query}` : "/utrinki";
+}
+
+/** JSON continuation of a page. Kept off the document loader so a failure stays on the reel. */
+export function utrinkiDataHref(
+  category: UtrinkiCategory,
+  page: number,
+  draft = false,
+) {
+  const href = utrinkiPageHref(category, page, draft);
+  return href.replace("/utrinki", "/api/utrinki");
+}
+
+export function isUtrinkiPage(value: unknown): value is UtrinkiPage {
+  if (typeof value !== "object" || value === null) return false;
+  const page = value as Partial<UtrinkiPage>;
+  return (
+    Array.isArray(page.stories) &&
+    typeof page.page === "number" &&
+    typeof page.hasMore === "boolean" &&
+    (page.category === "aktualno" ||
+      (typeof page.category === "string" && isCategoryKey(page.category)))
+  );
+}
+
+/** Drop stories already on the reel so a later page cannot reuse a React key. */
+export function appendUniqueStories(
+  pages: readonly (readonly UtrinkiStory[])[],
+  incoming: readonly UtrinkiStory[],
+): UtrinkiStory[][] {
+  const seen = new Set<number>();
+  for (const chunk of pages) {
+    for (const story of chunk) seen.add(story.id);
+  }
+  const next = incoming.filter((story) => {
+    if (seen.has(story.id)) return false;
+    seen.add(story.id);
+    return true;
+  });
+  if (next.length === 0) return pages as UtrinkiStory[][];
+  return [...pages.map((chunk) => [...chunk]), next];
 }
 
 function dominantCategory(members: readonly UtrinkiMember[]) {
@@ -272,7 +322,7 @@ export function toUtrinkiStory(input: {
   };
 
   if (!biasCountsAddUp(bias)) {
-    throw new Error("Utrinki bias counts do not add up");
+    console.error("Utrinki bias counts do not add up", bias);
   }
 
   return {

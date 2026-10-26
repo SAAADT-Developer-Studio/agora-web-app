@@ -8,7 +8,9 @@ export function isUnindexedPath(pathname: string) {
     pathname === "/zgodba" ||
     pathname.startsWith("/zgodba/") ||
     pathname === "/utrinki" ||
-    pathname.startsWith("/utrinki/")
+    pathname.startsWith("/utrinki/") ||
+    pathname === "/api/utrinki" ||
+    pathname.startsWith("/api/utrinki/")
   );
 }
 

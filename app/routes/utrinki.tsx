@@ -5,11 +5,7 @@ import { UtrinkiFeed } from "~/components/utrinki/feed";
 import { UtrinkiSkeleton } from "~/components/utrinki/states";
 import { getSeoMetas } from "~/lib/seo";
 import { UNINDEXED_ROBOTS } from "~/lib/seo/unindexed";
-import { getAppContext } from "~/lib/appContext";
-import { utrinkiCacheKey } from "~/lib/kvCache/keys";
-import { loadUtrinkiPage } from "~/lib/utrinki/load";
-import { parseUtrinkiQuery } from "~/lib/utrinki/model";
-import { getMaxAge } from "~/utils/getMaxAge";
+import { readUtrinkiPage } from "~/lib/utrinki/readPage";
 
 export function links() {
   return [
@@ -38,30 +34,9 @@ export function headers({ loaderHeaders }: Route.HeadersArgs) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const url = new URL(request.url);
-  const query = parseUtrinkiQuery(url.searchParams);
-
-  if (import.meta.env.DEV && url.searchParams.get("osnutek") === "1") {
-    const { fixtureUtrinkiPage } = await import("~/lib/utrinki/fixtures");
-    return data(
-      { ...fixtureUtrinkiPage(query), draft: true },
-      { headers: { "Cache-Control": "no-store" } },
-    );
-  }
-
-  const { db, kvCache, measurer } = getAppContext(context);
-  const page = await measurer.time("fetchUtrinki", () =>
-    kvCache.cached(() => loadUtrinkiPage({ db, ...query }), {
-      key: utrinkiCacheKey(query.category, query.page),
-      expirationTtl: 10 * 60,
-    }),
-  );
-  const maxAge = await getMaxAge(kvCache);
-
+  const { page, cacheControl } = await readUtrinkiPage(request, context);
   return data(page, {
-    headers: {
-      "Cache-Control": `max-age=${maxAge}, s-maxage=${maxAge}, stale-while-revalidate=${5 * 60}, stale-if-error=${3 * 60 * 60}`,
-    },
+    headers: { "Cache-Control": cacheControl },
   });
 }
 

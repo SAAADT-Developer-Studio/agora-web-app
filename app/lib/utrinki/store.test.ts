@@ -129,5 +129,22 @@ describe("utrinki local state", () => {
       page: 1,
     });
     expect(readScroll({ getItem: () => "nope" })).toBeNull();
+    expect(() =>
+      writeScroll(
+        {
+          setItem: () => {
+            throw new Error("quota");
+          },
+        },
+        { category: "politika", storyId: 5, page: 1 },
+      ),
+    ).not.toThrow();
+    expect(() =>
+      readScroll({
+        getItem: () => {
+          throw new Error("private");
+        },
+      }),
+    ).not.toThrow();
   });
 });

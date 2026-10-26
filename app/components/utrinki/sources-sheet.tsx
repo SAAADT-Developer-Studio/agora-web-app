@@ -7,9 +7,9 @@ import { BiasBar } from "~/components/utrinki/story-card";
 import { ProviderMark } from "~/components/utrinki/provider-mark";
 import { biasSideLabel } from "~/lib/utrinki/bias";
 import type { BiasSide } from "~/utils/biasSide";
-import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";
+import { articlesLabel } from "~/components/story-meta";
 import { cn } from "~/lib/utils";
-import type { UtrinkiStory } from "~/lib/utrinki/model";
+import { shortAgo, type UtrinkiStory } from "~/lib/utrinki/model";
 
 type SideFilter = "all" | BiasSide | "unrated";
 
@@ -42,6 +42,14 @@ export function SourcesSheet({
   const [expanded, setExpanded] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const open = story !== null;
+  const activeId = story?.id ?? null;
+  const [resetId, setResetId] = useState(activeId);
+  if (resetId !== activeId) {
+    setResetId(activeId);
+    setFilter("all");
+    setShowAll(false);
+    setExpanded(false);
+  }
 
   const articles = story?.articles ?? [];
   const bias = story?.bias;
@@ -77,21 +85,28 @@ export function SourcesSheet({
   const rows = showAll ? visible : visible.slice(0, PREVIEW_ROWS);
   const hiddenCount = visible.length - rows.length;
 
+  function resetSheet() {
+    setExpanded(false);
+    setShowAll(false);
+    setFilter("all");
+  }
+
+  function dismiss() {
+    resetSheet();
+    onClose();
+  }
+
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
-        if (!next) {
-          setExpanded(false);
-          setShowAll(false);
-          setFilter("all");
-          onClose();
-        }
+        if (!next) dismiss();
       }}
     >
       <DialogPortal>
         <DialogOverlay className="bg-[rgba(5,6,7,0.58)] backdrop-blur-none" />
         <DialogPrimitive.Content
+          aria-modal="true"
           className={cn(
             "fixed right-0 bottom-0 left-0 z-50 mx-auto flex w-full max-w-[390px] flex-col overflow-hidden rounded-t-[20px] bg-[#414141] text-[#f3f8fe] shadow-[0px_-8px_32px_-4px_rgba(0,0,0,0.28)] outline-none",
             expanded ? "h-dvh rounded-none" : "h-[min(76dvh,640px)]",
@@ -104,7 +119,7 @@ export function SourcesSheet({
             const move = (pointer: PointerEvent) => {
               const dy = pointer.clientY - startY;
               if (dy < -56) setExpanded(true);
-              if (dy > 80) onClose();
+              if (dy > 80) dismiss();
               else if (expanded && dy > 56) setExpanded(false);
             };
             const up = (pointer: PointerEvent) => {
@@ -138,7 +153,6 @@ export function SourcesSheet({
               </DialogPrimitive.Description>
               <BiasBar bias={bias} className="px-4 pt-3" />
               <div
-                role="tablist"
                 aria-label="Filter po perspektivi"
                 className={cn(
                   "mx-4 mt-3 h-10 overflow-x-auto rounded-full bg-[#292929] p-1 [scrollbar-width:none]",
@@ -147,18 +161,19 @@ export function SourcesSheet({
               >
                 {tabs.map((tab) => {
                   const selected = filter === tab.key;
+                  const disabled = tab.key !== "all" && tab.count === 0;
                   return (
                     <button
                       key={tab.key}
                       type="button"
-                      role="tab"
-                      aria-selected={selected}
+                      aria-pressed={selected}
+                      disabled={disabled}
                       onClick={() => {
                         setFilter(tab.key);
                         setShowAll(false);
                       }}
                       className={cn(
-                        "inline-flex h-8 items-center justify-center gap-1.5 rounded-full px-1 text-[13px] font-semibold whitespace-nowrap",
+                        "inline-flex h-8 items-center justify-center gap-1.5 rounded-full px-1 text-[13px] font-semibold whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-40",
                         selected
                           ? "bg-[#f3f8fe] text-[#12141a]"
                           : "text-[#f3f8fe]",
@@ -204,7 +219,7 @@ export function SourcesSheet({
                           <span className="block text-[11px] font-semibold text-[#f3f8fe]/65">
                             {article.providerName} ·{" "}
                             {biasSideLabel(article.side)} ·{" "}
-                            {timeDiffInSlovenian(new Date(article.publishedAt))}
+                            {shortAgo(article.publishedAt)}
                           </span>
                           <span className="mt-0.5 line-clamp-2 text-[15px] leading-[19px] font-semibold">
                             {article.title}
@@ -234,11 +249,11 @@ export function SourcesSheet({
                     onClick={() => setShowAll(true)}
                     className="text-[13px] text-[#f3f8fe]/60"
                   >
-                    + {hiddenCount} člankov
+                    + {articlesLabel(hiddenCount)}
                   </button>
                 )}
               </div>
-              <div className="px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))]">
+              <div className="px-4 pt-3 pb-[max(24px,env(safe-area-inset-bottom))]">
                 <Link
                   to={story.storyPath}
                   onClick={onOpenStory}

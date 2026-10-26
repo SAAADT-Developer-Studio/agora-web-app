@@ -44,8 +44,19 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
   const setValue = (newValue: T) => {
     const raw = JSON.stringify(newValue);
-    localStorage.setItem(key, raw);
-    snapshots.set(key, { raw, value: newValue });
+    let stored: string | null = raw;
+    try {
+      localStorage.setItem(key, raw);
+    } catch {
+      // Private mode and a full quota throw. Keep the value for this visit
+      // and pin the cache to whatever getItem still returns.
+      try {
+        stored = localStorage.getItem(key);
+      } catch {
+        stored = null;
+      }
+    }
+    snapshots.set(key, { raw: stored, value: newValue });
     window.dispatchEvent(new Event("storage"));
   };
   return [value, setValue] as const;
