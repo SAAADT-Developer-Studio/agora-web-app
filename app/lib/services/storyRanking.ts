@@ -72,11 +72,17 @@ export async function getStoryHomeArticles({
   db,
   count,
   side,
+  offset = 0,
 }: {
   db: Database;
   count: number;
   /** Only this side's blindspots, still in ranking order. */
   side?: BlindspotSide;
+  /**
+   * Skip this many stories after ranking. Existing callers omit it, which
+   * keeps `OFFSET 0` and the same first page.
+   */
+  offset?: number;
 }): Promise<ArticleType[]> {
   const topStoryIds = await db.execute(sql`
   WITH provider_counts AS (
@@ -154,6 +160,7 @@ export async function getStoryHomeArticles({
   ${blindspotFilter(side)}
   ORDER BY combined_score DESC
   LIMIT ${count}
+  OFFSET ${offset}
 `);
   return await hydrateStories(
     db,

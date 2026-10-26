@@ -6,7 +6,9 @@ export function isUnindexedPath(pathname: string) {
     pathname === "/novo" ||
     pathname.startsWith("/novo/") ||
     pathname === "/zgodba" ||
-    pathname.startsWith("/zgodba/")
+    pathname.startsWith("/zgodba/") ||
+    pathname === "/utrinki" ||
+    pathname.startsWith("/utrinki/")
   );
 }
 

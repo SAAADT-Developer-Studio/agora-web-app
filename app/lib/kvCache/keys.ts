@@ -8,6 +8,11 @@ export const META_CACHE_KEY = "meta" as CacheKey;
 /** Story-ranked `/novo` feed. Distinct from `HOME_CACHE_KEY` so the two never collide. */
 export const NOVO_HOME_CACHE_KEY = "data:story:novo" as CacheKey;
 
+/** One page of the hidden `/utrinki` reel. Never collides with `/novo`. */
+export function utrinkiCacheKey(category: string, page: number) {
+  return `data:story:utrinki:v1:${category}:${page}` as CacheKey;
+}
+
 export function getCategoryCacheKey(category: CategoryKeyValue) {
   return `data:v2:category:${category}` as CacheKey;
 }

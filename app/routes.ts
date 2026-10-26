@@ -21,6 +21,7 @@ export default [
       route("clanek/:articleId", "./routes/article.tsx"),
     ]),
   ]),
+  route("utrinki", "./routes/utrinki.tsx"),
   route("dev", "./routes/dev-layout.tsx", [
     route("compare-clustering", "./routes/dev/compare-clustering.tsx"),
   ]),

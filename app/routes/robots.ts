@@ -5,6 +5,7 @@ import { SITE_URL } from "~/lib/seo";
 const hiddenDisallows = [
   { type: "disallow" as const, value: "/novo" },
   { type: "disallow" as const, value: "/zgodba/" },
+  { type: "disallow" as const, value: "/utrinki" },
 ];
 
 function aiCrawler(userAgent: string) {
