@@ -50,7 +50,7 @@ export function ReelChrome({ category }: { category: UtrinkiCategory }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <>
-      <header className="relative z-20 flex h-[62px] shrink-0 items-center justify-between bg-gradient-to-b from-black/55 to-transparent pt-[env(safe-area-inset-top)] pr-4 pl-3">
+      <header className="relative z-20 flex h-[62px] shrink-0 items-center justify-between bg-[#1f1f1f] pt-[env(safe-area-inset-top)] pr-4 pl-3">
         <div className="flex items-center gap-2.5">
           <button
             type="button"
@@ -76,7 +76,7 @@ export function ReelChrome({ category }: { category: UtrinkiCategory }) {
           <ThemeSwitch variant="reel" />
           <Link
             to="/mediji"
-            className="inline-flex h-[34px] items-center justify-center rounded-lg bg-white px-3 text-[14px] font-semibold text-[#232323] focus-visible:ring-2 focus-visible:ring-[#0084e5] focus-visible:outline-none"
+            className="inline-flex h-[34px] w-[66px] items-center justify-center rounded-lg bg-white text-[14px] font-semibold text-[#232323] focus-visible:ring-2 focus-visible:ring-[#0084e5] focus-visible:outline-none"
           >
             Mediji
           </Link>

@@ -2,7 +2,6 @@ import { Link } from "react-router";
 import { useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import closeIcon from "~/assets/utrinki/close.svg";
-import arrowIcon from "~/assets/utrinki/arrow.svg";
 import { Dialog, DialogOverlay, DialogPortal } from "~/components/ui/dialog";
 import { BiasBar } from "~/components/utrinki/story-card";
 import { ProviderMark } from "~/components/utrinki/provider-mark";
@@ -28,19 +27,20 @@ const accent: Record<BiasSide | "unrated", string> = {
   unrated: "bg-[#9aa3af]",
 };
 
+const PREVIEW_ROWS = 4;
+
 export function SourcesSheet({
   story,
   onClose,
   onOpenStory,
-  onHide,
 }: {
   story: UtrinkiStory | null;
   onClose: () => void;
   onOpenStory: () => void;
-  onHide: () => void;
 }) {
   const [filter, setFilter] = useState<SideFilter>("all");
   const [expanded, setExpanded] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const open = story !== null;
 
   const articles = story?.articles ?? [];
@@ -74,6 +74,8 @@ export function SourcesSheet({
     if (filter === "unrated") return article.side === null;
     return article.side === filter;
   });
+  const rows = showAll ? visible : visible.slice(0, PREVIEW_ROWS);
+  const hiddenCount = visible.length - rows.length;
 
   return (
     <Dialog
@@ -81,6 +83,7 @@ export function SourcesSheet({
       onOpenChange={(next) => {
         if (!next) {
           setExpanded(false);
+          setShowAll(false);
           setFilter("all");
           onClose();
         }
@@ -141,7 +144,10 @@ export function SourcesSheet({
               <div
                 role="tablist"
                 aria-label="Filter po perspektivi"
-                className="mx-4 mt-3 flex h-10 gap-0 overflow-x-auto rounded-full bg-[#292929] p-1 [scrollbar-width:none]"
+                className={cn(
+                  "mx-4 mt-3 h-10 overflow-x-auto rounded-full bg-[#292929] p-1 [scrollbar-width:none]",
+                  tabs.length > 4 ? "flex" : "grid grid-cols-4",
+                )}
               >
                 {tabs.map((tab) => {
                   const selected = filter === tab.key;
@@ -151,9 +157,12 @@ export function SourcesSheet({
                       type="button"
                       role="tab"
                       aria-selected={selected}
-                      onClick={() => setFilter(tab.key)}
+                      onClick={() => {
+                        setFilter(tab.key);
+                        setShowAll(false);
+                      }}
                       className={cn(
-                        "inline-flex h-8 min-w-[5.5rem] flex-1 items-center justify-center gap-1.5 rounded-full px-2 text-[13px] font-semibold whitespace-nowrap",
+                        "inline-flex h-8 items-center justify-center gap-1.5 rounded-full px-1 text-[13px] font-semibold whitespace-nowrap",
                         selected
                           ? "bg-[#f3f8fe] text-[#12141a]"
                           : "text-[#f3f8fe]",
@@ -169,8 +178,8 @@ export function SourcesSheet({
                   );
                 })}
               </div>
-              <ul className="mt-3 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 pb-3">
-                {visible.map((article) => {
+              <ul className="mt-3 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-4 pb-3">
+                {rows.map((article) => {
                   const side = article.side ?? "unrated";
                   return (
                     <li key={article.id}>
@@ -178,7 +187,7 @@ export function SourcesSheet({
                         href={article.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="relative flex min-h-[76px] gap-3 overflow-hidden rounded-xl bg-[#292929] px-3 py-2.5 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                        className="relative flex h-[76px] gap-3 overflow-hidden rounded-xl bg-[#292929] px-3 py-2.5 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
                       >
                         <span
                           className={cn(
@@ -223,22 +232,23 @@ export function SourcesSheet({
                 >
                   Kako razvrščamo medije? ›
                 </Link>
-                <button
-                  type="button"
-                  onClick={onHide}
-                  className="text-[13px] text-[#f3f8fe]/70"
-                >
-                  Skrij sklop
-                </button>
+                {hiddenCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAll(true)}
+                    className="text-[13px] text-[#f3f8fe]/60"
+                  >
+                    + {hiddenCount} člankov
+                  </button>
+                )}
               </div>
               <div className="px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))]">
                 <Link
                   to={story.storyPath}
                   onClick={onOpenStory}
-                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0084e5] text-[15px] font-semibold"
+                  className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#0084e5] text-[15px] font-semibold"
                 >
                   Preberi celoten sklop
-                  <img src={arrowIcon} alt="" width={18} height={18} />
                 </Link>
               </div>
             </>

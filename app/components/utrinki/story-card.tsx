@@ -55,6 +55,7 @@ export function StoryCard({
   onToggleSave,
   onShare,
   onOpenStory,
+  onHide,
 }: {
   story: UtrinkiStory;
   category: UtrinkiCategory;
@@ -68,6 +69,7 @@ export function StoryCard({
   onToggleSave: () => void;
   onShare: () => void;
   onOpenStory: () => void;
+  onHide: () => void;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(story.imageUrl) && !imageFailed;
@@ -96,75 +98,49 @@ export function StoryCard({
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.12)_42%,rgba(0,0,0,0.96)_100%)]" />
       <div className="absolute inset-x-0 top-0 z-20">
         <ReelChrome category={category} />
-        <div className="pt-1">
+        <div className="pt-3.5">
           <CategoryRail
             category={category}
             pending={pendingCategory}
             draft={draft}
           />
         </div>
+        <div className="px-4 pt-4">
+          <ReelProgress index={progressIndex} count={progressCount} />
+        </div>
       </div>
-      <div className="relative z-10 mt-auto flex flex-col gap-3 px-4 pb-[max(16px,env(safe-area-inset-bottom))]">
-        <ReelProgress index={progressIndex} count={progressCount} />
-        <div className="flex items-end gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="text-[12px] font-semibold tracking-[0.5px] text-[#0084e5] uppercase">
-              {story.categoryLabel} · {updatedKicker(story.updatedAt)}
-            </p>
-            <h2
-              id={`utrinki-title-${story.id}`}
-              className="mt-1 line-clamp-4 text-[27px] leading-[30px] font-bold text-balance"
-            >
+      <div
+        className="relative z-10 mt-auto flex flex-col gap-3 px-4 pb-[max(16px,env(safe-area-inset-bottom))]"
+        onPointerDown={(event) => {
+          if (!(event.target instanceof HTMLElement)) return;
+          if (event.target.closest("button, a")) return;
+          const timer = window.setTimeout(onHide, 500);
+          const clear = () => {
+            window.clearTimeout(timer);
+            window.removeEventListener("pointerup", clear);
+            window.removeEventListener("pointercancel", clear);
+          };
+          window.addEventListener("pointerup", clear);
+          window.addEventListener("pointercancel", clear);
+        }}
+      >
+        <div className="pr-[80px]">
+          <p className="text-[12px] font-semibold tracking-[0.5px] text-[#0084e5] uppercase">
+            {story.categoryLabel} · {updatedKicker(story.updatedAt)}
+          </p>
+          <h2
+            id={`utrinki-title-${story.id}`}
+            className="mt-1 line-clamp-3 text-[27px] leading-[30px] font-bold"
+          >
+            <Link to={story.storyPath} onClick={onOpenStory}>
               {story.title}
-            </h2>
-            {story.summary && (
-              <p className="mt-2 line-clamp-3 text-[15px] leading-5 text-[#f3f8fe]/85">
-                {story.summary}
-              </p>
-            )}
-          </div>
-          <div className="flex w-[72px] shrink-0 flex-col items-center gap-3">
-            <div className="flex flex-col items-center gap-1.5">
-              <ActionButton
-                label={`Viri, ${story.providerCount}`}
-                onClick={onOpenSources}
-              >
-                <img src={sourcesIcon} alt="" width={24} height={24} />
-              </ActionButton>
-              <span className="text-center text-[11px] leading-[14px] font-semibold">
-                Viri · {story.providerCount}
-              </span>
-            </div>
-            <div className="flex flex-col items-center gap-1.5">
-              <ActionButton
-                label={saved ? "Odstrani iz shranjenih" : "Shrani"}
-                pressed={saved}
-                onClick={onToggleSave}
-              >
-                <Bookmark
-                  size={22}
-                  color="#F3F8FE"
-                  fill={saved ? "#F3F8FE" : "none"}
-                  aria-hidden
-                />
-              </ActionButton>
-              <button
-                type="button"
-                onClick={onOpenSaved}
-                className="text-center text-[11px] leading-[14px] font-semibold focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
-              >
-                {saved ? "Shranjeno" : "Shrani"}
-              </button>
-            </div>
-            <div className="flex flex-col items-center gap-1.5">
-              <ActionButton label="Deli" onClick={onShare}>
-                <img src={shareIcon} alt="" width={24} height={24} />
-              </ActionButton>
-              <span className="text-[11px] leading-[14px] font-semibold">
-                Deli
-              </span>
-            </div>
-          </div>
+            </Link>
+          </h2>
+          {story.summary && (
+            <p className="mt-2 line-clamp-3 text-[15px] leading-5 text-[#f3f8fe]/85">
+              {story.summary}
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -193,6 +169,46 @@ export function StoryCard({
           Preberi celoten sklop
           <img src={arrowIcon} alt="" width={18} height={18} />
         </Link>
+      </div>
+      <div className="absolute right-1 bottom-[212px] z-20 flex w-[72px] flex-col items-center gap-1.5">
+        <div className="flex flex-col items-center gap-1.5">
+          <ActionButton
+            label={`Viri, ${story.providerCount}`}
+            onClick={onOpenSources}
+          >
+            <img src={sourcesIcon} alt="" width={24} height={24} />
+          </ActionButton>
+          <span className="text-center text-[11px] leading-[14px] font-semibold whitespace-nowrap">
+            Viri · {story.providerCount}
+          </span>
+        </div>
+        <div className="flex flex-col items-center gap-1.5">
+          <ActionButton
+            label={saved ? "Odstrani iz shranjenih" : "Shrani"}
+            pressed={saved}
+            onClick={onToggleSave}
+          >
+            <Bookmark
+              size={22}
+              color="#F3F8FE"
+              fill={saved ? "#F3F8FE" : "none"}
+              aria-hidden
+            />
+          </ActionButton>
+          <button
+            type="button"
+            onClick={onOpenSaved}
+            className="text-center text-[11px] leading-[14px] font-semibold focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+          >
+            {saved ? "Shranjeno" : "Shrani"}
+          </button>
+        </div>
+        <div className="flex flex-col items-center gap-1.5">
+          <ActionButton label="Deli" onClick={onShare}>
+            <img src={shareIcon} alt="" width={24} height={24} />
+          </ActionButton>
+          <span className="text-[11px] leading-[14px] font-semibold">Deli</span>
+        </div>
       </div>
     </article>
   );
@@ -248,7 +264,7 @@ export function BiasBar({
               part.key === "right" && "text-right",
             )}
           >
-            {part.label} {part.percent}%
+            {part.label} {part.percent} %
           </span>
         ))}
       </div>

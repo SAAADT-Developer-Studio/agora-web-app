@@ -5,11 +5,12 @@ export const UTRINKI_KEYS = {
   hint: "vidik.utrinki.v1.hint",
 } as const;
 
-export const UTRINKI_SCROLL_KEY = "vidik.utrinki.v1.scroll";
+export const UTRINKI_SCROLL_KEY = "vidik.utrinki.v1.pos";
 
 /** Drop device state older than this, then cap what remains. */
-export const UTRINKI_MAX_AGE_MS = 60 * 24 * 60 * 60 * 1000;
+export const UTRINKI_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 export const UTRINKI_MAX_ENTRIES = 300;
+export const UTRINKI_SAVED_CAP = 100;
 
 export type SeenEntry = { seenAt: number; updatedAt: string };
 export type HiddenEntry = { hiddenAt: number };
@@ -200,6 +201,7 @@ export function toggleSaved(
     },
     (entry) => entry.savedAt,
     now,
+    { maxAgeMs: UTRINKI_MAX_AGE_MS, maxEntries: UTRINKI_SAVED_CAP },
   );
 }
 

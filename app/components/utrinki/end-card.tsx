@@ -63,7 +63,7 @@ export function EndCard({
           complete
         />
       </div>
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-4 pb-16 text-center">
+      <div className="relative z-10 flex flex-1 flex-col items-center px-4 pt-16 text-center">
         <div className="relative grid size-[72px] place-items-center">
           <img src={checkRing} alt="" width={72} height={72} />
           <span className="absolute text-[36px] leading-none font-bold text-[#0084e5]">

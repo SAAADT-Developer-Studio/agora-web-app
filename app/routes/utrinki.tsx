@@ -1,7 +1,8 @@
 import type { Route } from "./+types/utrinki";
 import { data } from "react-router";
+import { ErrorComponent } from "~/components/error-component";
 import { UtrinkiFeed } from "~/components/utrinki/feed";
-import { UtrinkiError, UtrinkiSkeleton } from "~/components/utrinki/states";
+import { UtrinkiSkeleton } from "~/components/utrinki/states";
 import { getSeoMetas } from "~/lib/seo";
 import { UNINDEXED_ROBOTS } from "~/lib/seo/unindexed";
 import { getAppContext } from "~/lib/appContext";
@@ -72,6 +73,6 @@ export default function UtrinkiRoute({ loaderData }: Route.ComponentProps) {
   return <UtrinkiFeed page={loaderData} />;
 }
 
-export function ErrorBoundary() {
-  return <UtrinkiError />;
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  return <ErrorComponent error={error} />;
 }

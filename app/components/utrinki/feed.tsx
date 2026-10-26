@@ -14,7 +14,6 @@ import { StoryCard } from "~/components/utrinki/story-card";
 import { SourcesSheet } from "~/components/utrinki/sources-sheet";
 import { SavedSheet } from "~/components/utrinki/saved-sheet";
 import { EndCard } from "~/components/utrinki/end-card";
-import { UtrinkiEmpty } from "~/components/utrinki/states";
 import { captureReel, dwellBucket } from "~/lib/utrinki/analytics";
 import { useUtrinkiStore } from "~/lib/utrinki/use-utrinki-store";
 import {
@@ -236,15 +235,19 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     const story = visible[activeIndex];
     if (!story) {
       flushDwell();
-      return;
+      return undefined;
     }
     if (dwell.current?.id !== story.id) {
+      const hadPrevious = dwell.current !== null;
       flushDwell();
+      if (hadPrevious) navigator.vibrate?.(10);
       dwell.current = {
         id: story.id,
         category: page.category,
         started: Date.now(),
       };
+    }
+    const seenTimer = window.setTimeout(() => {
       setSeenThisVisit((current) => {
         if (current.has(story.id)) return current;
         const next = new Set(current);
@@ -252,7 +255,7 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
         return next;
       });
       store.remember(story.id, story.updatedAt);
-    }
+    }, 1500);
     const chunkPage = Math.min(
       page.page + Math.floor(activeIndex / Math.max(progress.count, 1)),
       page.page + pages.length - 1,
@@ -263,6 +266,7 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
       page: chunkPage,
     });
     if (activeIndex > 0 && !store.hintDismissed) store.dismissHint();
+    return () => window.clearTimeout(seenTimer);
     // remember/dismiss identity changes every render; the index is the trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex, visible, page.category]);
@@ -364,10 +368,16 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   if (visible.length === 0) {
     return (
       <Shell>
-        <UtrinkiEmpty
-          categoryLabel={
-            page.category === "aktualno" ? "Aktualno" : page.category
-          }
+        <EndCard
+          category={page.category}
+          pendingCategory={pendingCategory}
+          draft={page.draft}
+          progressCount={1}
+          imageUrl={null}
+          hasMore={hasMore}
+          loading={fetcher.state !== "idle"}
+          onOlder={loadOlder}
+          onFirst={() => scrollToIndex(0)}
         />
       </Shell>
     );
@@ -379,6 +389,13 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   return (
     <Shell>
       <h1 className="sr-only">Utrinki</h1>
+      <button
+        type="button"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-[4.5rem] focus:left-4 focus:z-30 focus:rounded-full focus:bg-[#0084e5] focus:px-3 focus:py-2 focus:text-[14px] focus:font-semibold"
+        onClick={() => scrollToIndex(Math.min(activeIndex + 1, visible.length))}
+      >
+        Naslednji sklop
+      </button>
       <div
         ref={scrollerRef}
         className={
@@ -423,6 +440,10 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
                 onOpenStory={() =>
                   captureReel("reel_open_story", { story_id: story.id })
                 }
+                onHide={() => {
+                  store.hide(story.id);
+                  setSourcesId(null);
+                }}
               />
             </div>
           );
@@ -475,11 +496,6 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
           if (sourcesStory) {
             captureReel("reel_open_story", { story_id: sourcesStory.id });
           }
-        }}
-        onHide={() => {
-          if (!sourcesStory) return;
-          store.hide(sourcesStory.id);
-          setSourcesId(null);
         }}
       />
       <SavedSheet
