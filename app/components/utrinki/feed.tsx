@@ -151,7 +151,11 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
         }
         loadedPages.current.add(body.page);
         latestPage.current = body.page;
-        setPages((current) => appendUniqueStories(current, body.stories));
+        setPages((current) => {
+          const appended = appendUniqueStories(current, body.stories);
+          if (appended === current) wantMore.current = false;
+          return appended;
+        });
         setHasMore(body.hasMore);
         setOlderStatus("idle");
       } catch {
@@ -387,9 +391,15 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
         onClick: () => {
           store.unhide(story.id);
           window.setTimeout(() => {
-            scrollerRef.current
-              ?.querySelector<HTMLElement>(`[data-story-id="${story.id}"]`)
-              ?.scrollIntoView({ block: "start", behavior: "auto" });
+            const card = scrollerRef.current?.querySelector<HTMLElement>(
+              `[data-story-id="${story.id}"]`,
+            );
+            if (!card) return;
+            card.scrollIntoView({ block: "start", behavior: "auto" });
+            const cta = [...card.querySelectorAll("a")].find((link) =>
+              link.textContent?.includes("Preberi celoten sklop"),
+            );
+            cta?.focus({ preventScroll: true });
           }, 0);
         },
       },
@@ -464,8 +474,9 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
         {topBar}
         <EndCard
           imageUrl={null}
-          hasMore={false}
-          loading={false}
+          hasMore={hasMore}
+          loading={olderStatus === "loading"}
+          failed={olderStatus === "error"}
           empty={page.stories.length === 0}
           onOlder={loadOlder}
           onFirst={() => scrollToIndex(0)}
