@@ -133,7 +133,7 @@ function rankingSql(queries: SQL[]) {
 }
 
 describe("hidden column probe", () => {
-  it("resolves hidden through search_path and shares one in-flight probe", async () => {
+  it("resolves hidden through search_path without sharing an in-flight probe", async () => {
     let probes = 0;
     let release: () => void = () => {};
     const gate = new Promise<void>((resolve) => {
@@ -160,7 +160,7 @@ describe("hidden column probe", () => {
     release();
     await expect(Promise.all([first, second])).resolves.toEqual([false, false]);
     await expect(hiddenColumnPresent(db, "cluster_v2")).resolves.toBe(false);
-    expect(probes).toBe(1);
+    expect(probes).toBe(2);
   });
 
   it("rechecks a missing column and then keeps a present column for the isolate", async () => {
@@ -287,7 +287,7 @@ describe("public cluster and story reads", () => {
     resetHiddenColumnProbeForTests();
     const present = scriptedDb(true);
     const cluster = await findClusterForClanek(present.db, "523");
-    expect(cluster).toBeUndefined();
+    expect(cluster).toEqual({ outcome: "missing" });
     const where = compile(present.finds[0].where!);
     expect(where.sql).toMatch(/"hidden" = /);
     expect(where.params).toEqual(expect.arrayContaining([523, false]));

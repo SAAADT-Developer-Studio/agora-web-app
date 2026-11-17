@@ -6,9 +6,12 @@ import {
   newsArticleJsonLd,
   SITE_URL,
 } from "~/lib/seo";
+import { eq } from "drizzle-orm";
+import { story as storyTable } from "~/drizzle/schema";
 import {
   NOT_FOUND_ROBOTS,
   UNINDEXED_ROBOTS,
+  hiddenNotFoundResponse,
   notFoundResponse,
 } from "~/lib/seo/unindexed";
 import { getAppContext } from "~/lib/appContext";
@@ -158,6 +161,13 @@ export async function loader({ params, context }: Route.LoaderArgs) {
     }),
   );
 
+  if (!story && hiddenPresent) {
+    const row = await db.query.story.findFirst({
+      columns: { id: true },
+      where: eq(storyTable.id, storyId),
+    });
+    if (row) throw hiddenNotFoundResponse("Story Not Found");
+  }
   if (!story || story.storyArticles.length === 0) {
     throw notFoundResponse("Story Not Found");
   }

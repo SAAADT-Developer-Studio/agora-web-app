@@ -26,11 +26,9 @@ type ProbeDb = Pick<Database, "execute">;
 type ProbeEntry = { present: boolean; expiresAt: number };
 
 const probes = new Map<HiddenTable, ProbeEntry>();
-const inflight = new Map<HiddenTable, Promise<boolean>>();
 
 export function resetHiddenColumnProbeForTests(): void {
   probes.clear();
-  inflight.clear();
 }
 
 /** Every `cluster_v2` column except `hidden`, so a missing column is not selected. */
@@ -69,52 +67,38 @@ function asPresent(value: unknown): boolean {
  * resolves them through `search_path`. `to_regclass` uses that same lookup.
  * `current_schema()` would miss the column when the table lives in a later
  * schema on the path.
+ *
+ * Each call queries on its own until the result is cached. Sharing one
+ * in-flight promise across requests is unsafe: cancelling the first request
+ * can leave the others waiting on it.
  */
-export function hiddenColumnPresent(
+export async function hiddenColumnPresent(
   db: ProbeDb,
   table: HiddenTable,
   nowMs = Date.now(),
 ): Promise<boolean> {
   const cached = probes.get(table);
-  if (cached && cached.expiresAt > nowMs)
-    return Promise.resolve(cached.present);
+  if (cached && cached.expiresAt > nowMs) return cached.present;
 
-  const pending = inflight.get(table);
-  if (pending) return pending;
-
-  const promise = readHiddenColumn(db, table, nowMs);
-  inflight.set(table, promise);
-  return promise;
-}
-
-async function readHiddenColumn(
-  db: ProbeDb,
-  table: HiddenTable,
-  nowMs: number,
-): Promise<boolean> {
-  try {
-    const columnName = "hidden";
-    const result = await db.execute<{ present?: unknown }>(sql`
-      SELECT EXISTS (
-        SELECT 1
-        FROM pg_catalog.pg_attribute
-        WHERE attrelid = to_regclass(${table})
-          AND attname = ${columnName}
-          AND attnum > 0
-          AND NOT attisdropped
-      ) AS present
-    `);
-    const present = asPresent(result.rows[0]?.present);
-    probes.set(table, {
-      present,
-      expiresAt: present
-        ? Number.POSITIVE_INFINITY
-        : nowMs + HIDDEN_COLUMN_ABSENT_RECHECK_MS,
-    });
-    return present;
-  } finally {
-    inflight.delete(table);
-  }
+  const columnName = "hidden";
+  const result = await db.execute<{ present?: unknown }>(sql`
+    SELECT EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_attribute
+      WHERE attrelid = to_regclass(${table})
+        AND attname = ${columnName}
+        AND attnum > 0
+        AND NOT attisdropped
+    ) AS present
+  `);
+  const present = asPresent(result.rows[0]?.present);
+  probes.set(table, {
+    present,
+    expiresAt: present
+      ? Number.POSITIVE_INFINITY
+      : nowMs + HIDDEN_COLUMN_ABSENT_RECHECK_MS,
+  });
+  return present;
 }
 
 /**
