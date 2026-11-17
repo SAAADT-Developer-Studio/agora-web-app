@@ -6,7 +6,11 @@ import {
   newsArticleJsonLd,
   SITE_URL,
 } from "~/lib/seo";
-import { UNINDEXED_ROBOTS } from "~/lib/seo/unindexed";
+import {
+  NOT_FOUND_ROBOTS,
+  UNINDEXED_ROBOTS,
+  notFoundResponse,
+} from "~/lib/seo/unindexed";
 import { getAppContext } from "~/lib/appContext";
 import { extractHeroImage } from "~/utils/extractHeroImage";
 import { collectSocialMentions } from "~/utils/socialPost";
@@ -17,7 +21,14 @@ import { hiddenColumnPresent, storyPageWhere } from "~/lib/hiddenColumn";
 /** A story whose newest article is younger than this reads as developing. */
 const DEVELOPING_WINDOW_MS = 3 * 60 * 60 * 1000;
 
-export function headers({}: Route.HeadersArgs) {
+export function headers({ errorHeaders }: Route.HeadersArgs) {
+  if (errorHeaders) {
+    const responseHeaders = new Headers(errorHeaders);
+    if (!responseHeaders.has("X-Robots-Tag")) {
+      responseHeaders.set("X-Robots-Tag", NOT_FOUND_ROBOTS);
+    }
+    return responseHeaders;
+  }
   return {
     "Cache-Control": "max-age=10, s-maxage=10",
     "X-Robots-Tag": UNINDEXED_ROBOTS,
@@ -90,7 +101,7 @@ export function meta({ loaderData, location }: Route.MetaArgs) {
 export async function loader({ params, context }: Route.LoaderArgs) {
   const rawId = params.storyId;
   if (!rawId || !/^\d+$/.test(rawId)) {
-    throw new Response("Story Not Found", { status: 404 });
+    throw notFoundResponse("Story Not Found");
   }
   const storyId = Number.parseInt(rawId, 10);
 
@@ -148,7 +159,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   );
 
   if (!story || story.storyArticles.length === 0) {
-    throw new Response("Story Not Found", { status: 404 });
+    throw notFoundResponse("Story Not Found");
   }
 
   const members = story.storyArticles.map((sa) => sa.article_articleId);

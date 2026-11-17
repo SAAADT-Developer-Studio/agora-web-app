@@ -86,7 +86,7 @@ export function articleClusterWhere(articleId: string): SQL {
 
 export async function findClusterForClanek(db: Database, articleId: string) {
   const hiddenPresent = await hiddenColumnPresent(db, "cluster_v2");
-  return await db.query.clusterV2.findFirst({
+  const cluster = await db.query.clusterV2.findFirst({
     columns: clusterV2VisibleColumns,
     where: whereVisible(
       articleClusterWhere(articleId),
@@ -115,6 +115,44 @@ export async function findClusterForClanek(db: Database, articleId: string) {
       },
     },
   });
+  if (!cluster || !hiddenPresent) return cluster;
+
+  // An earlier run keeps its own slug. Hide that URL when the newest remint
+  // sharing a majority of these articles is itself hidden.
+  const articleIds = [
+    ...new Set(
+      cluster.articleClusters.map((membership) => membership.article.id),
+    ),
+  ];
+  if (articleIds.length === 0) return cluster;
+  const covered = await newerHiddenMajority(db, {
+    clusterId: cluster.id,
+    createdAt: cluster.createdAt,
+    articleIds,
+  });
+  if (covered) return undefined;
+  return cluster;
+}
+
+/**
+ * True when the newest newer cluster sharing a majority of `articleIds` is
+ * hidden. A failed lookup stays visible: a timeout must not 404 every clanek.
+ */
+async function newerHiddenMajority(
+  db: SqlExecutor,
+  input: { clusterId: number; createdAt: string; articleIds: number[] },
+): Promise<boolean> {
+  try {
+    const result = await withBoundedLookupTransaction(db, (tx) =>
+      tx.execute<{ hidden?: unknown }>(hiddenMajoritySuccessorSql(input)),
+    );
+    return asBool(result.rows[0]?.hidden);
+  } catch (error) {
+    console.warn(
+      `[hidden-cluster] majority remint lookup failed for cluster ${input.clusterId}; leaving the clanek visible: ${errorSummary(error)}`,
+    );
+    return false;
+  }
 }
 
 function idList(ids: number[]): SQL {
@@ -190,6 +228,43 @@ type SqlExecutor = Pick<Database, "execute">;
  * Categories are a second statement for the one picked id
  * (`ix_article_cluster_cluster_id`), not a LATERAL over the candidate join.
  */
+/**
+ * Newest newer cluster that shares a strict majority of this cluster's articles.
+ * One row: that cluster's `hidden` flag. No row means there is no such remint.
+ * Call only once `cluster_v2.hidden` exists.
+ *
+ * Join order matches `newerClusterCandidatesSql`: unnest the page's article ids,
+ * index-scan `article_cluster` on `article_id`, then primary-key lookup on
+ * `cluster_v2`. The bounded transaction keeps the planner from walking
+ * `ix_cluster_v2_created_at_id`.
+ */
+export function hiddenMajoritySuccessorSql(input: {
+  clusterId: number;
+  createdAt: string;
+  articleIds: number[];
+}): SQL {
+  return sql`
+    SELECT ${clusterV2.hidden} AS hidden
+    FROM unnest(ARRAY[${idList(input.articleIds)}]::int[]) AS mine(article_id)
+    INNER JOIN ${articleCluster}
+      ON ${articleCluster.articleId} = mine.article_id
+     AND ${articleCluster.clusterId} <> ${input.clusterId}
+    INNER JOIN ${clusterV2}
+      ON ${clusterV2.id} = ${articleCluster.clusterId}
+    WHERE (
+      ${clusterV2.createdAt} > ${input.createdAt}::timestamptz
+      OR (
+        ${clusterV2.createdAt} = ${input.createdAt}::timestamptz
+        AND ${clusterV2.id} > ${input.clusterId}
+      )
+    )
+    GROUP BY ${clusterV2.id}, ${clusterV2.createdAt}, ${clusterV2.hidden}
+    HAVING count(DISTINCT mine.article_id) * 2 > ${input.articleIds.length}
+    ORDER BY ${clusterV2.createdAt} DESC, ${clusterV2.id} DESC
+    LIMIT 1
+  `;
+}
+
 export function newerClusterCandidatesSql(input: {
   articleIds: number[];
   clusterId: number;

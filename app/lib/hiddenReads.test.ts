@@ -77,7 +77,7 @@ function scriptedDb(present: boolean) {
     async execute(query: SQL) {
       queries.push(query);
       const compiled = compile(query);
-      if (/information_schema/i.test(compiled.sql)) {
+      if (/to_regclass/i.test(compiled.sql)) {
         return { rows: [{ present }] };
       }
       if (/cluster_scores/i.test(compiled.sql)) {
@@ -133,18 +133,32 @@ function rankingSql(queries: SQL[]) {
 }
 
 describe("hidden column probe", () => {
-  it("does not reference hidden until information_schema says the column exists", async () => {
+  it("resolves hidden through search_path and shares one in-flight probe", async () => {
     let probes = 0;
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
     const db = {
       async execute(query: SQL) {
         probes += 1;
-        expect(compile(query).sql).toMatch(/information_schema/i);
-        expect(compile(query).sql).not.toMatch(/cluster_v2\.hidden|"hidden"/i);
+        const compiled = compile(query);
+        expect(compiled.sql).toMatch(/to_regclass/i);
+        expect(compiled.sql).toMatch(/pg_attribute/i);
+        expect(compiled.sql).not.toMatch(/current_schema/i);
+        expect(compiled.sql).not.toMatch(/cluster_v2\.hidden|"hidden"/i);
+        expect(compiled.params).toEqual(
+          expect.arrayContaining(["cluster_v2", "hidden"]),
+        );
+        await gate;
         return { rows: [{ present: false }] };
       },
     } as unknown as Database;
 
-    await expect(hiddenColumnPresent(db, "cluster_v2")).resolves.toBe(false);
+    const first = hiddenColumnPresent(db, "cluster_v2");
+    const second = hiddenColumnPresent(db, "cluster_v2");
+    release();
+    await expect(Promise.all([first, second])).resolves.toEqual([false, false]);
     await expect(hiddenColumnPresent(db, "cluster_v2")).resolves.toBe(false);
     expect(probes).toBe(1);
   });
@@ -375,7 +389,7 @@ describe("dev explorer reads", () => {
     await unmatchedCounts(present.db, 3);
 
     const dataQueries = present.queries.filter(
-      (query) => !/information_schema/i.test(compile(query).sql),
+      (query) => !/to_regclass/i.test(compile(query).sql),
     );
     expect(dataQueries.length).toBeGreaterThan(0);
     for (const query of dataQueries) {

@@ -34,7 +34,6 @@ import { ArchiveNotice, NewerCopyNotice } from "~/components/archive-notice";
 import { getAppContext } from "~/lib/appContext";
 import {
   clanekCacheControl,
-  clanekHttpStatus,
   clanekIndexing,
   clanekPath,
   clusterOwnCategory,
@@ -42,8 +41,16 @@ import {
   resolveClanekArchive,
 } from "~/lib/articleClusterLookup";
 import { extractHeroImage } from "~/utils/extractHeroImage";
+import { NOT_FOUND_ROBOTS, notFoundResponse } from "~/lib/seo/unindexed";
 
-export function headers({ loaderHeaders }: Route.HeadersArgs) {
+export function headers({ loaderHeaders, errorHeaders }: Route.HeadersArgs) {
+  if (errorHeaders) {
+    const responseHeaders = new Headers(errorHeaders);
+    if (!responseHeaders.has("X-Robots-Tag")) {
+      responseHeaders.set("X-Robots-Tag", NOT_FOUND_ROBOTS);
+    }
+    return responseHeaders;
+  }
   if (loaderHeaders.has("Cache-Control")) return loaderHeaders;
   return {
     "Cache-Control": clanekCacheControl(false),
@@ -91,9 +98,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   );
 
   if (!cluster) {
-    throw new Response("Article Not Found", {
-      status: clanekHttpStatus(false),
-    });
+    throw notFoundResponse("Article Not Found");
   }
 
   const articles = cluster.articleClusters.map((ac) => ac.article);

@@ -1,6 +1,16 @@
 /** Shared noindex policy for routes that are deployed but not listed. */
 export const UNINDEXED_ROBOTS = "noindex, nofollow";
 
+/** Missing and hidden clanek/story URLs. Search engines should drop them. */
+export const NOT_FOUND_ROBOTS = "noindex";
+
+export function notFoundResponse(message: string) {
+  return new Response(message, {
+    status: 404,
+    headers: { "X-Robots-Tag": NOT_FOUND_ROBOTS },
+  });
+}
+
 export function isUnindexedPath(pathname: string) {
   return (
     pathname === "/novo" ||

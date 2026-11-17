@@ -24,6 +24,7 @@ import {
   clanekPath,
   clusterOwnCategory,
   findClusterForClanek,
+  hiddenMajoritySuccessorSql,
   isArchivedCluster,
   isWithinClustererWindow,
   newerClusterCandidatesSql,
@@ -74,7 +75,7 @@ type SqlKind =
 
 function sqlKind(text: string): SqlKind {
   const trimmed = text.trim();
-  if (/information_schema/i.test(text)) return "probe";
+  if (/to_regclass/i.test(text)) return "probe";
   if (/^begin\b/i.test(trimmed)) return "begin";
   if (/^commit\b/i.test(trimmed)) return "commit";
   if (/^rollback\b/i.test(trimmed)) return "rollback";
@@ -241,10 +242,128 @@ describe("findClusterForClanek", () => {
 
     expect(cluster).toBeUndefined();
     expect(executed).toHaveLength(1);
-    expect(executed[0]).toMatch(/information_schema/i);
+    expect(executed[0]).toMatch(/to_regclass/i);
     expect(compile(where!).params).toStrictEqual([DIGIT_SLUG]);
     expect(compile(where!).sql).not.toMatch(/\blike\b/i);
     expect(compile(where!).sql).not.toMatch(/hidden/i);
+  });
+
+  it("404s an older remint when the newest majority successor is hidden", async () => {
+    const statements: string[] = [];
+    const visible = {
+      id: 4,
+      createdAt: "2026-10-01T00:00:00.000Z",
+      title: "Old",
+      articleClusters: [{ article: { id: 10 } }, { article: { id: 11 } }],
+    };
+    const db = {
+      query: {
+        clusterV2: {
+          findFirst: async () => visible,
+        },
+      },
+      execute: async (query: SQL) => {
+        const compiled = compile(query);
+        statements.push(compiled.sql);
+        if (/to_regclass/i.test(compiled.sql)) {
+          return { rows: [{ present: true }] };
+        }
+        if (/unnest/i.test(compiled.sql)) {
+          return { rows: [{ hidden: true }] };
+        }
+        return { rows: [] };
+      },
+    } as unknown as Database;
+
+    await expect(findClusterForClanek(db, "old-a")).resolves.toBeUndefined();
+    const successor = statements.find((sql) => /unnest/i.test(sql));
+    expect(successor).toMatch(/count\(DISTINCT mine\.article_id\) \* 2 >/);
+    expect(successor).toMatch(/"hidden"/);
+  });
+
+  it("keeps an older remint when the newest majority successor is public", async () => {
+    const visible = {
+      id: 4,
+      createdAt: "2026-10-01T00:00:00.000Z",
+      title: "Old",
+      articleClusters: [{ article: { id: 10 } }, { article: { id: 11 } }],
+    };
+    const db = {
+      query: {
+        clusterV2: {
+          findFirst: async () => visible,
+        },
+      },
+      execute: async (query: SQL) => {
+        const compiled = compile(query);
+        if (/to_regclass/i.test(compiled.sql)) {
+          return { rows: [{ present: true }] };
+        }
+        if (/unnest/i.test(compiled.sql)) {
+          return { rows: [{ hidden: false }] };
+        }
+        return { rows: [] };
+      },
+    } as unknown as Database;
+
+    await expect(findClusterForClanek(db, "old-a")).resolves.toBe(visible);
+  });
+
+  it("leaves the clanek visible when the remint lookup fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const visible = {
+      id: 4,
+      createdAt: "2026-10-01T00:00:00.000Z",
+      title: "Old",
+      articleClusters: [{ article: { id: 10 } }],
+    };
+    const db = {
+      query: {
+        clusterV2: {
+          findFirst: async () => visible,
+        },
+      },
+      execute: async (query: SQL) => {
+        const compiled = compile(query);
+        if (/to_regclass/i.test(compiled.sql)) {
+          return { rows: [{ present: true }] };
+        }
+        if (/unnest/i.test(compiled.sql)) throw new Error("statement timeout");
+        return { rows: [] };
+      },
+    } as unknown as Database;
+
+    try {
+      await expect(findClusterForClanek(db, "old-a")).resolves.toBe(visible);
+      expect(warn).toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+describe("hidden majority successor sql", () => {
+  it("starts from this cluster's articles and keeps a strict majority", () => {
+    const compiled = compile(
+      hiddenMajoritySuccessorSql({
+        clusterId: 4,
+        createdAt: "2026-10-01T00:00:00.000Z",
+        articleIds: [10, 11],
+      }),
+    );
+    const from = compiled.sql.slice(compiled.sql.toLowerCase().indexOf("from"));
+    expect(from.indexOf("unnest")).toBeLessThan(
+      from.indexOf("article_cluster"),
+    );
+    expect(from.indexOf("article_cluster")).toBeLessThan(
+      from.indexOf("cluster_v2"),
+    );
+    expect(compiled.sql).toMatch(/count\(DISTINCT mine\.article_id\) \* 2 >/);
+    expect(compiled.sql).toMatch(/order by .+"created_at" desc, .+"id" desc/i);
+    expect(compiled.sql).toMatch(/limit 1/i);
+    expect(compiled.params).toEqual(
+      expect.arrayContaining([10, 11, 4, "2026-10-01T00:00:00.000Z"]),
+    );
   });
 });
 
