@@ -1,4 +1,9 @@
 import { desc, eq, sql } from "drizzle-orm";
+import {
+  andHiddenIsFalse,
+  hiddenColumnPresent,
+  whereVisible,
+} from "~/lib/hiddenColumn";
 import type { Database } from "~/lib/db";
 import {
   article,
@@ -224,6 +229,7 @@ export async function storyForArticle(
   db: Database,
   articleId: number,
 ): Promise<StoryRow | null> {
+  const hiddenPresent = await hiddenColumnPresent(db, "story");
   const rows = await db.execute<{
     id: number;
     title: string;
@@ -242,7 +248,7 @@ export async function storyForArticle(
       ${storyArticle.similarity} AS similarity,
       ${storyArticle.nearestArticleId} AS nearest_article_id
     FROM ${storyArticle}
-    INNER JOIN ${story} ON ${story.id} = ${storyArticle.storyId}
+    INNER JOIN ${story} ON ${story.id} = ${storyArticle.storyId}${andHiddenIsFalse(story.hidden, hiddenPresent)}
     WHERE ${storyArticle.articleId} = ${articleId}
     LIMIT 1
   `);
@@ -264,6 +270,7 @@ export async function clusterForArticle(
   articleId: number,
   runId: number,
 ): Promise<ClusterRow | null> {
+  const hiddenPresent = await hiddenColumnPresent(db, "cluster_v2");
   const rows = await db.execute<{
     id: number;
     title: string;
@@ -278,7 +285,7 @@ export async function clusterForArticle(
       ${clusterV2.runId} AS run_id,
       ${clusterV2.createdAt} AS created_at
     FROM ${articleCluster}
-    INNER JOIN ${clusterV2} ON ${clusterV2.id} = ${articleCluster.clusterId}
+    INNER JOIN ${clusterV2} ON ${clusterV2.id} = ${articleCluster.clusterId}${andHiddenIsFalse(clusterV2.hidden, hiddenPresent)}
     WHERE ${articleCluster.articleId} = ${articleId}
       AND ${articleCluster.runId} = ${runId}
     LIMIT 1
@@ -298,6 +305,7 @@ export async function findStory(
   db: Database,
   id: number,
 ): Promise<StoryRow | null> {
+  const hiddenPresent = await hiddenColumnPresent(db, "story");
   const [row] = await db
     .select({
       id: story.id,
@@ -306,7 +314,7 @@ export async function findStory(
       createdAt: story.createdAt,
     })
     .from(story)
-    .where(eq(story.id, id))
+    .where(whereVisible(eq(story.id, id), story.hidden, hiddenPresent))
     .limit(1);
   if (!row) return null;
   return { ...row, method: null, similarity: null, nearestArticleId: null };
@@ -317,6 +325,7 @@ export async function findCluster(
   idOrSlug: string,
 ): Promise<ClusterRow | null> {
   const byId = /^\d+$/.test(idOrSlug);
+  const hiddenPresent = await hiddenColumnPresent(db, "cluster_v2");
   const rows = await db.execute<{
     id: number;
     title: string;
@@ -333,7 +342,7 @@ export async function findCluster(
           ${clusterV2.runId} AS run_id,
           ${clusterV2.createdAt} AS created_at
         FROM ${clusterV2}
-        WHERE ${clusterV2.id} = ${Number(idOrSlug)}
+        WHERE ${clusterV2.id} = ${Number(idOrSlug)}${andHiddenIsFalse(clusterV2.hidden, hiddenPresent)}
         LIMIT 1
       `
       : sql`
@@ -344,7 +353,7 @@ export async function findCluster(
           ${clusterV2.runId} AS run_id,
           ${clusterV2.createdAt} AS created_at
         FROM ${clusterV2}
-        WHERE ${clusterV2.slug} = ${idOrSlug}
+        WHERE ${clusterV2.slug} = ${idOrSlug}${andHiddenIsFalse(clusterV2.hidden, hiddenPresent)}
         LIMIT 1
       `,
   );
@@ -416,16 +425,20 @@ export async function storyMembers(
   storyId: number,
   runId: number,
 ): Promise<MemberRow[]> {
+  const [storyVisible, clusterVisible] = await Promise.all([
+    hiddenColumnPresent(db, "story"),
+    hiddenColumnPresent(db, "cluster_v2"),
+  ]);
   const rows = await db.execute<MemberSql>(sql`
     SELECT ${memberSelect}
     FROM ${storyArticle}
     INNER JOIN ${article} ON ${article.id} = ${storyArticle.articleId}
     INNER JOIN ${newsProvider} ON ${newsProvider.key} = ${article.newsProviderKey}
-    INNER JOIN ${story} ON ${story.id} = ${storyArticle.storyId}
+    INNER JOIN ${story} ON ${story.id} = ${storyArticle.storyId}${andHiddenIsFalse(story.hidden, storyVisible)}
     LEFT JOIN ${articleCluster}
       ON ${articleCluster.articleId} = ${article.id}
       AND ${articleCluster.runId} = ${runId}
-    LEFT JOIN ${clusterV2} ON ${clusterV2.id} = ${articleCluster.clusterId}
+    LEFT JOIN ${clusterV2} ON ${clusterV2.id} = ${articleCluster.clusterId}${andHiddenIsFalse(clusterV2.hidden, clusterVisible)}
     WHERE ${storyArticle.storyId} = ${storyId}
     ORDER BY ${article.publishedAt} DESC
   `);
@@ -437,16 +450,20 @@ export async function clusterMembers(
   clusterId: number,
   runId: number,
 ): Promise<MemberRow[]> {
+  const [storyVisible, clusterVisible] = await Promise.all([
+    hiddenColumnPresent(db, "story"),
+    hiddenColumnPresent(db, "cluster_v2"),
+  ]);
   const rows = await db.execute<MemberSql>(sql`
     SELECT ${memberSelect}
     FROM ${articleCluster}
     INNER JOIN ${article} ON ${article.id} = ${articleCluster.articleId}
     INNER JOIN ${newsProvider} ON ${newsProvider.key} = ${article.newsProviderKey}
     LEFT JOIN ${storyArticle} ON ${storyArticle.articleId} = ${article.id}
-    LEFT JOIN ${story} ON ${story.id} = ${storyArticle.storyId}
-    LEFT JOIN ${clusterV2} ON ${clusterV2.id} = ${articleCluster.clusterId}
+    LEFT JOIN ${story} ON ${story.id} = ${storyArticle.storyId}${andHiddenIsFalse(story.hidden, storyVisible)}
+    LEFT JOIN ${clusterV2} ON ${clusterV2.id} = ${articleCluster.clusterId}${andHiddenIsFalse(clusterV2.hidden, clusterVisible)}
     WHERE ${articleCluster.clusterId} = ${clusterId}
-      AND ${articleCluster.runId} = ${runId}
+      AND ${articleCluster.runId} = ${runId}${andHiddenIsFalse(clusterV2.hidden, clusterVisible)}
     ORDER BY ${article.publishedAt} DESC
   `);
   return rows.rows.map(mapMember);
@@ -509,6 +526,7 @@ export async function splitStories(
   db: Database,
   runId: number,
 ): Promise<SplitStory[]> {
+  const hiddenPresent = await hiddenColumnPresent(db, "story");
   const rows = await db.execute<{
     id: number;
     title: string;
@@ -525,7 +543,7 @@ export async function splitStories(
     LEFT JOIN ${articleCluster}
       ON ${articleCluster.articleId} = ${storyArticle.articleId}
       AND ${articleCluster.runId} = ${runId}
-    WHERE ${story.lastArticlePublishedAt} > now() - interval '14 days'
+    WHERE ${story.lastArticlePublishedAt} > now() - interval '14 days'${andHiddenIsFalse(story.hidden, hiddenPresent)}
     GROUP BY ${story.id}
     HAVING count(DISTINCT ${articleCluster.clusterId}) > 1
     ORDER BY cluster_count DESC, article_count DESC
@@ -543,6 +561,7 @@ export async function splitClusters(
   db: Database,
   runId: number,
 ): Promise<SplitCluster[]> {
+  const hiddenPresent = await hiddenColumnPresent(db, "cluster_v2");
   const rows = await db.execute<{
     id: number;
     title: string;
@@ -559,7 +578,7 @@ export async function splitClusters(
     FROM ${clusterV2}
     INNER JOIN ${articleCluster} ON ${articleCluster.clusterId} = ${clusterV2.id}
     LEFT JOIN ${storyArticle} ON ${storyArticle.articleId} = ${articleCluster.articleId}
-    WHERE ${clusterV2.runId} = ${runId}
+    WHERE ${clusterV2.runId} = ${runId}${andHiddenIsFalse(clusterV2.hidden, hiddenPresent)}
     GROUP BY ${clusterV2.id}
     HAVING count(DISTINCT ${storyArticle.storyId}) > 1
     ORDER BY story_count DESC, article_count DESC
@@ -575,6 +594,25 @@ export async function splitClusters(
 }
 
 export async function unmatchedCounts(db: Database, runId: number) {
+  const [storyVisible, clusterVisible] = await Promise.all([
+    hiddenColumnPresent(db, "story"),
+    hiddenColumnPresent(db, "cluster_v2"),
+  ]);
+  // Keep memberships whose cluster row is missing. Drop only hidden clusters,
+  // so the count stays the same when every cluster is visible.
+  const visibleCluster = clusterVisible
+    ? sql` AND (
+        NOT EXISTS (
+          SELECT 1 FROM ${clusterV2}
+          WHERE ${clusterV2.id} = ${articleCluster.clusterId}
+        )
+        OR EXISTS (
+          SELECT 1 FROM ${clusterV2}
+          WHERE ${clusterV2.id} = ${articleCluster.clusterId}
+            AND ${eq(clusterV2.hidden, false)}
+        )
+      )`
+    : sql``;
   const noStory = await db.execute<{ n: number }>(sql`
     SELECT count(*)::int AS n
     FROM ${articleCluster}
@@ -582,13 +620,13 @@ export async function unmatchedCounts(db: Database, runId: number) {
       AND NOT EXISTS (
         SELECT 1 FROM ${storyArticle}
         WHERE ${storyArticle.articleId} = ${articleCluster.articleId}
-      )
+      )${visibleCluster}
   `);
   const noCluster = await db.execute<{ n: number }>(sql`
     SELECT count(*)::int AS n
     FROM ${storyArticle}
     INNER JOIN ${story} ON ${story.id} = ${storyArticle.storyId}
-    WHERE ${story.lastArticlePublishedAt} > now() - interval '14 days'
+    WHERE ${story.lastArticlePublishedAt} > now() - interval '14 days'${andHiddenIsFalse(story.hidden, storyVisible)}
       AND NOT EXISTS (
         SELECT 1 FROM ${articleCluster}
         WHERE ${articleCluster.articleId} = ${storyArticle.articleId}

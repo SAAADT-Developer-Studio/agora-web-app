@@ -7,7 +7,13 @@ import {
   articleSocialPost,
   newsProvider,
 } from "~/drizzle/schema";
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
+import {
+  andHiddenIsFalse,
+  clusterV2VisibleColumns,
+  hiddenColumnPresent,
+  whereVisible,
+} from "~/lib/hiddenColumn";
 import { BiasRatingKey } from "~/enums/biasRatingKey";
 import {
   BLINDSPOT_MIN_PERCENT,
@@ -159,6 +165,7 @@ export async function getHomeArticles({
   side?: BlindspotSide;
 }): Promise<ArticleType[]> {
   // TODO: maybe pass in clusterRunId as param?
+  const hiddenPresent = await hiddenColumnPresent(db, "cluster_v2");
   const topClusterIds = await db.execute(sql`
   WITH latest_run AS (
     SELECT ${clusterRun.id} as id
@@ -195,7 +202,7 @@ export async function getHomeArticles({
     LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
     LEFT JOIN ${newsProvider} ON ${article.newsProviderKey} = ${newsProvider.key}
     LEFT JOIN provider_counts pc ON pc.cluster_id = ${clusterV2.id}
-    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
+    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)${andHiddenIsFalse(clusterV2.hidden, hiddenPresent)}
     GROUP BY ${clusterV2.id}
     HAVING count(${article.id}) > 0
   ),
@@ -262,6 +269,7 @@ export async function getCategoryArticles({
   count: number;
   offset?: number;
 }): Promise<ArticleType[]> {
+  const hiddenPresent = await hiddenColumnPresent(db, "cluster_v2");
   const topClusterIds = await db.execute(sql`
   WITH latest_run AS (
     SELECT ${clusterRun.id} as id
@@ -297,7 +305,7 @@ export async function getCategoryArticles({
     LEFT JOIN provider_counts pc ON pc.cluster_id = ${clusterV2.id}
     WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
       AND (${category} = ANY(ARRAY[${article.categories}[1], ${article.categories}[2]]))
-      ${ignoredClusterIds.length > 0 ? sql`AND ${clusterV2.id} NOT IN ${ignoredClusterIds}` : sql``}
+      ${ignoredClusterIds.length > 0 ? sql`AND ${clusterV2.id} NOT IN ${ignoredClusterIds}` : sql``}${andHiddenIsFalse(clusterV2.hidden, hiddenPresent)}
     GROUP BY ${clusterV2.id}
     HAVING count(${article.id}) > 0
   ),
@@ -353,14 +361,15 @@ async function common(
   db: Database,
   clusterIds: { id: number; combined_score: number }[],
 ): Promise<ArticleType[]> {
+  const hiddenPresent = await hiddenColumnPresent(db, "cluster_v2");
+  const ids = clusterIds.map((c) => c.id);
   const topClusters = await db.query.clusterV2.findMany({
-    where: (cluster, { and, inArray }) =>
-      and(
-        inArray(
-          cluster.id,
-          clusterIds.map((c) => c.id),
-        ),
-      ),
+    columns: clusterV2VisibleColumns,
+    where: whereVisible(
+      inArray(clusterV2.id, ids),
+      clusterV2.hidden,
+      hiddenPresent,
+    ),
     with: {
       articleClusters: {
         with: {

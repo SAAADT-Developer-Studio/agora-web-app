@@ -34,7 +34,6 @@ import { ArchiveNotice, NewerCopyNotice } from "~/components/archive-notice";
 import { getAppContext } from "~/lib/appContext";
 import {
   clanekCacheControl,
-  clanekHttpStatus,
   clanekIndexing,
   clanekPath,
   clusterOwnCategory,
@@ -42,8 +41,21 @@ import {
   resolveClanekArchive,
 } from "~/lib/articleClusterLookup";
 import { extractHeroImage } from "~/utils/extractHeroImage";
+import {
+  NOT_FOUND_ROBOTS,
+  clanekUnavailableResponse,
+  hiddenNotFoundResponse,
+  notFoundResponse,
+} from "~/lib/seo/unindexed";
 
-export function headers({ loaderHeaders }: Route.HeadersArgs) {
+export function headers({ loaderHeaders, errorHeaders }: Route.HeadersArgs) {
+  if (errorHeaders) {
+    const responseHeaders = new Headers(errorHeaders);
+    if (!responseHeaders.has("X-Robots-Tag")) {
+      responseHeaders.set("X-Robots-Tag", NOT_FOUND_ROBOTS);
+    }
+    return responseHeaders;
+  }
   if (loaderHeaders.has("Cache-Control")) return loaderHeaders;
   return {
     "Cache-Control": clanekCacheControl(false),
@@ -86,15 +98,16 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   // One pg Client cannot run two queries at once. Resolve the cluster first
   // so a missing row never starts the selection lookup.
-  const cluster = await measurer.time("fetchClusterData", () =>
+  const lookup = await measurer.time("fetchClusterData", () =>
     findClusterForClanek(db, articleId),
   );
 
-  if (!cluster) {
-    throw new Response("Article Not Found", {
-      status: clanekHttpStatus(false),
-    });
+  if (lookup.outcome === "unavailable") throw clanekUnavailableResponse();
+  if (lookup.outcome === "hidden") {
+    throw hiddenNotFoundResponse("Article Not Found");
   }
+  if (lookup.outcome === "missing") throw notFoundResponse("Article Not Found");
+  const cluster = lookup.cluster;
 
   const articles = cluster.articleClusters.map((ac) => ac.article);
 

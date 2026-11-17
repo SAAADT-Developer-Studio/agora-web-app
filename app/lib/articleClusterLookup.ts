@@ -7,6 +7,12 @@ import {
   clusterV2,
 } from "~/drizzle/schema";
 import type { Database } from "~/lib/db";
+import {
+  andHiddenIsFalse,
+  clusterV2VisibleColumns,
+  hiddenColumnPresent,
+  whereVisible,
+} from "~/lib/hiddenColumn";
 
 /** Postgres `integer` / int4 upper bound. Larger values must not be queried as ids. */
 export const INT4_MAX = 2_147_483_647;
@@ -70,6 +76,7 @@ export function parseArticleClusterKey(articleId: string): ArticleClusterKey {
  * Equality on `cluster_v2.id` or `cluster_v2.slug`.
  * The clanek page must not filter by the latest run, ranking, or a time window.
  * A cluster that has left the live feed still resolves when its row exists.
+ * `hidden` is applied in `findClusterForClanek`, and only after the column exists.
  */
 export function articleClusterWhere(articleId: string): SQL {
   const key = parseArticleClusterKey(articleId);
@@ -77,9 +84,40 @@ export function articleClusterWhere(articleId: string): SQL {
   return eq(clusterV2.slug, key.slug);
 }
 
-export async function findClusterForClanek(db: Database, articleId: string) {
-  return await db.query.clusterV2.findFirst({
-    where: articleClusterWhere(articleId),
+export type ClanekLookup =
+  | {
+      outcome: "found";
+      cluster: NonNullable<Awaited<ReturnType<typeof loadClanekCluster>>>;
+    }
+  | { outcome: "missing" }
+  | { outcome: "hidden" }
+  | { outcome: "unavailable" };
+
+/** How long a "no hidden clusters" or per-cluster remint answer is reused. */
+export const HIDDEN_REMIT_CACHE_TTL_MS = 60_000;
+
+type TimedFlag = { present: boolean; expiresAt: number };
+
+let anyHiddenCluster: TimedFlag | undefined;
+const majorityCache = new Map<string, TimedFlag>();
+
+export function resetHiddenRemitCacheForTests(): void {
+  anyHiddenCluster = undefined;
+  majorityCache.clear();
+}
+
+function loadClanekCluster(
+  db: Database,
+  articleId: string,
+  hiddenPresent: boolean,
+) {
+  return db.query.clusterV2.findFirst({
+    columns: clusterV2VisibleColumns,
+    where: whereVisible(
+      articleClusterWhere(articleId),
+      clusterV2.hidden,
+      hiddenPresent,
+    ),
     with: {
       articleClusters: {
         with: {
@@ -102,6 +140,152 @@ export async function findClusterForClanek(db: Database, articleId: string) {
       },
     },
   });
+}
+
+export function anyHiddenClusterSql(): SQL {
+  return sql`
+    SELECT EXISTS (
+      SELECT 1 FROM ${clusterV2} WHERE ${clusterV2.hidden} = true
+    ) AS any_hidden
+  `;
+}
+
+export async function findClusterForClanek(
+  db: Database,
+  articleId: string,
+): Promise<ClanekLookup> {
+  const hiddenPresent = await hiddenColumnPresent(db, "cluster_v2");
+  const cluster = await loadClanekCluster(db, articleId, hiddenPresent);
+  if (!cluster) {
+    if (!hiddenPresent) return { outcome: "missing" };
+    const row = await db.query.clusterV2.findFirst({
+      columns: { id: true },
+      where: articleClusterWhere(articleId),
+    });
+    return { outcome: row ? "hidden" : "missing" };
+  }
+  if (!hiddenPresent) return { outcome: "found", cluster };
+
+  // An earlier run keeps its own slug. Hide that URL when the newest remint
+  // sharing a strict majority of these articles is itself hidden.
+  const articleIds = [
+    ...new Set(
+      cluster.articleClusters.map((membership) => membership.article.id),
+    ),
+  ];
+  if (articleIds.length === 0) return { outcome: "found", cluster };
+
+  const covered = await newerHiddenMajority(db, {
+    clusterId: cluster.id,
+    createdAt: cluster.createdAt,
+    articleIds,
+  });
+  if (covered === "unavailable") return { outcome: "unavailable" };
+  if (covered) return { outcome: "hidden" };
+  return { outcome: "found", cluster };
+}
+
+function majorityCacheKey(input: {
+  clusterId: number;
+  createdAt: string;
+  articleIds: number[];
+}): string {
+  return `${input.clusterId}|${input.createdAt}|${[...input.articleIds].sort((a, b) => a - b).join(",")}`;
+}
+
+/**
+ * `true` when the newest newer majority remint is hidden, `false` when it is
+ * not (or no cluster is hidden), `"unavailable"` when the check itself failed.
+ * A failure must not fall through to a cacheable 200.
+ */
+async function newerHiddenMajority(
+  db: SqlExecutor,
+  input: { clusterId: number; createdAt: string; articleIds: number[] },
+): Promise<boolean | "unavailable"> {
+  const nowMs = Date.now();
+  const key = majorityCacheKey(input);
+  const cached = majorityCache.get(key);
+  if (cached && cached.expiresAt > nowMs) return cached.present;
+
+  if (
+    anyHiddenCluster &&
+    anyHiddenCluster.expiresAt > nowMs &&
+    !anyHiddenCluster.present
+  ) {
+    return false;
+  }
+
+  try {
+    const anyHidden = await db.execute<{ any_hidden?: unknown }>(
+      anyHiddenClusterSql(),
+    );
+    const row = anyHidden.rows[0];
+    if (!row || !("any_hidden" in row)) return "unavailable";
+    const present = asBool(row.any_hidden);
+    anyHiddenCluster = {
+      present,
+      expiresAt: nowMs + HIDDEN_REMIT_CACHE_TTL_MS,
+    };
+    if (!present) return false;
+  } catch (error) {
+    console.warn(
+      `[hidden-cluster] hidden-row probe failed for cluster ${input.clusterId}; refusing the page: ${errorSummary(error)}`,
+    );
+    return "unavailable";
+  }
+
+  try {
+    const result = await withMajorityTransaction(db, (tx) =>
+      tx.execute<{ hidden?: unknown }>(hiddenMajoritySuccessorSql(input)),
+    );
+    const hidden = asBool(result.rows[0]?.hidden);
+    majorityCache.set(key, {
+      present: hidden,
+      expiresAt: nowMs + HIDDEN_REMIT_CACHE_TTL_MS,
+    });
+    return hidden;
+  } catch (error) {
+    console.warn(
+      `[hidden-cluster] majority remint lookup failed for cluster ${input.clusterId}; refusing the page: ${errorSummary(error)}`,
+    );
+    return "unavailable";
+  }
+}
+
+/** One round trip for the planner guards. `set_config(..., true)` is SET LOCAL. */
+async function withMajorityTransaction<T>(
+  db: SqlExecutor,
+  fn: (db: SqlExecutor) => Promise<T>,
+): Promise<T> {
+  let finished = false;
+  await db.execute(sql`BEGIN`);
+  try {
+    await db.execute(sql`
+      SELECT
+        set_config('statement_timeout', ${NEWER_CLUSTER_STATEMENT_TIMEOUT}, true),
+        set_config('lock_timeout', ${NEWER_CLUSTER_LOCK_TIMEOUT}, true),
+        set_config('idle_in_transaction_session_timeout', ${NEWER_CLUSTER_IDLE_IN_TRANSACTION_TIMEOUT}, true),
+        set_config('join_collapse_limit', '1', true),
+        set_config('from_collapse_limit', '1', true),
+        set_config('enable_hashjoin', 'off', true),
+        set_config('enable_mergejoin', 'off', true),
+        set_config('enable_seqscan', 'off', true)
+    `);
+    const result = await fn(db);
+    await db.execute(sql`COMMIT`);
+    finished = true;
+    return result;
+  } finally {
+    if (!finished) {
+      try {
+        await db.execute(sql`ROLLBACK`);
+      } catch (rollbackError) {
+        console.warn(
+          `[hidden-cluster] rollback failed: ${errorSummary(rollbackError)}`,
+        );
+      }
+    }
+  }
 }
 
 function idList(ids: number[]): SQL {
@@ -177,10 +361,49 @@ type SqlExecutor = Pick<Database, "execute">;
  * Categories are a second statement for the one picked id
  * (`ix_article_cluster_cluster_id`), not a LATERAL over the candidate join.
  */
+/**
+ * Newest newer cluster that shares a strict majority of this cluster's articles.
+ * One row: that cluster's `hidden` flag. No row means there is no such remint.
+ * Call only once `cluster_v2.hidden` exists.
+ *
+ * Join order matches `newerClusterCandidatesSql`: unnest the page's article ids,
+ * index-scan `article_cluster` on `article_id`, then primary-key lookup on
+ * `cluster_v2`. The bounded transaction keeps the planner from walking
+ * `ix_cluster_v2_created_at_id`.
+ */
+export function hiddenMajoritySuccessorSql(input: {
+  clusterId: number;
+  createdAt: string;
+  articleIds: number[];
+}): SQL {
+  return sql`
+    SELECT ${clusterV2.hidden} AS hidden
+    FROM unnest(ARRAY[${idList(input.articleIds)}]::int[]) AS mine(article_id)
+    INNER JOIN ${articleCluster}
+      ON ${articleCluster.articleId} = mine.article_id
+     AND ${articleCluster.clusterId} <> ${input.clusterId}
+    INNER JOIN ${clusterV2}
+      ON ${clusterV2.id} = ${articleCluster.clusterId}
+    WHERE (
+      ${clusterV2.createdAt} > ${input.createdAt}::timestamptz
+      OR (
+        ${clusterV2.createdAt} = ${input.createdAt}::timestamptz
+        AND ${clusterV2.id} > ${input.clusterId}
+      )
+    )
+    GROUP BY ${clusterV2.id}, ${clusterV2.createdAt}, ${clusterV2.hidden}
+    HAVING count(DISTINCT mine.article_id) * 2 > ${input.articleIds.length}
+    ORDER BY ${clusterV2.createdAt} DESC, ${clusterV2.id} DESC
+    LIMIT 1
+  `;
+}
+
 export function newerClusterCandidatesSql(input: {
   articleIds: number[];
   clusterId: number;
   createdAt: string;
+  /** Set once `cluster_v2.hidden` is known to exist. Omit it and the SQL stays unchanged. */
+  excludeHidden?: boolean;
 }): SQL {
   return sql`
     SELECT ${clusterV2.id} AS id, ${clusterV2.slug} AS slug
@@ -190,7 +413,7 @@ export function newerClusterCandidatesSql(input: {
      AND ${articleCluster.clusterId} <> ${input.clusterId}
     INNER JOIN ${clusterV2}
       ON ${clusterV2.id} = ${articleCluster.clusterId}
-    WHERE ${clusterV2.createdAt} > ${input.createdAt}::timestamptz
+    WHERE ${clusterV2.createdAt} > ${input.createdAt}::timestamptz${andHiddenIsFalse(clusterV2.hidden, input.excludeHidden === true)}
     ORDER BY ${clusterV2.createdAt} DESC, ${clusterV2.id} DESC
     LIMIT 1
   `;
@@ -321,9 +544,10 @@ function newerClusterCacheKey(input: {
   articleIds: number[];
   clusterId: number;
   createdAt: string;
+  excludeHidden: boolean;
 }): string {
   const articleIds = [...input.articleIds].sort((a, b) => a - b).join(",");
-  return `${input.clusterId}|${input.createdAt}|${articleIds}`;
+  return `${input.clusterId}|${input.createdAt}|${articleIds}|h${input.excludeHidden ? 1 : 0}`;
 }
 
 function readNewerClusterCache(
@@ -444,7 +668,12 @@ async function withBoundedLookupTransaction<T>(
 
 async function queryNewerCluster(
   db: SqlExecutor,
-  input: { articleIds: number[]; clusterId: number; createdAt: string },
+  input: {
+    articleIds: number[];
+    clusterId: number;
+    createdAt: string;
+    excludeHidden: boolean;
+  },
 ): Promise<NewerCluster | null> {
   const candidates = await db.execute<NewerClusterRow>(
     newerClusterCandidatesSql(input),
@@ -472,7 +701,17 @@ async function lookupNewerCluster(
   input: { articleIds: number[]; clusterId: number; createdAt: string },
   nowMs: number,
 ): Promise<NewerClusterLookup> {
-  const key = newerClusterCacheKey(input);
+  let excludeHidden = false;
+  try {
+    excludeHidden = await hiddenColumnPresent(db, "cluster_v2");
+  } catch (error) {
+    console.warn(
+      `[newer-cluster] hidden-column probe failed for cluster ${input.clusterId}; skipping newer link: ${errorSummary(error)}`,
+    );
+    return { degraded: true };
+  }
+
+  const key = newerClusterCacheKey({ ...input, excludeHidden });
   const cached = readNewerClusterCache(key, nowMs);
   if (cached.hit) return { degraded: false, cluster: cached.value };
 
@@ -486,7 +725,7 @@ async function lookupNewerCluster(
 
   try {
     const cluster = await withBoundedLookupTransaction(db, (tx) =>
-      queryNewerCluster(tx, input),
+      queryNewerCluster(tx, { ...input, excludeHidden }),
     );
     writeNewerClusterCache(key, cluster, nowMs);
     return { degraded: false, cluster };

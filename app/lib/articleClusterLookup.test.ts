@@ -5,6 +5,8 @@ import type { SQL } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ArchiveNotice, NewerCopyNotice } from "~/components/archive-notice";
 import type { Database } from "~/lib/db";
+import { resetHiddenColumnProbeForTests } from "~/lib/hiddenColumn";
+import { shouldStorePageCache } from "~/lib/pageCache";
 import {
   ARCHIVE_LABEL,
   ARCHIVE_MESSAGE,
@@ -23,6 +25,8 @@ import {
   clanekPath,
   clusterOwnCategory,
   findClusterForClanek,
+  hiddenMajoritySuccessorSql,
+  resetHiddenRemitCacheForTests,
   isArchivedCluster,
   isWithinClustererWindow,
   newerClusterCandidatesSql,
@@ -32,7 +36,6 @@ import {
   resolveClanekArchive,
   parseArticleClusterKey,
 } from "~/lib/articleClusterLookup";
-import { shouldStorePageCache } from "~/lib/pageCache";
 import { getSeoMetas, SITE_URL } from "~/lib/seo";
 
 const DIGIT_SLUG =
@@ -65,6 +68,7 @@ type SqlKind =
   | "commit"
   | "rollback"
   | "set"
+  | "probe"
   | "selection"
   | "candidates"
   | "categories"
@@ -72,6 +76,7 @@ type SqlKind =
 
 function sqlKind(text: string): SqlKind {
   const trimmed = text.trim();
+  if (/to_regclass/i.test(text)) return "probe";
   if (/^begin\b/i.test(trimmed)) return "begin";
   if (/^commit\b/i.test(trimmed)) return "commit";
   if (/^rollback\b/i.test(trimmed)) return "rollback";
@@ -86,6 +91,7 @@ function lookupDb(script: {
   selection?: Array<Record<string, unknown>>;
   candidates?: Array<Record<string, unknown>>;
   categories?: Array<Record<string, unknown>>;
+  hiddenPresent?: boolean;
   failAt?: "candidates" | "categories";
   onCandidates?: () => Promise<void> | void;
 }) {
@@ -105,6 +111,9 @@ function lookupDb(script: {
         return { rows: [] };
       }
       if (kind === "set") return { rows: [] };
+      if (kind === "probe") {
+        return { rows: [{ present: script.hiddenPresent === true }] };
+      }
       if (kind === "selection") return { rows: script.selection ?? [] };
       if (kind === "candidates") {
         await script.onCandidates?.();
@@ -208,9 +217,14 @@ describe("article cluster lookup sql", () => {
 });
 
 describe("findClusterForClanek", () => {
+  beforeEach(() => {
+    resetHiddenColumnProbeForTests();
+    resetHiddenRemitCacheForTests();
+  });
+
   it("looks up a digit-leading slug and does not query selection on a miss", async () => {
     let where: SQL | undefined;
-    let executed = 0;
+    const executed: string[] = [];
     const db = {
       query: {
         clusterV2: {
@@ -220,18 +234,193 @@ describe("findClusterForClanek", () => {
           },
         },
       },
-      execute: async () => {
-        executed += 1;
+      execute: async (query: SQL) => {
+        executed.push(compile(query).sql);
         return { rows: [] };
       },
     } as unknown as Database;
 
     const cluster = await findClusterForClanek(db, DIGIT_SLUG);
 
-    expect(cluster).toBeUndefined();
-    expect(executed).toBe(0);
+    expect(cluster).toEqual({ outcome: "missing" });
+    expect(executed).toHaveLength(1);
+    expect(executed[0]).toMatch(/to_regclass/i);
     expect(compile(where!).params).toStrictEqual([DIGIT_SLUG]);
     expect(compile(where!).sql).not.toMatch(/\blike\b/i);
+    expect(compile(where!).sql).not.toMatch(/hidden/i);
+  });
+
+  it("404s an older remint when the newest majority successor is hidden", async () => {
+    const statements: string[] = [];
+    const visible = {
+      id: 4,
+      createdAt: "2026-10-01T00:00:00.000Z",
+      title: "Old",
+      articleClusters: [{ article: { id: 10 } }, { article: { id: 11 } }],
+    };
+    const db = {
+      query: {
+        clusterV2: {
+          findFirst: async () => visible,
+        },
+      },
+      execute: async (query: SQL) => {
+        const compiled = compile(query);
+        statements.push(compiled.sql);
+        if (/to_regclass/i.test(compiled.sql)) {
+          return { rows: [{ present: true }] };
+        }
+        if (/any_hidden/i.test(compiled.sql)) {
+          return { rows: [{ any_hidden: true }] };
+        }
+        if (/unnest/i.test(compiled.sql)) {
+          return { rows: [{ hidden: true }] };
+        }
+        return { rows: [] };
+      },
+    } as unknown as Database;
+
+    await expect(findClusterForClanek(db, "old-a")).resolves.toEqual({
+      outcome: "hidden",
+    });
+    const successor = statements.find((sqlText) => /unnest/i.test(sqlText));
+    expect(successor).toMatch(/count\(DISTINCT mine\.article_id\) \* 2 >/);
+    expect(successor).toMatch(/"hidden"/);
+    const sets = statements.filter((sqlText) => /set_config/i.test(sqlText));
+    expect(sets).toHaveLength(1);
+    expect(
+      statements.some((sqlText) => /^set local/i.test(sqlText.trim())),
+    ).toBe(false);
+  });
+
+  it("keeps an older remint when the newest majority successor is public", async () => {
+    const visible = {
+      id: 4,
+      createdAt: "2026-10-01T00:00:00.000Z",
+      title: "Old",
+      articleClusters: [{ article: { id: 10 } }, { article: { id: 11 } }],
+    };
+    const db = {
+      query: {
+        clusterV2: {
+          findFirst: async () => visible,
+        },
+      },
+      execute: async (query: SQL) => {
+        const compiled = compile(query);
+        if (/to_regclass/i.test(compiled.sql)) {
+          return { rows: [{ present: true }] };
+        }
+        if (/any_hidden/i.test(compiled.sql)) {
+          return { rows: [{ any_hidden: true }] };
+        }
+        if (/unnest/i.test(compiled.sql)) {
+          return { rows: [{ hidden: false }] };
+        }
+        return { rows: [] };
+      },
+    } as unknown as Database;
+
+    await expect(findClusterForClanek(db, "old-a")).resolves.toEqual({
+      outcome: "found",
+      cluster: visible,
+    });
+  });
+
+  it("skips the remint join when no cluster is hidden", async () => {
+    const statements: string[] = [];
+    const visible = {
+      id: 4,
+      createdAt: "2026-10-01T00:00:00.000Z",
+      title: "Old",
+      articleClusters: [{ article: { id: 10 } }, { article: { id: 11 } }],
+    };
+    const db = {
+      query: {
+        clusterV2: {
+          findFirst: async () => visible,
+        },
+      },
+      execute: async (query: SQL) => {
+        const compiled = compile(query);
+        statements.push(compiled.sql);
+        if (/to_regclass/i.test(compiled.sql)) {
+          return { rows: [{ present: true }] };
+        }
+        if (/any_hidden/i.test(compiled.sql)) {
+          return { rows: [{ any_hidden: false }] };
+        }
+        return { rows: [] };
+      },
+    } as unknown as Database;
+
+    await expect(findClusterForClanek(db, "old-a")).resolves.toEqual({
+      outcome: "found",
+      cluster: visible,
+    });
+    expect(statements.some((sqlText) => /unnest/i.test(sqlText))).toBe(false);
+  });
+
+  it("refuses the page when the remint lookup fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const visible = {
+      id: 4,
+      createdAt: "2026-10-01T00:00:00.000Z",
+      title: "Old",
+      articleClusters: [{ article: { id: 10 } }],
+    };
+    const db = {
+      query: {
+        clusterV2: {
+          findFirst: async () => visible,
+        },
+      },
+      execute: async (query: SQL) => {
+        const compiled = compile(query);
+        if (/to_regclass/i.test(compiled.sql)) {
+          return { rows: [{ present: true }] };
+        }
+        if (/any_hidden/i.test(compiled.sql)) {
+          return { rows: [{ any_hidden: true }] };
+        }
+        if (/unnest/i.test(compiled.sql)) throw new Error("statement timeout");
+        return { rows: [] };
+      },
+    } as unknown as Database;
+
+    try {
+      await expect(findClusterForClanek(db, "old-a")).resolves.toEqual({
+        outcome: "unavailable",
+      });
+      expect(warn).toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+describe("hidden majority successor sql", () => {
+  it("starts from this cluster's articles and keeps a strict majority", () => {
+    const compiled = compile(
+      hiddenMajoritySuccessorSql({
+        clusterId: 4,
+        createdAt: "2026-10-01T00:00:00.000Z",
+        articleIds: [10, 11],
+      }),
+    );
+    const from = compiled.sql.slice(compiled.sql.toLowerCase().indexOf("from"));
+    expect(from.indexOf("unnest")).toBeLessThan(
+      from.indexOf("article_cluster"),
+    );
+    expect(from.indexOf("article_cluster")).toBeLessThan(
+      from.indexOf("cluster_v2"),
+    );
+    expect(compiled.sql).toMatch(/count\(DISTINCT mine\.article_id\) \* 2 >/);
+    expect(compiled.sql).toMatch(/order by .+"created_at" desc, .+"id" desc/i);
+    expect(compiled.sql).toMatch(/limit 1/i);
+    expect(compiled.params).toEqual(
+      expect.arrayContaining([10, 11, 4, "2026-10-01T00:00:00.000Z"]),
+    );
   });
 });
 
@@ -247,6 +436,7 @@ describe("archived clanek pages", () => {
 
   beforeEach(() => {
     resetNewerClusterLookupForTests();
+    resetHiddenColumnProbeForTests();
   });
 
   it("keeps a story inside the clusterer window, including a run re-minted minutes later", () => {

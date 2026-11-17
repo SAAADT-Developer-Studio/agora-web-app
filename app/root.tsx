@@ -3,8 +3,9 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { ErrorComponent } from "~/components/error-component";
-import { Suspense, useEffect } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Suspense, useEffect, useState } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { getQueryClient } from "~/lib/queryClient";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { Toaster } from "sonner";
 
@@ -85,9 +86,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-const queryClient = new QueryClient();
-
 export default function App() {
+  // Fresh client per server request. A shared client keeps the previous
+  // category payload and `initialData` from the loader never replaces it.
+  const [queryClient] = useState(() => getQueryClient());
+
   useEffect(() => {
     let userId = localStorage.getItem("user_id");
     if (!userId) {
