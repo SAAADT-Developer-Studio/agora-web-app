@@ -7,6 +7,12 @@ import {
   clusterV2,
 } from "~/drizzle/schema";
 import type { Database } from "~/lib/db";
+import {
+  andHiddenIsFalse,
+  clusterV2VisibleColumns,
+  hiddenColumnPresent,
+  whereVisible,
+} from "~/lib/hiddenColumn";
 
 /** Postgres `integer` / int4 upper bound. Larger values must not be queried as ids. */
 export const INT4_MAX = 2_147_483_647;
@@ -70,6 +76,7 @@ export function parseArticleClusterKey(articleId: string): ArticleClusterKey {
  * Equality on `cluster_v2.id` or `cluster_v2.slug`.
  * The clanek page must not filter by the latest run, ranking, or a time window.
  * A cluster that has left the live feed still resolves when its row exists.
+ * `hidden` is applied in `findClusterForClanek`, and only after the column exists.
  */
 export function articleClusterWhere(articleId: string): SQL {
   const key = parseArticleClusterKey(articleId);
@@ -78,8 +85,14 @@ export function articleClusterWhere(articleId: string): SQL {
 }
 
 export async function findClusterForClanek(db: Database, articleId: string) {
+  const hiddenPresent = await hiddenColumnPresent(db, "cluster_v2");
   return await db.query.clusterV2.findFirst({
-    where: articleClusterWhere(articleId),
+    columns: clusterV2VisibleColumns,
+    where: whereVisible(
+      articleClusterWhere(articleId),
+      clusterV2.hidden,
+      hiddenPresent,
+    ),
     with: {
       articleClusters: {
         with: {
@@ -181,6 +194,8 @@ export function newerClusterCandidatesSql(input: {
   articleIds: number[];
   clusterId: number;
   createdAt: string;
+  /** Set once `cluster_v2.hidden` is known to exist. Omit it and the SQL stays unchanged. */
+  excludeHidden?: boolean;
 }): SQL {
   return sql`
     SELECT ${clusterV2.id} AS id, ${clusterV2.slug} AS slug
@@ -190,7 +205,7 @@ export function newerClusterCandidatesSql(input: {
      AND ${articleCluster.clusterId} <> ${input.clusterId}
     INNER JOIN ${clusterV2}
       ON ${clusterV2.id} = ${articleCluster.clusterId}
-    WHERE ${clusterV2.createdAt} > ${input.createdAt}::timestamptz
+    WHERE ${clusterV2.createdAt} > ${input.createdAt}::timestamptz${andHiddenIsFalse(clusterV2.hidden, input.excludeHidden === true)}
     ORDER BY ${clusterV2.createdAt} DESC, ${clusterV2.id} DESC
     LIMIT 1
   `;
@@ -321,9 +336,10 @@ function newerClusterCacheKey(input: {
   articleIds: number[];
   clusterId: number;
   createdAt: string;
+  excludeHidden: boolean;
 }): string {
   const articleIds = [...input.articleIds].sort((a, b) => a - b).join(",");
-  return `${input.clusterId}|${input.createdAt}|${articleIds}`;
+  return `${input.clusterId}|${input.createdAt}|${articleIds}|h${input.excludeHidden ? 1 : 0}`;
 }
 
 function readNewerClusterCache(
@@ -444,7 +460,12 @@ async function withBoundedLookupTransaction<T>(
 
 async function queryNewerCluster(
   db: SqlExecutor,
-  input: { articleIds: number[]; clusterId: number; createdAt: string },
+  input: {
+    articleIds: number[];
+    clusterId: number;
+    createdAt: string;
+    excludeHidden: boolean;
+  },
 ): Promise<NewerCluster | null> {
   const candidates = await db.execute<NewerClusterRow>(
     newerClusterCandidatesSql(input),
@@ -472,7 +493,17 @@ async function lookupNewerCluster(
   input: { articleIds: number[]; clusterId: number; createdAt: string },
   nowMs: number,
 ): Promise<NewerClusterLookup> {
-  const key = newerClusterCacheKey(input);
+  let excludeHidden = false;
+  try {
+    excludeHidden = await hiddenColumnPresent(db, "cluster_v2");
+  } catch (error) {
+    console.warn(
+      `[newer-cluster] hidden-column probe failed for cluster ${input.clusterId}; skipping newer link: ${errorSummary(error)}`,
+    );
+    return { degraded: true };
+  }
+
+  const key = newerClusterCacheKey({ ...input, excludeHidden });
   const cached = readNewerClusterCache(key, nowMs);
   if (cached.hit) return { degraded: false, cluster: cached.value };
 
@@ -486,7 +517,7 @@ async function lookupNewerCluster(
 
   try {
     const cluster = await withBoundedLookupTransaction(db, (tx) =>
-      queryNewerCluster(tx, input),
+      queryNewerCluster(tx, { ...input, excludeHidden }),
     );
     writeNewerClusterCache(key, cluster, nowMs);
     return { degraded: false, cluster };

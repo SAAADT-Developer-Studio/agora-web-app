@@ -5,6 +5,7 @@ import type { SQL } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ArchiveNotice, NewerCopyNotice } from "~/components/archive-notice";
 import type { Database } from "~/lib/db";
+import { resetHiddenColumnProbeForTests } from "~/lib/hiddenColumn";
 import {
   ARCHIVE_LABEL,
   ARCHIVE_MESSAGE,
@@ -65,6 +66,7 @@ type SqlKind =
   | "commit"
   | "rollback"
   | "set"
+  | "probe"
   | "selection"
   | "candidates"
   | "categories"
@@ -72,6 +74,7 @@ type SqlKind =
 
 function sqlKind(text: string): SqlKind {
   const trimmed = text.trim();
+  if (/information_schema/i.test(text)) return "probe";
   if (/^begin\b/i.test(trimmed)) return "begin";
   if (/^commit\b/i.test(trimmed)) return "commit";
   if (/^rollback\b/i.test(trimmed)) return "rollback";
@@ -86,6 +89,7 @@ function lookupDb(script: {
   selection?: Array<Record<string, unknown>>;
   candidates?: Array<Record<string, unknown>>;
   categories?: Array<Record<string, unknown>>;
+  hiddenPresent?: boolean;
   failAt?: "candidates" | "categories";
   onCandidates?: () => Promise<void> | void;
 }) {
@@ -105,6 +109,9 @@ function lookupDb(script: {
         return { rows: [] };
       }
       if (kind === "set") return { rows: [] };
+      if (kind === "probe") {
+        return { rows: [{ present: script.hiddenPresent === true }] };
+      }
       if (kind === "selection") return { rows: script.selection ?? [] };
       if (kind === "candidates") {
         await script.onCandidates?.();
@@ -208,9 +215,13 @@ describe("article cluster lookup sql", () => {
 });
 
 describe("findClusterForClanek", () => {
+  beforeEach(() => {
+    resetHiddenColumnProbeForTests();
+  });
+
   it("looks up a digit-leading slug and does not query selection on a miss", async () => {
     let where: SQL | undefined;
-    let executed = 0;
+    const executed: string[] = [];
     const db = {
       query: {
         clusterV2: {
@@ -220,8 +231,8 @@ describe("findClusterForClanek", () => {
           },
         },
       },
-      execute: async () => {
-        executed += 1;
+      execute: async (query: SQL) => {
+        executed.push(compile(query).sql);
         return { rows: [] };
       },
     } as unknown as Database;
@@ -229,9 +240,11 @@ describe("findClusterForClanek", () => {
     const cluster = await findClusterForClanek(db, DIGIT_SLUG);
 
     expect(cluster).toBeUndefined();
-    expect(executed).toBe(0);
+    expect(executed).toHaveLength(1);
+    expect(executed[0]).toMatch(/information_schema/i);
     expect(compile(where!).params).toStrictEqual([DIGIT_SLUG]);
     expect(compile(where!).sql).not.toMatch(/\blike\b/i);
+    expect(compile(where!).sql).not.toMatch(/hidden/i);
   });
 });
 
@@ -247,6 +260,7 @@ describe("archived clanek pages", () => {
 
   beforeEach(() => {
     resetNewerClusterLookupForTests();
+    resetHiddenColumnProbeForTests();
   });
 
   it("keeps a story inside the clusterer window, including a run re-minted minutes later", () => {

@@ -179,6 +179,8 @@ export const story = pgTable("story", {
 	title: varchar().notNull(),
 	lastArticlePublishedAt: timestamp("last_article_published_at", { withTimezone: true, mode: 'string' }).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).notNull(),
+	// agora migration: hidden boolean NOT NULL DEFAULT false. Reads must tolerate it missing.
+	hidden: boolean("hidden").notNull().default(false),
 }, (table) => [
 	index("ix_story_last_article_published_at").using("btree", table.lastArticlePublishedAt.asc().nullsLast().op("timestamptz_ops")),
 ]);
@@ -199,6 +201,8 @@ export const clusterV2 = pgTable("cluster_v2", {
 	rankVersion: varchar("rank_version"),
 	rankCategory: varchar("rank_category"),
 	rankingRunId: integer("ranking_run_id"),
+	// agora migration: hidden boolean NOT NULL DEFAULT false. Reads must tolerate it missing.
+	hidden: boolean("hidden").notNull().default(false),
 }, (table) => [
 	index("ix_cluster_v2_created_at_id").using("btree", table.createdAt.asc().nullsLast().op("timestamptz_ops"), table.id.asc().nullsLast().op("int4_ops")),
 	index("ix_cluster_v2_ranking_run_id").using("btree", table.rankingRunId.asc().nullsLast().op("int4_ops")),

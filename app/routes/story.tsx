@@ -12,6 +12,7 @@ import { extractHeroImage } from "~/utils/extractHeroImage";
 import { collectSocialMentions } from "~/utils/socialPost";
 import { parseStoryBullets } from "~/utils/storySummary";
 import StoryPage, { type StoryPageData } from "~/components/story-page";
+import { hiddenColumnPresent, storyPageWhere } from "~/lib/hiddenColumn";
 
 /** A story whose newest article is younger than this reads as developing. */
 const DEVELOPING_WINDOW_MS = 3 * 60 * 60 * 1000;
@@ -95,9 +96,10 @@ export async function loader({ params, context }: Route.LoaderArgs) {
 
   const { db, measurer } = getAppContext(context);
 
+  const hiddenPresent = await hiddenColumnPresent(db, "story");
   const story = await measurer.time("fetchStoryData", () =>
     db.query.story.findFirst({
-      where: (s, { eq }) => eq(s.id, storyId),
+      where: storyPageWhere(storyId, hiddenPresent),
       columns: { id: true, title: true },
       with: {
         storySummaries: {

@@ -6,7 +6,13 @@ import {
   story,
   storyArticle,
 } from "~/drizzle/schema";
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
+import {
+  andHiddenIsFalse,
+  hiddenColumnPresent,
+  storyVisibleColumns,
+  whereVisible,
+} from "~/lib/hiddenColumn";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import {
   extractCarouselImages,
@@ -78,6 +84,7 @@ export async function getStoryHomeArticles({
   /** Only this side's blindspots, still in ranking order. */
   side?: BlindspotSide;
 }): Promise<ArticleType[]> {
+  const hiddenPresent = await hiddenColumnPresent(db, "story");
   const topStoryIds = await db.execute(sql`
   WITH provider_counts AS (
     SELECT
@@ -107,7 +114,7 @@ export async function getStoryHomeArticles({
     LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
     LEFT JOIN ${newsProvider} ON ${article.newsProviderKey} = ${newsProvider.key}
     LEFT JOIN provider_counts pc ON pc.story_id = ${story.id}
-    WHERE ${recentStoriesFilter}
+    WHERE ${recentStoriesFilter}${andHiddenIsFalse(story.hidden, hiddenPresent)}
     GROUP BY ${story.id}
     HAVING count(${article.id}) > 0
   ),
@@ -174,6 +181,7 @@ export async function getStoryCategoryArticles({
   count: number;
   offset?: number;
 }): Promise<ArticleType[]> {
+  const hiddenPresent = await hiddenColumnPresent(db, "story");
   const topStoryIds = await db.execute(sql`
   WITH provider_counts AS (
     SELECT
@@ -202,7 +210,7 @@ export async function getStoryCategoryArticles({
     LEFT JOIN provider_counts pc ON pc.story_id = ${story.id}
     WHERE ${recentStoriesFilter}
       AND (${category} = ANY(ARRAY[${article.categories}[1], ${article.categories}[2]]))
-      ${ignoredClusterIds.length > 0 ? sql`AND ${story.id} NOT IN ${ignoredClusterIds}` : sql``}
+      ${ignoredClusterIds.length > 0 ? sql`AND ${story.id} NOT IN ${ignoredClusterIds}` : sql``}${andHiddenIsFalse(story.hidden, hiddenPresent)}
     GROUP BY ${story.id}
     HAVING count(${article.id}) > 0
   ),
@@ -260,12 +268,11 @@ async function hydrateStories(
 ): Promise<ArticleType[]> {
   if (storyIds.length === 0) return [];
 
+  const hiddenPresent = await hiddenColumnPresent(db, "story");
+  const ids = storyIds.map((row) => row.id);
   const topStories = await db.query.story.findMany({
-    where: (s, { inArray }) =>
-      inArray(
-        s.id,
-        storyIds.map((row) => row.id),
-      ),
+    columns: storyVisibleColumns,
+    where: whereVisible(inArray(story.id, ids), story.hidden, hiddenPresent),
     with: {
       storyArticles: {
         with: {
