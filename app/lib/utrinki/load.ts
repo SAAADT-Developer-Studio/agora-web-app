@@ -1,7 +1,9 @@
 import type { Database } from "~/lib/db";
 import {
+  createObservedRankSession,
   getStoryCategoryArticles,
   getStoryHomeArticles,
+  resolveObservedStoryRankRun,
 } from "~/lib/services/storyRanking";
 import {
   assembleUtrinkiPage,
@@ -14,14 +16,39 @@ import {
 
 type Ranked = { id: string };
 
+type RankStories = (
+  db: Database,
+  category: UtrinkiCategory,
+  count: number,
+  offset: number,
+) => Promise<Ranked[]>;
+
+/**
+ * Same ordering the home and category listings use: the latest fresh story
+ * ranking run when `storyRankOrder` is on, otherwise the in-app formula.
+ * A failed lookup falls back inside the story query and keeps this offset.
+ */
 async function rankStories(
   db: Database,
   category: UtrinkiCategory,
   count: number,
   offset: number,
+  storyRankOrder: boolean,
 ): Promise<Ranked[]> {
+  const rankSession = createObservedRankSession();
+  const observedRunId = await resolveObservedStoryRankRun(
+    db,
+    storyRankOrder,
+    rankSession,
+  );
   if (category === "aktualno") {
-    return getStoryHomeArticles({ db, count, offset });
+    return getStoryHomeArticles({
+      db,
+      count,
+      offset,
+      observedRunId,
+      rankSession,
+    });
   }
   return getStoryCategoryArticles({
     db,
@@ -29,6 +56,8 @@ async function rankStories(
     category,
     count,
     offset,
+    observedRunId,
+    rankSession,
   });
 }
 
@@ -108,14 +137,24 @@ export async function loadUtrinkiPage(
     db,
     category,
     page,
-  }: { db: Database; category: UtrinkiCategory; page: number },
+    storyRankOrder = false,
+  }: {
+    db: Database;
+    category: UtrinkiCategory;
+    page: number;
+    /** Same flag the home loader reads from `STORY_RANK_ORDER`. */
+    storyRankOrder?: boolean;
+  },
   deps: {
-    rank?: typeof rankStories;
+    rank?: RankStories;
     hydrate?: typeof hydrateUtrinkiStories;
   } = {},
 ): Promise<UtrinkiPage> {
   const window = utrinkiWindow(page);
-  const rank = deps.rank ?? rankStories;
+  const rank =
+    deps.rank ??
+    ((database, nextCategory, count, offset) =>
+      rankStories(database, nextCategory, count, offset, storyRankOrder));
   const hydrate = deps.hydrate ?? hydrateUtrinkiStories;
   const ranked = await rank(db, category, window.limit, window.offset);
   const rankedIds = ranked.map((article) => Number(article.id));

@@ -9,7 +9,14 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader } from "lucide-react";
 import type { Database } from "~/lib/db";
 import { getMaxAge } from "~/utils/getMaxAge";
-import { getCategoryArticles, type ArticleType } from "~/lib/services/ranking";
+import type { ArticleType } from "~/lib/services/ranking";
+import {
+  createObservedRankSession,
+  getStoryCategoryArticles,
+  resolveObservedStoryRankRun,
+  type ObservedRankSession,
+} from "~/lib/services/storyRanking";
+import { storyRankOrderFromEnv } from "~/lib/storyRankOrder";
 import { getAppContext } from "~/lib/appContext";
 import { getCategoryCacheKey } from "~/lib/kvCache/keys";
 import { get } from "~/lib/fetcher";
@@ -34,16 +41,29 @@ async function fetchCategoryData(
 export async function fetchCategoryArticlesData({
   db,
   category,
+  storyRankOrder = false,
+  rankSession,
 }: {
   db: Database;
   category: CategoryKeyValue;
+  storyRankOrder?: boolean;
+  /** Reuse across the home feed and category pages of one populate-cache call. */
+  rankSession?: ObservedRankSession;
 }) {
-  const articles = await getCategoryArticles({
+  const session = rankSession ?? createObservedRankSession();
+  const observedRunId = await resolveObservedStoryRankRun(
+    db,
+    storyRankOrder,
+    session,
+  );
+  const articles = await getStoryCategoryArticles({
     db,
     ignoredClusterIds: [],
     category,
     count: 21,
     offset: 0,
+    observedRunId,
+    rankSession: session,
   });
   return articles;
 }
@@ -54,18 +74,20 @@ export function headers({ loaderHeaders }: Route.HeadersArgs) {
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const category = params.category;
-  const { db, kvCache, measurer } = getAppContext(context);
+  const { db, kvCache, measurer, cloudflare } = getAppContext(context);
   if (!isCategoryKey(category)) {
     throw new Response("Category Not Found", { status: 404 });
   }
+  const storyRankOrder = storyRankOrderFromEnv(cloudflare.env);
 
   const articles = await measurer.time(
     "fetchCategoryArticles",
     async () =>
       await kvCache.cached(
-        async () => await fetchCategoryArticlesData({ db, category }),
+        async () =>
+          await fetchCategoryArticlesData({ db, category, storyRankOrder }),
         {
-          key: getCategoryCacheKey(category),
+          key: getCategoryCacheKey(category, storyRankOrder),
           expirationTtl: 10 * 60,
         },
       ),

@@ -3,16 +3,40 @@ import type { CategoryKeyValue } from "~/config";
 // https://egghead.io/blog/using-branded-types-in-typescript
 export type CacheKey = string & { __cacheKeyBrand: never };
 
-export const HOME_CACHE_KEY = "data:v2:home" as CacheKey;
+/** Story-ranked home feed. Bump the prefix when the cached `ArticleType` shape or link target changes. */
+export const HOME_CACHE_KEY = "data:story:home" as CacheKey;
 export const META_CACHE_KEY = "meta" as CacheKey;
-/** Story-ranked `/novo` feed. Distinct from `HOME_CACHE_KEY` so the two never collide. */
-export const NOVO_HOME_CACHE_KEY = "data:story:novo" as CacheKey;
 
-/** One page of the hidden `/utrinki` reel. Never collides with `/novo`. */
-export function utrinkiCacheKey(category: string, page: number) {
-  return `data:story:utrinki:v1:${category}:${page}` as CacheKey;
+/**
+ * Distinct from the formula keys so turning `STORY_RANK_ORDER` on or off
+ * does not keep serving the other ordering until the previous TTL expires.
+ */
+const OBSERVED_RANK_CACHE_SUFFIX = ":observed-rank";
+
+function cacheKeyForOrder(base: string, storyRankOrder: boolean): CacheKey {
+  if (!storyRankOrder) return base as CacheKey;
+  return `${base}${OBSERVED_RANK_CACHE_SUFFIX}` as CacheKey;
 }
 
-export function getCategoryCacheKey(category: CategoryKeyValue) {
-  return `data:v2:category:${category}` as CacheKey;
+export function homeCacheKey(storyRankOrder = false): CacheKey {
+  return cacheKeyForOrder(HOME_CACHE_KEY, storyRankOrder);
+}
+
+export function getCategoryCacheKey(
+  category: CategoryKeyValue,
+  storyRankOrder = false,
+): CacheKey {
+  return cacheKeyForOrder(`data:story:category:${category}`, storyRankOrder);
+}
+
+/** One page of the hidden `/utrinki` reel. */
+export function utrinkiCacheKey(
+  category: string,
+  page: number,
+  storyRankOrder = false,
+): CacheKey {
+  return cacheKeyForOrder(
+    `data:story:utrinki:v1:${category}:${page}`,
+    storyRankOrder,
+  );
 }

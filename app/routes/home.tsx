@@ -2,21 +2,15 @@ import type { Route } from "./+types/home";
 
 import { HomeFeed } from "~/components/home-feed";
 import { getSeoMetas } from "~/lib/seo";
-import {
-  emptyArticlesByCategory,
-  getCategoryArticles,
-  getHomeArticles,
-} from "~/lib/services/ranking";
+import { fetchHomeArticlesData } from "~/lib/services/storyRanking";
+import { storyRankOrderFromEnv } from "~/lib/storyRankOrder";
 import { fetchRandomProviders } from "~/lib/services/randomProviders";
-import { config } from "~/config";
-import type { Database } from "~/lib/db";
 import { getEnv } from "~/utils/getEnv";
-import { BLINDSPOTS_PER_SIDE } from "~/utils/blindspots";
 import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { ErrorComponent } from "~/components/error-component";
 import { getAppContext } from "~/lib/appContext";
-import { HOME_CACHE_KEY } from "~/lib/kvCache/keys";
+import { homeCacheKey } from "~/lib/kvCache/keys";
 
 export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
@@ -34,50 +28,9 @@ export function headers({ loaderHeaders }: Route.HeadersArgs) {
   return loaderHeaders;
 }
 
-export async function fetchHomeArticlesData({ db }: { db: Database }) {
-  const homeArticles = await getHomeArticles({ db, count: 6 });
-  let ignoredClusterIds = homeArticles.map((a) => Number(a.id));
-
-  const byCategory = emptyArticlesByCategory();
-
-  for (const category of config.categories) {
-    const categoryArticles = await getCategoryArticles({
-      db,
-      ignoredClusterIds,
-      count: 6,
-      category: category.key,
-    });
-
-    ignoredClusterIds = [
-      ...ignoredClusterIds,
-      ...categoryArticles.map((a) => Number(a.id)),
-    ];
-
-    byCategory[category.key] = categoryArticles;
-  }
-
-  return {
-    home: homeArticles,
-    ...byCategory,
-    // Searched across the whole run: one-sided stories rarely rank high.
-    // A hero story can repeat here — the section answers a different question.
-    blindspots: {
-      left: await getHomeArticles({
-        db,
-        count: BLINDSPOTS_PER_SIDE,
-        side: "left",
-      }),
-      right: await getHomeArticles({
-        db,
-        count: BLINDSPOTS_PER_SIDE,
-        side: "right",
-      }),
-    },
-  };
-}
-
 export async function loader({ context }: Route.LoaderArgs) {
-  const { db, kvCache, measurer } = getAppContext(context);
+  const { db, kvCache, measurer, cloudflare } = getAppContext(context);
+  const storyRankOrder = storyRankOrderFromEnv(cloudflare.env);
 
   const articles = await measurer.time(
     "fetchHomeArticlesData",
@@ -86,9 +39,10 @@ export async function loader({ context }: Route.LoaderArgs) {
         async () =>
           await fetchHomeArticlesData({
             db,
+            storyRankOrder,
           }),
         {
-          key: HOME_CACHE_KEY,
+          key: homeCacheKey(storyRankOrder),
           expirationTtl: 10 * 60,
         },
       ),

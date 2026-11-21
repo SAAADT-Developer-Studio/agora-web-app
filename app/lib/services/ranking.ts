@@ -1,12 +1,4 @@
-import type { Database } from "~/lib/db";
-import {
-  article,
-  clusterV2,
-  articleCluster,
-  clusterRun,
-  articleSocialPost,
-  newsProvider,
-} from "~/drizzle/schema";
+import { article, newsProvider } from "~/drizzle/schema";
 import { sql } from "drizzle-orm";
 import { BiasRatingKey } from "~/enums/biasRatingKey";
 import {
@@ -14,13 +6,7 @@ import {
   BLINDSPOT_MIN_RATED,
   type BlindspotSide,
 } from "~/utils/blindspots";
-import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import {
-  extractCarouselImages,
-  extractHeroImage,
-} from "~/utils/extractHeroImage";
-import {
-  defineCategoryMap,
   CategoryKey,
   type CategoryKeyValue,
   type CategoryMap,
@@ -51,7 +37,7 @@ export type ArticleType = {
   showTags?: boolean;
   numberOfArticles: number;
   providerKeys: string[];
-  /** Set only by the hidden story listing (`/novo`). Public listings omit it and link to clanek. */
+  /** Story URL (`/zgodba/:id`). Absent only in KV entries from the cluster_v2 listings, which link to clanek. */
   to?: string;
   /** Lead images for the hero carousel, `image.src` first. Absent in older KV entries. */
   images?: string[];
@@ -72,49 +58,6 @@ export function newestPublishedAt(articles: { publishedAt: string | null }[]) {
   return newest && new Date(newest).toISOString();
 }
 
-const CATEGORY_PRIORITY = defineCategoryMap({
-  politika: 6,
-  gospodarstvo: 6,
-  kriminal: 5,
-  lokalno: 5,
-  "tehnologija-znanost": 4,
-  sport: 2,
-  kultura: 2,
-  zdravje: 1,
-  okolje: 1,
-});
-
-const MAX_CATEGORY_PRIORITY = Math.max(...Object.values(CATEGORY_PRIORITY));
-
-const categoryPriorityCases = sql.join(
-  (Object.entries(CATEGORY_PRIORITY) as [CategoryKeyValue, number][]).map(
-    ([key, priority]) => sql`WHEN ${key} THEN ${priority}`,
-  ),
-  sql.raw(" "),
-);
-
-// Decay constant: articles lose ~63% relevance every 12 hours
-// Formula: exp(-hours_since_publication / 12)
-const RECENCY_DECAY_HOURS = 12;
-
-const recencyScoreExpr = sql<number>`
-  max(
-    exp(
-      -extract(epoch from (now() - ${article.publishedAt}::timestamptz)) / 3600 / ${RECENCY_DECAY_HOURS}
-    )
-  )
-`;
-
-// Category score: average priority of first category across articles, normalized by max priority
-const categoryScoreExpr = sql<number>`
-  avg(
-    CASE ${article.categories}[1]
-      ${categoryPriorityCases}
-      ELSE 0
-    END
-  ) / ${MAX_CATEGORY_PRIORITY}
-`;
-
 export type ArticlesByCategory = CategoryMap<ArticleType[]>;
 
 export function emptyArticlesByCategory(): ArticlesByCategory {
@@ -127,7 +70,7 @@ export function emptyArticlesByCategory(): ArticlesByCategory {
 }
 
 /**
- * Per-cluster rated / left / right article counts for the ranking queries.
+ * Per-story rated / left / right article counts for the ranking queries.
  * DISTINCT because the social-post and provider joins fan rows out.
  */
 export const biasCountColumns = sql`
@@ -146,279 +89,4 @@ export function blindspotFilter(side?: BlindspotSide) {
   const sideCount = side === "left" ? sql`left_count` : sql`right_count`;
   return sql`WHERE rated_count >= ${BLINDSPOT_MIN_RATED}
     AND round(${sideCount} * 100.0 / rated_count) >= ${BLINDSPOT_MIN_PERCENT}`;
-}
-
-export async function getHomeArticles({
-  db,
-  count,
-  side,
-}: {
-  db: Database;
-  count: number;
-  /** Only this side's blindspots, still in ranking order. */
-  side?: BlindspotSide;
-}): Promise<ArticleType[]> {
-  // TODO: maybe pass in clusterRunId as param?
-  const topClusterIds = await db.execute(sql`
-  WITH latest_run AS (
-    SELECT ${clusterRun.id} as id
-    FROM ${clusterRun}
-    WHERE ${clusterRun.isProduction} = true
-    ORDER BY ${clusterRun.createdAt} DESC
-    LIMIT 1
-  ),
-
-  provider_counts AS (
-    SELECT
-      ${articleCluster.clusterId} as cluster_id,
-      ${article.newsProviderKey} as provider_key,
-      count(*) as provider_article_count
-    FROM ${articleCluster}
-    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
-    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
-    GROUP BY ${articleCluster.clusterId}, ${article.newsProviderKey}
-  ),
-
-  cluster_scores AS (
-    SELECT
-      ${clusterV2.id} as id,
-      count(${article.id}) as article_count,
-      sum(${article.llmRank}) as sum_llm_rank,
-      ${recencyScoreExpr} as recency_score,
-      ${categoryScoreExpr} as category_score,
-      count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count,
-      max(pc.provider_article_count) as max_provider_articles,
-      ${biasCountColumns}
-    FROM ${clusterV2}
-    INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
-    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
-    LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
-    LEFT JOIN ${newsProvider} ON ${article.newsProviderKey} = ${newsProvider.key}
-    LEFT JOIN provider_counts pc ON pc.cluster_id = ${clusterV2.id}
-    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
-    GROUP BY ${clusterV2.id}
-    HAVING count(${article.id}) > 0
-  ),
-
-  normalized_scores AS (
-    SELECT
-      id,
-      article_count,
-      recency_score,
-      category_score,
-      social_post_count,
-      max_provider_articles,
-      rated_count,
-      left_count,
-      right_count,
-      CASE
-        WHEN MAX(sum_llm_rank) OVER () > 0
-        THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
-        ELSE 0
-      END as cluster_llm_rank_score,
-      CASE
-        WHEN MAX(social_post_count) OVER () > 0
-        THEN social_post_count::float / MAX(social_post_count) OVER ()
-        ELSE 0
-      END as social_score
-    FROM cluster_scores
-  )
-
-  SELECT
-    id,
-    article_count,
-    cluster_llm_rank_score,
-    recency_score,
-    category_score,
-    social_score,
-
-    (max_provider_articles::float / NULLIF(article_count, 0)) as dominance,
-    (cluster_llm_rank_score * 0.4 + recency_score * 0.20 + category_score * 0.20 + social_score * 0.20) as base_score,
-    (
-      (cluster_llm_rank_score * 0.4 + recency_score * 0.20 + category_score * 0.20 + social_score * 0.20)
-      * (1 - GREATEST(0, (max_provider_articles::float / NULLIF(article_count, 0)) - 0.4))
-    ) as combined_score
-  FROM normalized_scores
-  ${blindspotFilter(side)}
-  ORDER BY combined_score DESC
-  LIMIT ${count}
-`);
-  return await common(
-    db,
-    topClusterIds.rows as { id: number; combined_score: number }[],
-  );
-}
-
-export async function getCategoryArticles({
-  db,
-  ignoredClusterIds,
-  category,
-  count,
-  offset,
-}: {
-  db: Database;
-  ignoredClusterIds: number[];
-  category: CategoryKeyValue;
-  count: number;
-  offset?: number;
-}): Promise<ArticleType[]> {
-  const topClusterIds = await db.execute(sql`
-  WITH latest_run AS (
-    SELECT ${clusterRun.id} as id
-    FROM ${clusterRun}
-    WHERE ${clusterRun.isProduction} = true
-    ORDER BY ${clusterRun.createdAt} DESC
-    LIMIT 1
-  ),
-
-  provider_counts AS (
-    SELECT
-      ${articleCluster.clusterId} as cluster_id,
-      ${article.newsProviderKey} as provider_key,
-      count(*) as provider_article_count
-    FROM ${articleCluster}
-    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
-    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
-    GROUP BY ${articleCluster.clusterId}, ${article.newsProviderKey}
-  ),
-
-  cluster_scores AS (
-    SELECT
-      ${clusterV2.id} as id,
-      count(${article.id}) as article_count,
-      sum(${article.llmRank}) as sum_llm_rank,
-      ${recencyScoreExpr} as recency_score,
-      count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count,
-      max(pc.provider_article_count) as max_provider_articles
-    FROM ${clusterV2}
-    INNER JOIN ${articleCluster} ON ${clusterV2.id} = ${articleCluster.clusterId}
-    INNER JOIN ${article} ON ${articleCluster.articleId} = ${article.id}
-    LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
-    LEFT JOIN provider_counts pc ON pc.cluster_id = ${clusterV2.id}
-    WHERE ${articleCluster.runId} = (SELECT id FROM latest_run)
-      AND (${category} = ANY(ARRAY[${article.categories}[1], ${article.categories}[2]]))
-      ${ignoredClusterIds.length > 0 ? sql`AND ${clusterV2.id} NOT IN ${ignoredClusterIds}` : sql``}
-    GROUP BY ${clusterV2.id}
-    HAVING count(${article.id}) > 0
-  ),
-
-  normalized_scores AS (
-    SELECT
-      id,
-      article_count,
-      recency_score,
-      social_post_count,
-      max_provider_articles,
-      CASE
-        WHEN MAX(sum_llm_rank) OVER () > 0
-        THEN sum_llm_rank::float / MAX(sum_llm_rank) OVER ()
-        ELSE 0
-      END as cluster_llm_rank_score,
-      CASE
-        WHEN MAX(social_post_count) OVER () > 0
-        THEN social_post_count::float / MAX(social_post_count) OVER ()
-        ELSE 0
-      END as social_score
-    FROM cluster_scores
-  )
-
-  SELECT
-    id,
-    article_count,
-    cluster_llm_rank_score,
-    recency_score,
-    social_score,
-
-    (max_provider_articles::float / NULLIF(article_count, 0)) as dominance,
-
-    (cluster_llm_rank_score * 0.45 + recency_score * 0.3 + social_score * 0.25) as base_score,
-
-    (
-      (cluster_llm_rank_score * 0.45 + recency_score * 0.3 + social_score * 0.25)
-      * (1 - GREATEST(0, (max_provider_articles::float / NULLIF(article_count, 0)) - 0.4))
-    ) as combined_score
-  FROM normalized_scores
-  ORDER BY combined_score DESC
-  LIMIT ${count}
-  OFFSET ${offset ?? 0}
-`);
-
-  return await common(
-    db,
-    topClusterIds.rows as { id: number; combined_score: number }[],
-  );
-}
-
-async function common(
-  db: Database,
-  clusterIds: { id: number; combined_score: number }[],
-): Promise<ArticleType[]> {
-  const topClusters = await db.query.clusterV2.findMany({
-    where: (cluster, { and, inArray }) =>
-      and(
-        inArray(
-          cluster.id,
-          clusterIds.map((c) => c.id),
-        ),
-      ),
-    with: {
-      articleClusters: {
-        with: {
-          article: {
-            columns: {
-              id: true,
-              imageUrls: true,
-              categories: true,
-              publishedAt: true,
-            },
-            with: { newsProvider: true },
-          },
-        },
-      },
-    },
-  });
-
-  topClusters.sort((a, b) => {
-    const aScore = clusterIds.find((c) => c.id === a.id)?.combined_score ?? 0;
-    const bScore = clusterIds.find((c) => c.id === b.id)?.combined_score ?? 0;
-    return bScore - aScore;
-  });
-
-  const articles: ArticleType[] = topClusters.map((c) => {
-    const clusterArticles = c.articleClusters.map((ac) => ac.article);
-
-    const imgSrc = extractHeroImage(clusterArticles);
-
-    const tags = new Set(
-      clusterArticles
-        .map((a) => a.categories)
-        .filter((c) => c !== null)
-        .flat(),
-    );
-
-    const biasDistribution = getBiasDistribution(clusterArticles);
-
-    const providerKeys = new Set(
-      clusterArticles.map((a) => a.newsProvider.key),
-    );
-
-    return {
-      id: c.id.toString(),
-      slug: c.slug ?? undefined,
-      title: c.title,
-      image: {
-        src: imgSrc,
-        alt: "Placeholder Image 1", // TODO: fix this or get rid of it
-      },
-      tags: Array.from(tags).slice(0, 3),
-      biasDistribution,
-      showTags: true,
-      numberOfArticles: clusterArticles.length,
-      providerKeys: Array.from(providerKeys),
-      images: extractCarouselImages(clusterArticles),
-      lastPublishedAt: newestPublishedAt(clusterArticles),
-    };
-  });
-
-  return articles;
 }

@@ -56,7 +56,7 @@ export function Article(article: ArticleType) {
       </div>
 
       <div className="relative flex flex-col gap-2 p-3 pt-0">
-        <h3 className="line-clamp-3 text-[15px] leading-snug font-semibold text-pretty">
+        <h3 className="line-clamp-3 text-[15px] leading-snug font-semibold text-pretty first-letter:uppercase">
           {title}
         </h3>
         <StoryMetaLine

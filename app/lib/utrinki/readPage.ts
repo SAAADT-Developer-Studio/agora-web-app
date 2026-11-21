@@ -1,5 +1,6 @@
 import { getAppContext } from "~/lib/appContext";
 import { utrinkiCacheKey } from "~/lib/kvCache/keys";
+import { storyRankOrderFromEnv } from "~/lib/storyRankOrder";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { loadUtrinkiPage } from "~/lib/utrinki/load";
 import { parseUtrinkiQuery, type UtrinkiPage } from "~/lib/utrinki/model";
@@ -19,10 +20,11 @@ export async function readUtrinkiPage(
     };
   }
 
-  const { db, kvCache, measurer } = getAppContext(context);
+  const { db, kvCache, measurer, cloudflare } = getAppContext(context);
+  const storyRankOrder = storyRankOrderFromEnv(cloudflare.env);
   const page = await measurer.time("fetchUtrinki", () =>
-    kvCache.cached(() => loadUtrinkiPage({ db, ...query }), {
-      key: utrinkiCacheKey(query.category, query.page),
+    kvCache.cached(() => loadUtrinkiPage({ db, ...query, storyRankOrder }), {
+      key: utrinkiCacheKey(query.category, query.page, storyRankOrder),
       expirationTtl: 10 * 60,
     }),
   );

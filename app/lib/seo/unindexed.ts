@@ -1,12 +1,8 @@
-/** Shared noindex policy for routes that are deployed but not listed. */
+/** Shared noindex policy for the hidden `/utrinki` reel. */
 export const UNINDEXED_ROBOTS = "noindex, nofollow";
 
 export function isUnindexedPath(pathname: string) {
   return (
-    pathname === "/novo" ||
-    pathname.startsWith("/novo/") ||
-    pathname === "/zgodba" ||
-    pathname.startsWith("/zgodba/") ||
     pathname === "/utrinki" ||
     pathname.startsWith("/utrinki/") ||
     pathname === "/api/utrinki" ||

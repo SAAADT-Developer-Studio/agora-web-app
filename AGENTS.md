@@ -31,24 +31,22 @@ Changing article-fetch logic usually means updating both the loader and `fetchHo
 
 ## Routing & config
 
-- Route definitions: `app/routes.ts`. Public URL segments are Slovenian (`/mediji`, `/metodologija`, `/clanek/:articleId`). Hidden, unlisted routes: `/novo` (story-ranked home) and `/zgodba/:storyId`. `/dev/*` is English and internal.
+- Route definitions: `app/routes.ts`. Public URL segments are Slovenian (`/mediji`, `/metodologija`, `/zgodba/:storyId`, `/clanek/:articleId`). `/novo` (the old hidden story preview) 301s to `/`. `/utrinki` is a hidden reel of the same story order as `/`: `noindex`, `Disallow` in robots.txt, and absent from the sitemap and nav. `/dev/*` is English and internal.
 - **Categories**: keys live only in `app/config.ts` (`CategoryKey` / `CategoryKeyValue`). Domain configs (nav metadata, SEO, ranking priority, home side sections) must use `defineCategoryMap()` / `CategoryMap<T>` so TypeScript fails if a key is added without updating every map. Use `isCategoryKey()` for runtime checks — don't rebuild category sets ad hoc.
 - Article images: `config.imagesUrl` (`https://images.vidik.si`).
 - React Router route modules cannot import other route modules. Shared UI belongs in `app/components/` (e.g. `story-page.tsx` renders `/zgodba/:storyId`).
 
 ## Clustering (story vs cluster_v2)
 
-Two systems coexist on purpose:
-
-- **Public listings** (`/` and `/:category`) rank `cluster_v2` from the latest production `cluster_run` and link to `/:category/clanek/:articleId`. KV keys stay `data:v2:home` and `data:v2:category:{category}`.
-- **Hidden listings** (`/novo`) rank `story` + `story_article` (14-day `last_article_published_at` window) and link to `/zgodba/:storyId`. KV key is `data:story:novo` (`NOVO_HOME_CACHE_KEY`) so it never collides with the public home cache.
+- **Listings** (`/` and `/:category`) rank `story` + `story_article` (14-day `last_article_published_at` window, `app/lib/services/storyRanking.ts`) and link to `/zgodba/:storyId`. KV keys are `data:story:home` and `data:story:category:{category}`. `/utrinki` pages use `data:story:utrinki:v1:{category}:{page}` and the same home query (optional offset for paging). When `STORY_RANK_ORDER` is on, those keys gain a `:observed-rank` suffix.
+- **Clanek pages** `/:category/clanek/:articleId` still render `cluster_v2` clusters as indexable archive pages so existing links keep working. Nothing in the listings links to them any more.
 - **Story pages** `/zgodba/:storyId` load `story` + `story_article`, the newest `story_summary` (LLM headline + `bullets: [{ text, article_ids }]`, append-only; parsed by `parseStoryBullets`) and the members' `social_post` rows (reddit `platform_metadata` is a JSON string inside jsonb; parsed by `parseSocialPost`). Do not 301 clanek into stories.
-- `/novo` and `/zgodba/` are unlisted: `noindex, nofollow` meta, `X-Robots-Tag`, `Disallow` in robots.txt, and omitted from the sitemap. No public page links to them.
+- `/zgodba/` is indexable and the sitemap lists stories from the same 14-day window.
 - Story ids and cluster ids are different namespaces — the same number is not the same entity.
 - Stories are incremental (no `cluster_run`). Closest clocks: `story_article.assigned_at`, `story.created_at`.
 - `story_article.similarity` is cosine vs `nearest_article_id` at assign time (`method` `seed` | `cosine`). `article_cluster` has no scores; live cosine is `article.embedding` (float8[]).
 
-`ArticleType.to` is how `/novo` cards point at `/zgodba/...`. Public listings leave `to` unset and use clanek URLs. Changing the hidden URL shape requires bumping `NOVO_HOME_CACHE_KEY` in `app/lib/kvCache/keys.ts`.
+`ArticleType.to` is how listing cards point at `/zgodba/...`; `storyHref` falls back to a clanek URL only when `to` is unset. Changing the story URL shape requires bumping the `data:story:` keys in `app/lib/kvCache/keys.ts`.
 
 ## Dev tools
 
