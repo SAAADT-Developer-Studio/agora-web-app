@@ -13,3 +13,15 @@ export function shouldStorePageCache(
   if (/\bno-store\b/i.test(cacheControl)) return false;
   return true;
 }
+
+/**
+ * Cache key for a page. Includes the build's asset version: cached HTML links
+ * hashed `/assets/*` files, and a deploy deletes the previous build's files.
+ * Keyed by URL alone, a page cached before a deploy would be served afterwards
+ * with CSS and JS that 404. A new version starts with an empty cache.
+ */
+export function pageCacheKey(url: string, assetsVersion: string): string {
+  const key = new URL(url);
+  key.searchParams.set("__build", assetsVersion);
+  return key.toString();
+}
