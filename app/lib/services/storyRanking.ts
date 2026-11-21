@@ -65,7 +65,7 @@ const categoryScoreExpr = sql<number>`
   ) / ${MAX_CATEGORY_PRIORITY}
 `;
 
-// Stories aren't run-scoped; 14d window stands in for latest cluster_run
+// Stories aren't run-scoped; a 14-day window bounds the candidates
 const recentStoriesFilter = sql`${story.lastArticlePublishedAt} > now() - interval '14 days'`;
 
 export async function getStoryHomeArticles({
@@ -319,8 +319,8 @@ async function hydrateStories(
   });
 }
 
-/** Hidden `/novo` homepage: same shape as the public home feed, ranked from stories. */
-export async function fetchStoryHomeArticlesData({ db }: { db: Database }) {
+/** Home feed (`/`): hero stories, per-category sections, and blindspots. */
+export async function fetchHomeArticlesData({ db }: { db: Database }) {
   const homeArticles = await getStoryHomeArticles({ db, count: 6 });
   let ignoredClusterIds = homeArticles.map((a) => Number(a.id));
 
