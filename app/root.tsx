@@ -3,6 +3,7 @@ import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
 import type { Route } from "./+types/root";
 import "./app.css";
 import { ErrorComponent } from "~/components/error-component";
+import { RenderClockProvider } from "~/components/render-clock";
 import { Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "~/components/ui/tooltip";
@@ -88,7 +89,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 const queryClient = new QueryClient();
 
-export default function App() {
+export function loader() {
+  return { renderedAt: new Date().toISOString() };
+}
+
+export default function App({ loaderData }: Route.ComponentProps) {
   useEffect(() => {
     try {
       const userId = readAnonymousUserId(localStorage);
@@ -104,14 +109,16 @@ export default function App() {
 
   return (
     // This suspense is here so that in case of hydration errors, react does not rerender the head (it only rerenders from the closest Suspense boundary down)
-    <QueryClientProvider client={queryClient}>
-      <Suspense>
-        <TooltipProvider>
-          <Toaster />
-          <Outlet />
-        </TooltipProvider>
-      </Suspense>
-    </QueryClientProvider>
+    <RenderClockProvider renderedAt={loaderData.renderedAt}>
+      <QueryClientProvider client={queryClient}>
+        <Suspense>
+          <TooltipProvider>
+            <Toaster />
+            <Outlet />
+          </TooltipProvider>
+        </Suspense>
+      </QueryClientProvider>
+    </RenderClockProvider>
   );
 }
 

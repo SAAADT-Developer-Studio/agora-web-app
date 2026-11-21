@@ -1,12 +1,6 @@
+import { formatSlovenianTime } from "~/lib/date";
+
+/** Same displayed Ljubljana hour and minute (the article range hides a zero-length span). */
 export function isSameHour(date1: Date, date2: Date) {
-  return (
-    date1.toLocaleTimeString("sl-SI", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }) ===
-    date2.toLocaleTimeString("sl-SI", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  );
+  return formatSlovenianTime(date1) === formatSlovenianTime(date2);
 }

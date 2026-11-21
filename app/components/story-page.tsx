@@ -18,12 +18,18 @@ import { BiasDistribution } from "~/components/bias-distribution";
 import { BiasInfoTooltip } from "~/components/bias-info-tooltip";
 import { Icon } from "~/components/icon";
 import { ProviderImage } from "~/components/provider-image";
+import { RelativeTime, useClientNow } from "~/components/render-clock";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import type { newsProvider } from "~/drizzle/schema";
+import {
+  formatSlovenianSpan,
+  formatSlovenianTime,
+  formatSlovenianWeekdayDate,
+} from "~/lib/date";
 import { cn } from "~/lib/utils";
 import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
@@ -63,35 +69,6 @@ export type StoryPageData = {
   uniqueCategories: string[];
   heroImageUrl: string;
 };
-
-const TIME_ZONE = "Europe/Ljubljana";
-const timeFormatter = new Intl.DateTimeFormat("sl-SI", {
-  timeZone: TIME_ZONE,
-  hour: "2-digit",
-  minute: "2-digit",
-});
-const dayFormatter = new Intl.DateTimeFormat("sl-SI", {
-  timeZone: TIME_ZONE,
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-});
-const shortDateFormatter = new Intl.DateTimeFormat("sl-SI", {
-  timeZone: TIME_ZONE,
-  day: "numeric",
-  month: "short",
-});
-
-function formatSpan(oldest: Date, newest: Date) {
-  const from = shortDateFormatter.format(oldest);
-  const to = shortDateFormatter.format(newest);
-  if (from === to) {
-    const start = timeFormatter.format(oldest);
-    const end = timeFormatter.format(newest);
-    return start === end ? `${from}, ${start}` : `${from}, ${start}–${end}`;
-  }
-  return `${from} – ${to}`;
-}
 
 type SideFilter = "all" | BiasSide;
 
@@ -297,8 +274,8 @@ function CoverageMeta({
             <span className="bg-vidikgreen relative inline-flex size-2 rounded-full" />
           </span>
         )}
-        <span suppressHydrationWarning>
-          posodobljeno {timeDiffInSlovenian(newestDate)}
+        <span>
+          posodobljeno <RelativeTime date={newestDate} />
         </span>
       </span>
     </div>
@@ -430,7 +407,7 @@ function CoverageTimeline({
             Kako so poročali mediji
           </h2>
           <p className="text-primary/60 mt-1 text-sm">
-            {formatSpan(oldestDate, newestDate)} · najnovejši na vrhu
+            {formatSlovenianSpan(oldestDate, newestDate)} · najnovejši na vrhu
           </p>
         </div>
 
@@ -474,7 +451,7 @@ function CoverageTimeline({
         {groupByDay(visible).map((group) => (
           <div key={`${group.dayKey}-${group.items[0].id}`}>
             <h3 className="text-primary/50 mb-3 text-xs font-bold tracking-wider uppercase">
-              {dayFormatter.format(group.date)}
+              {formatSlovenianWeekdayDate(group.date)}
             </h3>
             <ol className="border-primary/10 space-y-3 sm:ml-1.5 sm:border-l sm:pl-5 md:pl-6">
               {group.items.map((article) => (
@@ -545,7 +522,7 @@ function StoryArticleCard({
             dateTime={article.publishedAt}
             className="text-primary/50 tabular-nums"
           >
-            {timeFormatter.format(publishedAt)}
+            {formatSlovenianTime(publishedAt)}
           </time>
           {article.isPaywalled && (
             <Tooltip>
@@ -605,6 +582,7 @@ function SocialMentions({
   articlesById: Map<number, StoryArticle>;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const now = new Date(useClientNow());
 
   return (
     <section aria-labelledby="social-mentions" className="min-w-0">
@@ -653,14 +631,11 @@ function SocialMentions({
                   <p className="text-primary group-hover:text-electricblue line-clamp-2 text-sm leading-snug font-semibold transition-colors">
                     {mention.title ?? article?.title ?? mention.url}
                   </p>
-                  <p
-                    className="text-primary/50 mt-1 truncate text-xs"
-                    suppressHydrationWarning
-                  >
+                  <p className="text-primary/50 mt-1 truncate text-xs">
                     {[
                       mention.community && `r/${mention.community}`,
                       mention.postedAt &&
-                        timeDiffInSlovenian(new Date(mention.postedAt)),
+                        timeDiffInSlovenian(new Date(mention.postedAt), now),
                     ]
                       .filter(Boolean)
                       .join(" · ")}

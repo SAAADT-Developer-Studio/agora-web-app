@@ -15,7 +15,8 @@ import { cn } from "~/lib/utils";
 import type { ArticlePageData } from "~/routes/article";
 import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
-import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";
+import { RelativeTime } from "~/components/render-clock";
+import { formatArticleTimestamp } from "~/lib/date";
 
 type Article = ArticlePageData["cluster"]["articles"][number];
 
@@ -74,7 +75,7 @@ function ArticleItemDesktop({
                 {article.newsProvider.name}
               </ArticleMetadataBadge>
               <ArticleMetadataBadge icon={Clock}>
-                {timeDiffInSlovenian(publishDate)}
+                <RelativeTime date={publishDate} />
               </ArticleMetadataBadge>
               {article.author && (
                 <ArticleMetadataBadge icon={NotebookPen}>
@@ -150,7 +151,7 @@ function ArticleItemMobile({
               className="h-[22px] border px-1 py-1 text-[8px]"
               iconClassName="size-2"
             >
-              {timeDiffInSlovenian(publishDate)}
+              <RelativeTime date={publishDate} />
             </ArticleMetadataBadge>
             {article.author && (
               <ArticleMetadataBadge
@@ -241,12 +242,5 @@ function PaywallIcon({ className }: { className?: string }) {
 }
 
 function formatArticleDate(date: Date): string {
-  return `${date.toLocaleDateString("sl-SI", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })} ob ${date.toLocaleTimeString("sl-SI", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })}`;
+  return formatArticleTimestamp(date);
 }
