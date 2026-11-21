@@ -42,15 +42,14 @@ export default function Footer() {
           </nav>
         </div>
 
-        <div className="border-primary/10 mt-6 flex flex-col-reverse gap-3 border-t pt-4 md:flex-row md:items-center md:justify-between">
-          <p
-            className="text-surface-text/45 flex items-center gap-2 text-[13px]"
-            suppressHydrationWarning
-          >
-            <BiasSpectrum className="w-10" />© {year} vidik.si · <b>M</b>&amp;
-            <b>B</b> Production
+        <div className="border-primary/10 text-surface-text/45 mt-6 grid gap-3 border-t pt-4 text-[13px] md:grid-cols-3 md:items-center">
+          <p className="flex items-center gap-2" suppressHydrationWarning>
+            <BiasSpectrum className="w-10" />© {year} vidik.si
           </p>
-          <SocialLinks className="-ml-2 md:-mr-2 md:ml-0" />
+          <p className="md:text-center">
+            <b>M</b>&amp;<b>B</b> Production
+          </p>
+          <SocialLinks className="-ml-2 md:-mr-2 md:ml-0 md:justify-end" />
         </div>
       </div>
     </footer>
