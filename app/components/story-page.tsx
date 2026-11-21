@@ -1,4 +1,6 @@
 import type { InferSelectModel } from "drizzle-orm";
+import Autoplay from "embla-carousel-autoplay";
+import useEmblaCarousel from "embla-carousel-react";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { Link } from "react-router";
@@ -808,6 +810,19 @@ function HeroImageCarousel({
   title: string;
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
+    Autoplay({ delay: 4500, stopOnInteraction: false }),
+  ]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => setCurrentIndex(emblaApi.selectedScrollSnap());
+    onSelect();
+    emblaApi.on("select", onSelect).on("reInit", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect).off("reInit", onSelect);
+    };
+  }, [emblaApi]);
 
   const carouselItems = getCarouselArticleIds(articles)
     .slice(0, MAX_CAROUSEL_ITEMS)
@@ -824,14 +839,6 @@ function HeroImageCarousel({
       ];
     });
 
-  useEffect(() => {
-    if (carouselItems.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % carouselItems.length);
-    }, 4500);
-    return () => clearInterval(interval);
-  }, [carouselItems.length]);
-
   if (carouselItems.length === 0) {
     return (
       <figure className="bg-muted border-primary/10 relative aspect-video overflow-hidden rounded-xl border">
@@ -845,34 +852,51 @@ function HeroImageCarousel({
   }
 
   const current = carouselItems[currentIndex % carouselItems.length];
+  const selectSlide = (index: number) => {
+    emblaApi?.scrollTo(index);
+    emblaApi?.plugins().autoplay?.reset();
+  };
 
   return (
     <figure className="bg-muted border-primary/10 relative aspect-video overflow-hidden rounded-xl border">
-      {carouselItems.map((item, index) => (
-        <img
-          key={item.id}
-          src={item.imageUrl}
-          alt={title}
-          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-1800 ease-in-out"
-          style={{ opacity: index === currentIndex ? 1 : 0 }}
-        />
-      ))}
+      {/* Embla viewport: swipe (touch) or drag (mouse) between images. */}
+      <div
+        ref={emblaRef}
+        className={cn(
+          "h-full overflow-hidden",
+          carouselItems.length > 1 && "cursor-grab active:cursor-grabbing",
+        )}
+      >
+        <div className="flex h-full touch-pan-y">
+          {carouselItems.map((item) => (
+            <img
+              key={item.id}
+              src={item.imageUrl}
+              alt={title}
+              draggable={false}
+              className="h-full w-full min-w-0 shrink-0 grow-0 basis-full object-cover select-none"
+            />
+          ))}
+        </div>
+      </div>
       {carouselItems.length > 1 && (
         // On narrow screens the dots sit top right so the caption keeps the
         // full width.
         <CarouselDots
           count={carouselItems.length}
           currentIndex={currentIndex}
-          onSelect={setCurrentIndex}
+          onSelect={selectSlide}
           className="absolute top-3 right-3 rounded-full bg-black/35 px-2 py-1.5 backdrop-blur-sm sm:hidden"
         />
       )}
-      <figcaption className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-3 pt-16 md:p-4 md:pt-20">
+      {/* pointer-events-none so a swipe that starts on the gradient still
+          reaches the carousel; only the link and dots take clicks. */}
+      <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/75 via-black/30 to-transparent p-3 pt-16 md:p-4 md:pt-20">
         <a
           key={current.id}
           href={`#article-${current.id}`}
           onClick={onCaptionClick}
-          className="animate-in fade-in slide-in-from-bottom-1 flex min-w-0 items-center gap-2 text-sm font-semibold text-white duration-700"
+          className="animate-in fade-in slide-in-from-bottom-1 pointer-events-auto flex min-w-0 items-center gap-2 text-sm font-semibold text-white duration-700"
         >
           <ProviderImage
             className="size-6 shrink-0 rounded-full border-2 border-white/80 bg-white object-contain"
@@ -884,8 +908,8 @@ function HeroImageCarousel({
           <CarouselDots
             count={carouselItems.length}
             currentIndex={currentIndex}
-            onSelect={setCurrentIndex}
-            className="mb-2.5 hidden sm:flex"
+            onSelect={selectSlide}
+            className="pointer-events-auto mb-2.5 hidden sm:flex"
           />
         )}
       </figcaption>
