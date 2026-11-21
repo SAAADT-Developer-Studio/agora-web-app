@@ -1,5 +1,7 @@
 import { createLucideIcon, Facebook, Instagram, Mail } from "lucide-react";
 import { href, Link, NavLink } from "react-router";
+import { useClientNow } from "~/components/render-clock";
+import { formatSlovenianYear } from "~/lib/date";
 
 const XIcon = createLucideIcon("X", [
   [
@@ -13,6 +15,7 @@ const XIcon = createLucideIcon("X", [
 ]);
 
 export default function Footer() {
+  const year = formatSlovenianYear(new Date(useClientNow()));
   return (
     <footer className="bg-surface-light text-surface-light-text mt-20 flex items-center justify-center">
       <div className="w-[1200px] px-4 py-12">
@@ -102,7 +105,7 @@ export default function Footer() {
         </div>
 
         <div className="border-text-surface-light-text/40 text-surface-light-text/40 mt-12 flex flex-col items-center justify-between border-t pt-8 text-sm md:flex-row">
-          <p>@vidik.si - {new Date().getFullYear()}</p>
+          <p>@vidik.si - {year}</p>
           <p className="mt-4 md:mt-0">
             <b>M</b>&<b>B</b> Production{" "}
           </p>

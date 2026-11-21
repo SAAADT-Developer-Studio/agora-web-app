@@ -1,4 +1,5 @@
 import { href, Link } from "react-router";
+import { formatSlovenianDateTime } from "~/lib/date";
 import { getSeoMetas } from "~/lib/seo";
 import { getAppContext } from "~/lib/appContext";
 import { ErrorComponent } from "~/components/error-component";
@@ -237,12 +238,7 @@ function LocalTime({ value }: { value: string | null }) {
   const date = parseDbDate(value);
   if (!date) return value;
   return (
-    <time dateTime={date.toISOString()} suppressHydrationWarning>
-      {date.toLocaleString(undefined, {
-        dateStyle: "medium",
-        timeStyle: "medium",
-      })}
-    </time>
+    <time dateTime={date.toISOString()}>{formatSlovenianDateTime(date)}</time>
   );
 }
 

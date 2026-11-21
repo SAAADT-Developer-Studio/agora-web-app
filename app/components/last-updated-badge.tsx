@@ -1,3 +1,4 @@
+import { formatSlovenianLongDate } from "~/lib/date";
 import { cn } from "~/lib/utils";
 
 export function LastUpdatedBadge({
@@ -12,12 +13,7 @@ export function LastUpdatedBadge({
       className={cn("bg-primary/10 inline-block rounded px-3 py-1", className)}
     >
       <span className="text-primary text-xs font-medium">
-        Nazadnje posodobljeno:{" "}
-        {date.toLocaleDateString("sl-SI", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })}
+        Nazadnje posodobljeno: {formatSlovenianLongDate(date)}
       </span>
     </div>
   );

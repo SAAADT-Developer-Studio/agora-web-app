@@ -1,6 +1,7 @@
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, href } from "react-router";
 import { formatSlovenianDateTime } from "~/lib/date";
+import { useClientNow } from "~/components/render-clock";
 import { config } from "~/config";
 import { Menu, X } from "lucide-react";
 import logo from "~/assets/logo.svg";
@@ -11,6 +12,20 @@ import { cn } from "~/lib/utils";
 import { LoadingBar } from "~/components/loading-bar";
 
 const SIDEPANEL_WIDTH = 280;
+
+function HeaderClock() {
+  const now = useClientNow();
+  return (
+    <span
+      className="text-vidikwhite hidden text-xs md:block"
+      // Live clock. Hydration paints the server render time; the browser
+      // time replaces it after mount, which is the one mismatch we allow.
+      suppressHydrationWarning
+    >
+      {formatSlovenianDateTime(new Date(now))}
+    </span>
+  );
+}
 
 export function Header() {
   const [open, setOpen] = useState(false);
@@ -48,9 +63,7 @@ export function Header() {
           </Link>
         </div>
         <div className="flex items-center gap-5">
-          <span className="text-vidikwhite hidden text-xs md:block">
-            <Suspense>{formatSlovenianDateTime(new Date())}</Suspense>
-          </span>
+          <HeaderClock />
           <ThemeSwitch />
           <Link
             to={href("/mediji")}

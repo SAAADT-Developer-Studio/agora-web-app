@@ -40,7 +40,8 @@ import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { BiasRatingKey, type BiasRating } from "~/enums/biasRatingKey";
 import { BiasInfoTooltip } from "~/components/bias-info-tooltip";
 import { mossData as mossDataTable, article, vote } from "~/drizzle/schema";
-import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";
+import { RelativeTime } from "~/components/render-clock";
+import { formatSlovenianInteger } from "~/lib/date";
 import { getAppContext } from "~/lib/appContext";
 import { sql } from "drizzle-orm";
 
@@ -196,9 +197,14 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
               {provider.name}
             </h1>
             <p className="text-primary/50 text-[15px] font-light sm:text-[20px]">
-              {latestArticle?.publishedAt
-                ? `Zadnji članek objavljen ${timeDiffInSlovenian(new Date(latestArticle.publishedAt))}`
-                : "Ni podatkov o zadnjem članku"}
+              {latestArticle?.publishedAt ? (
+                <>
+                  Zadnji članek objavljen{" "}
+                  <RelativeTime date={latestArticle.publishedAt} />
+                </>
+              ) : (
+                "Ni podatkov o zadnjem članku"
+              )}
             </p>
           </div>
         </div>
@@ -434,7 +440,7 @@ function ProviderStatsCards({
             <div>
               <p className="text-primary/60 mb-2 text-xs">Doseg ta mesec:</p>
               <h3 className="text-primary text-4xl leading-none font-bold">
-                {mossData?.reach.toLocaleString() || "N/A"}
+                {formatSlovenianInteger(mossData.reach)}
               </h3>
             </div>
             <div className="bg-primary/10 h-2 overflow-hidden rounded-full">
@@ -446,8 +452,7 @@ function ProviderStatsCards({
               />
             </div>
             <p className="text-primary/50 text-xs">
-              Dnevno povprečje:{" "}
-              {mossData?.avgDailyReach.toLocaleString() || "N/A"}
+              Dnevno povprečje: {formatSlovenianInteger(mossData.avgDailyReach)}
             </p>
           </div>
         </Card>
@@ -470,7 +475,7 @@ function ProviderStatsCards({
             <div>
               <p className="text-primary/60 mb-2 text-xs">Ogledi ta mesec:</p>
               <h3 className="text-primary text-4xl leading-none font-bold">
-                {mossData?.views.toLocaleString() || "N/A"}
+                {formatSlovenianInteger(mossData.views)}
               </h3>
             </div>
             <div className="flex items-center gap-1.5">

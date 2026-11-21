@@ -9,6 +9,7 @@ import { biasSideLabel } from "~/lib/utrinki/bias";
 import type { BiasSide } from "~/utils/biasSide";
 import { articlesLabel } from "~/components/story-meta";
 import { cn } from "~/lib/utils";
+import { useClientNow } from "~/components/render-clock";
 import { shortAgo, type UtrinkiStory } from "~/lib/utrinki/model";
 
 type SideFilter = "all" | BiasSide | "unrated";
@@ -41,6 +42,7 @@ export function SourcesSheet({
   const [filter, setFilter] = useState<SideFilter>("all");
   const [expanded, setExpanded] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const now = useClientNow();
   const open = story !== null;
   const activeId = story?.id ?? null;
   const [resetId, setResetId] = useState(activeId);
@@ -219,7 +221,7 @@ export function SourcesSheet({
                           <span className="block text-[11px] font-semibold text-[#f3f8fe]/65">
                             {article.providerName} ·{" "}
                             {biasSideLabel(article.side)} ·{" "}
-                            {shortAgo(article.publishedAt)}
+                            {shortAgo(article.publishedAt, now)}
                           </span>
                           <span className="mt-0.5 line-clamp-2 text-[15px] leading-[19px] font-semibold">
                             {article.title}

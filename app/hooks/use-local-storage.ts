@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 /**
  * Parsed snapshots must stay referentially stable while the stored string
@@ -31,7 +31,7 @@ function readStored<T>(key: string, initialValue: T): T {
 }
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
-  const value = useSyncExternalStore(
+  const storedValue = useSyncExternalStore(
     (onChange) => {
       window.addEventListener("storage", onChange);
       return () => {
@@ -41,6 +41,13 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     () => readStored(key, initialValue),
     () => initialValue,
   );
+  // localStorage is client-only. Keep the server default through hydration
+  // and apply the stored value after mount (theme, utrinki, votes).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const value = mounted ? storedValue : initialValue;
 
   const setValue = (newValue: T) => {
     const raw = JSON.stringify(newValue);

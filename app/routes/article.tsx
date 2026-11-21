@@ -20,6 +20,12 @@ import {
 import { resolvePlural } from "~/utils/resolvePlural";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import { BiasDistribution } from "~/components/bias-distribution";
+import {
+  formatSlovenianLongDate,
+  formatSlovenianShortDate,
+  formatSlovenianTime,
+  isSameLjubljanaDay,
+} from "~/lib/date";
 import { isSameHour } from "~/utils/isSameHour";
 import { Link, data } from "react-router";
 import { InfoCard } from "~/components/ui/info-card";
@@ -334,38 +340,22 @@ function Timespan({
   return (
     <div className="flex flex-col items-start space-y-0.5">
       <div className="text-sm font-semibold">
-        {oldestDate.toDateString() === newestDate.toDateString() ? (
+        {isSameLjubljanaDay(oldestDate, newestDate) ? (
           <div>
             <div className="font-bold">
-              {oldestDate.toLocaleDateString("sl-SI", {
-                day: "numeric",
-                month: "short",
-              })}
+              {formatSlovenianShortDate(oldestDate)}
             </div>
             <span className="text-xs">
-              {oldestDate.toLocaleTimeString("sl-SI", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {formatSlovenianTime(oldestDate)}
               {!isSameHour(oldestDate, newestDate) && " - "}
               {!isSameHour(oldestDate, newestDate) &&
-                newestDate.toLocaleTimeString("sl-SI", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                formatSlovenianTime(newestDate)}
             </span>
           </div>
         ) : (
           <>
-            {oldestDate.toLocaleDateString("sl-SI", {
-              day: "numeric",
-              month: "short",
-            })}{" "}
-            –{" "}
-            {newestDate.toLocaleDateString("sl-SI", {
-              day: "numeric",
-              month: "short",
-            })}
+            {formatSlovenianShortDate(oldestDate)} –{" "}
+            {formatSlovenianShortDate(newestDate)}
           </>
         )}
       </div>
@@ -408,16 +398,7 @@ function ArticleBottomBanner({
         </strong>
         .
         {newestDate ? (
-          <>
-            {" "}
-            Nazadnje posodobljeno{" "}
-            {newestDate.toLocaleDateString("sl-SI", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-            .
-          </>
+          <> Nazadnje posodobljeno {formatSlovenianLongDate(newestDate)}.</>
         ) : null}
       </p>
     </InfoCard>

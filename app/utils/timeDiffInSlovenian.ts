@@ -1,5 +1,4 @@
-export function timeDiffInSlovenian(pastDate: Date) {
-  const now = new Date();
+export function timeDiffInSlovenian(pastDate: Date, now = new Date()) {
   const diffMs = now.getTime() - pastDate.getTime();
   const diffSeconds = Math.floor(diffMs / 1000);
   const diffMinutes = Math.floor(diffSeconds / 60);

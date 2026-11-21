@@ -3,7 +3,7 @@ import { getCategory, isCategoryKey } from "~/config";
 import { cn } from "~/lib/utils";
 import type { BiasDistribution } from "~/lib/services/ranking";
 import { biasKeyToColor } from "~/utils/biasKeyToColor";
-import { timeDiffInSlovenian } from "~/utils/timeDiffInSlovenian";
+import { RelativeTime } from "~/components/render-clock";
 
 /** "POLITIKA" → "Politika"; unknown keys fall back to the raw tag. */
 export function categoryLabel(tag: string) {
@@ -80,10 +80,10 @@ export function StoryMetaLine({
       <span className="truncate">
         {articlesLabel(numberOfArticles)} · {sourcesLabel(providerKeys.length)}
         {lastPublishedAt && (
-          <span suppressHydrationWarning>
+          <>
             {" · "}
-            {timeDiffInSlovenian(new Date(lastPublishedAt))}
-          </span>
+            <RelativeTime date={lastPublishedAt} />
+          </>
         )}
       </span>
     </span>

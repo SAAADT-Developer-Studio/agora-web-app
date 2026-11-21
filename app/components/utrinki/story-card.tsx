@@ -7,6 +7,7 @@ import sourcesIcon from "~/assets/utrinki/sources.svg";
 import shareIcon from "~/assets/utrinki/share.svg";
 import arrowIcon from "~/assets/utrinki/arrow.svg";
 import { ProviderStack } from "~/components/utrinki/provider-mark";
+import { useClientNow } from "~/components/render-clock";
 import { updatedKicker, type UtrinkiStory } from "~/lib/utrinki/model";
 
 function ActionButton({
@@ -53,6 +54,7 @@ export function StoryCard({
   onHide: () => void;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
+  const now = useClientNow();
   const showImage = Boolean(story.imageUrl) && !imageFailed;
   return (
     <article
@@ -93,11 +95,8 @@ export function StoryCard({
         }}
       >
         <div className="pr-[80px]">
-          <p
-            className="text-[12px] font-semibold tracking-[0.5px] text-[#0084e5] uppercase"
-            suppressHydrationWarning
-          >
-            {story.categoryLabel} · {updatedKicker(story.updatedAt)}
+          <p className="text-[12px] font-semibold tracking-[0.5px] text-[#0084e5] uppercase">
+            {story.categoryLabel} · {updatedKicker(story.updatedAt, now)}
           </p>
           <h2
             id={`utrinki-title-${story.id}`}
