@@ -65,8 +65,13 @@ const categoryScoreExpr = sql<number>`
   ) / ${MAX_CATEGORY_PRIORITY}
 `;
 
-// Stories aren't run-scoped; a 14-day window bounds the candidates
-const recentStoriesFilter = sql`${story.lastArticlePublishedAt} > now() - interval '14 days'`;
+/**
+ * Stories aren't run-scoped; this window bounds the listing candidates.
+ * Outside it a story page is an archive, like a clanek from an older run.
+ */
+export const STORY_WINDOW_DAYS = 14;
+
+export const recentStoriesFilter = sql`${story.lastArticlePublishedAt} > now() - make_interval(days => ${STORY_WINDOW_DAYS})`;
 
 export async function getStoryHomeArticles({
   db,

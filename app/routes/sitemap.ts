@@ -11,6 +11,7 @@ import { LAST_UPDATED as METHODOLOGY_LAST_UPDATED } from "~/routes/bias-methodol
 import { getAppContext } from "~/lib/appContext";
 import { META_CACHE_KEY } from "~/lib/kvCache/keys";
 import { story, storyArticle } from "~/drizzle/schema";
+import { recentStoriesFilter } from "~/lib/services/storyRanking";
 
 export async function loader({ context }: Route.LoaderArgs) {
   const { kvCache, db } = getAppContext(context);
@@ -61,7 +62,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     );
   }
 
-  // Same 14-day window the home and category listings rank from. Merged
+  // Same window the home and category listings rank from. Merged
   // stories are left empty, so the EXISTS drops them.
   const stories = await db.execute<{
     id: number;
@@ -69,7 +70,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   }>(sql`
     SELECT ${story.id} AS id, ${story.lastArticlePublishedAt} AS last_article_published_at
     FROM ${story}
-    WHERE ${story.lastArticlePublishedAt} > now() - interval '14 days'
+    WHERE ${recentStoriesFilter}
       AND EXISTS (
         SELECT 1 FROM ${storyArticle} WHERE ${storyArticle.storyId} = ${story.id}
       )

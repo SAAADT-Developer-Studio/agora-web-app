@@ -11,14 +11,19 @@ import { extractHeroImage } from "~/utils/extractHeroImage";
 import { collectSocialMentions } from "~/utils/socialPost";
 import { parseStoryBullets } from "~/utils/storySummary";
 import StoryPage, { type StoryPageData } from "~/components/story-page";
+import { clanekCacheControl } from "~/lib/articleClusterLookup";
+import { STORY_WINDOW_DAYS } from "~/lib/services/storyRanking";
+import { data } from "react-router";
 
 /** A story whose newest article is younger than this reads as developing. */
 const DEVELOPING_WINDOW_MS = 3 * 60 * 60 * 1000;
 
-export function headers({}: Route.HeadersArgs) {
-  return {
-    "Cache-Control": "max-age=10, s-maxage=10",
-  };
+const STORY_WINDOW_MS = STORY_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+
+/** Same policy as clanek: live pages for 10 seconds, archives for an hour. */
+export function headers({ loaderHeaders }: Route.HeadersArgs) {
+  if (loaderHeaders.has("Cache-Control")) return loaderHeaders;
+  return { "Cache-Control": clanekCacheControl(false) };
 }
 
 export function meta({ loaderData, location }: Route.MetaArgs) {
@@ -95,7 +100,7 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const story = await measurer.time("fetchStoryData", () =>
     db.query.story.findFirst({
       where: (s, { eq }) => eq(s.id, storyId),
-      columns: { id: true, title: true },
+      columns: { id: true, title: true, lastArticlePublishedAt: true },
       with: {
         storySummaries: {
           columns: { title: true, bullets: true },
@@ -159,23 +164,31 @@ export async function loader({ params, context }: Route.LoaderArgs) {
   const summary = story.storySummaries.at(0);
   const newest = Date.parse(members[0].publishedAt);
 
-  return {
-    story: {
-      id: story.id,
-      title: summary?.title ?? story.title,
-      bullets: parseStoryBullets(
-        summary?.bullets,
-        new Set(members.map((a) => a.id)),
+  // Out of the listing window: the story takes no new articles and is
+  // cached like an archived clanek.
+  const archived =
+    Date.now() - Date.parse(story.lastArticlePublishedAt) > STORY_WINDOW_MS;
+
+  return data(
+    {
+      story: {
+        id: story.id,
+        title: summary?.title ?? story.title,
+        bullets: parseStoryBullets(
+          summary?.bullets,
+          new Set(members.map((a) => a.id)),
+        ),
+        isDeveloping: Date.now() - newest < DEVELOPING_WINDOW_MS,
+      },
+      articles,
+      mentions: collectSocialMentions(members),
+      uniqueCategories: Array.from(
+        new Set(members.flatMap((a) => a.categories || [])),
       ),
-      isDeveloping: Date.now() - newest < DEVELOPING_WINDOW_MS,
-    },
-    articles,
-    mentions: collectSocialMentions(members),
-    uniqueCategories: Array.from(
-      new Set(members.flatMap((a) => a.categories || [])),
-    ),
-    heroImageUrl: extractHeroImage(articles),
-  } satisfies StoryPageData;
+      heroImageUrl: extractHeroImage(articles),
+    } satisfies StoryPageData,
+    { headers: { "Cache-Control": clanekCacheControl(archived) } },
+  );
 }
 
 export default function StoryRoute({ loaderData }: Route.ComponentProps) {
