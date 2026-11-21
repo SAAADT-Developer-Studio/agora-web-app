@@ -3,13 +3,14 @@ import type { Route } from "./+types/home";
 import { HomeFeed } from "~/components/home-feed";
 import { getSeoMetas } from "~/lib/seo";
 import { fetchHomeArticlesData } from "~/lib/services/storyRanking";
+import { storyRankOrderFromEnv } from "~/lib/storyRankOrder";
 import { fetchRandomProviders } from "~/lib/services/randomProviders";
 import { getEnv } from "~/utils/getEnv";
 import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { ErrorComponent } from "~/components/error-component";
 import { getAppContext } from "~/lib/appContext";
-import { HOME_CACHE_KEY } from "~/lib/kvCache/keys";
+import { homeCacheKey } from "~/lib/kvCache/keys";
 
 export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
@@ -28,7 +29,8 @@ export function headers({ loaderHeaders }: Route.HeadersArgs) {
 }
 
 export async function loader({ context }: Route.LoaderArgs) {
-  const { db, kvCache, measurer } = getAppContext(context);
+  const { db, kvCache, measurer, cloudflare } = getAppContext(context);
+  const storyRankOrder = storyRankOrderFromEnv(cloudflare.env);
 
   const articles = await measurer.time(
     "fetchHomeArticlesData",
@@ -37,9 +39,10 @@ export async function loader({ context }: Route.LoaderArgs) {
         async () =>
           await fetchHomeArticlesData({
             db,
+            storyRankOrder,
           }),
         {
-          key: HOME_CACHE_KEY,
+          key: homeCacheKey(storyRankOrder),
           expirationTtl: 10 * 60,
         },
       ),
