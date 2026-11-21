@@ -11,8 +11,11 @@ export function ThemeSwitch({
   variant = "switch",
   ...props
 }: React.ComponentProps<typeof SwitchPrimitive.Root> & {
-  /** `reel` is the round control on the Utrinki top bar. */
-  variant?: "switch" | "reel";
+  /**
+   * `reel` is the round control on the Utrinki top bar. `icon` is a bare
+   * icon button that inherits the surrounding text color.
+   */
+  variant?: "switch" | "reel" | "icon";
 }) {
   const [theme, setTheme] = useLocalStorage("theme", "light");
 
@@ -22,6 +25,23 @@ export function ThemeSwitch({
     document.documentElement.classList.add(newTheme);
     setTheme(newTheme);
   };
+
+  if (variant === "icon") {
+    const dark = theme === "dark";
+    return (
+      <button
+        type="button"
+        onClick={handleSwitch}
+        aria-label={dark ? "Preklopi na svetlo temo" : "Preklopi na temno temo"}
+        className={cn(
+          "grid size-9 shrink-0 place-items-center rounded-full transition-colors hover:bg-current/10 focus-visible:ring-2 focus-visible:ring-current/50 focus-visible:outline-none",
+          className,
+        )}
+      >
+        {dark ? <Moon size={18} aria-hidden /> : <Sun size={18} aria-hidden />}
+      </button>
+    );
+  }
 
   if (variant === "reel") {
     const dark = theme === "dark";
