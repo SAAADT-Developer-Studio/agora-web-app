@@ -82,10 +82,15 @@ export function compareCoalescedRank(
   return b.id - a.id;
 }
 
-/** Undefined table (`42P01`) or undefined column (`42703`). */
-export function isMissingRankingSchema(error: unknown): boolean {
+/**
+ * Short label for a failed `ranking_run` / `story_rank` read.
+ * Every such error falls back to the formula; this is only for the log line.
+ */
+export function observedRankFailureLabel(error: unknown): string {
   const code = pgErrorCode(error);
-  return code === "42P01" || code === "42703";
+  const message = error instanceof Error ? error.message : "unknown error";
+  const detail = message.replace(/\s+/g, " ").slice(0, 200);
+  return code ? `${code} ${detail}` : detail;
 }
 
 function pgErrorCode(error: unknown, depth = 0): string | undefined {

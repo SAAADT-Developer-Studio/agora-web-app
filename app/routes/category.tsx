@@ -11,8 +11,10 @@ import type { Database } from "~/lib/db";
 import { getMaxAge } from "~/utils/getMaxAge";
 import type { ArticleType } from "~/lib/services/ranking";
 import {
+  createObservedRankSession,
   getStoryCategoryArticles,
   resolveObservedStoryRankRun,
+  type ObservedRankSession,
 } from "~/lib/services/storyRanking";
 import { storyRankOrderFromEnv } from "~/lib/storyRankOrder";
 import { getAppContext } from "~/lib/appContext";
@@ -40,12 +42,20 @@ export async function fetchCategoryArticlesData({
   db,
   category,
   storyRankOrder = false,
+  rankSession,
 }: {
   db: Database;
   category: CategoryKeyValue;
   storyRankOrder?: boolean;
+  /** Reuse across the home feed and category pages of one populate-cache call. */
+  rankSession?: ObservedRankSession;
 }) {
-  const observedRunId = await resolveObservedStoryRankRun(db, storyRankOrder);
+  const session = rankSession ?? createObservedRankSession();
+  const observedRunId = await resolveObservedStoryRankRun(
+    db,
+    storyRankOrder,
+    session,
+  );
   const articles = await getStoryCategoryArticles({
     db,
     ignoredClusterIds: [],
@@ -53,6 +63,7 @@ export async function fetchCategoryArticlesData({
     count: 21,
     offset: 0,
     observedRunId,
+    rankSession: session,
   });
   return articles;
 }

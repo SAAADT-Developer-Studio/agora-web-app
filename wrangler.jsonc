@@ -11,7 +11,7 @@
   "vars": {
     "ENVIRONMENT": "prod",
     // "true" orders listings by story_rank. Anything else keeps the in-app formula.
-    "STORY_RANK_ORDER": "false",
+    "STORY_RANK_ORDER": "true",
   },
   "observability": {
     "enabled": true,
@@ -72,7 +72,7 @@
     "preview": {
       "vars": {
         "ENVIRONMENT": "preview",
-        "STORY_RANK_ORDER": "false",
+        "STORY_RANK_ORDER": "true",
       },
       "hyperdrive": [
         {
