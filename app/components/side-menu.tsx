@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Link, NavLink, href } from "react-router";
-import { ArrowRight, Facebook, Instagram, Mail, X } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 import logoNoText from "~/assets/logo-no-text.svg";
-import { XIcon } from "~/components/footer";
+import { SocialLinks } from "~/components/social-links";
 import { useClientNow } from "~/components/render-clock";
 import { ThemeSwitch } from "~/components/theme-switch";
 import { categories } from "~/config";
@@ -43,25 +43,10 @@ const MENU_CATEGORIES = [
   ...categories.map((c) => ({ name: sentenceCase(c.name), path: c.path })),
 ];
 
-const SOCIALS = [
-  {
-    name: "Facebook",
-    href: "https://www.facebook.com/share/1BHYtu1oJB/?mibextid=wwXIfr",
-    icon: Facebook,
-  },
-  {
-    name: "Instagram",
-    href: "https://www.instagram.com/vidikslo?igsh=MTNnMW1vYXQyYXpvMQ%3D%3D&utm_source=qr",
-    icon: Instagram,
-  },
-  { name: "X", href: "https://x.com/VidikSlo", icon: XIcon },
-  { name: "E-pošta", href: "mailto:info@vidik.si", icon: Mail },
-];
-
 /** Left to right, the five outlet ratings in their fixed brand colors. */
 const SPECTRUM = ["#FA2D36", "#FF6166", "#FEFFFF", "#52A1FF", "#2D7EFF"];
 
-function BiasSpectrum({ className }: { className?: string }) {
+export function BiasSpectrum({ className }: { className?: string }) {
   return (
     <div className={cn("flex gap-[3px]", className)} aria-hidden>
       {SPECTRUM.map((color) => (
@@ -77,25 +62,6 @@ function BiasSpectrum({ className }: { className?: string }) {
 
 function useMenuDate() {
   return sentenceCase(formatSlovenianWeekdayDate(new Date(useClientNow())));
-}
-
-function SocialLinks({ className }: { className?: string }) {
-  return (
-    <div className={cn("flex items-center gap-1", className)}>
-      {SOCIALS.map(({ name, href: url, icon: Icon }) => (
-        <a
-          key={name}
-          href={url}
-          target={url.startsWith("mailto:") ? undefined : "_blank"}
-          rel="noreferrer"
-          aria-label={name}
-          className="text-surface-text/60 hover:text-surface-text hover:bg-primary/5 grid size-9 place-items-center rounded-full transition-colors"
-        >
-          <Icon size={18} aria-hidden />
-        </a>
-      ))}
-    </div>
-  );
 }
 
 function MenuFooter() {

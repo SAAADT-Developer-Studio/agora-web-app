@@ -1,115 +1,56 @@
-import { createLucideIcon, Facebook, Instagram, Mail } from "lucide-react";
-import { href, Link, NavLink } from "react-router";
+import { href, Link } from "react-router";
 import { useClientNow } from "~/components/render-clock";
+import { BiasSpectrum, Wordmark } from "~/components/side-menu";
+import { SocialLinks } from "~/components/social-links";
 import { formatSlovenianYear } from "~/lib/date";
 
-export const XIcon = createLucideIcon("X", [
-  [
-    "path",
-    {
-      d: "M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z",
-      stroke: "none",
-      fill: "currentColor",
-    },
-  ],
-]);
+const LINKS = [
+  { name: "Mediji", to: href("/mediji") },
+  { name: "Kako ocenjujemo medije", to: href("/metodologija") },
+  { name: "Kontakt in podpora", to: href("/kontakt") },
+  { name: "Politika zasebnosti", to: href("/politika-zasebnosti") },
+];
 
+/** Quiet, compact footer: one row of links, one line of small print. */
 export default function Footer() {
   const year = formatSlovenianYear(new Date(useClientNow()));
   return (
-    <footer className="bg-surface-light text-surface-light-text mt-20 flex items-center justify-center">
-      <div className="w-[1200px] px-4 py-12">
-        <div className="flex flex-col items-start justify-around gap-8 md:flex-row md:justify-between md:gap-0">
-          <div className="w-full md:w-1/2">
-            <h3 className="pb-2 text-lg font-semibold tracking-wide">Vidik</h3>
-            <p className="text-surface-light-text w-full pb-2 text-sm leading-6 md:w-2/3">
-              Odkrij, kako različni slovenski mediji poročajo o istih novicah.
-              Naša platforma razkriva medijsko pristranskost in pomaga razumeti
-              zgodbo z vseh političnih <b>vidikov</b>.
+    <footer className="bg-surface text-surface-text border-primary/10 mt-20 border-t">
+      <div className="mx-auto max-w-[1200px] px-4 py-8 md:px-6">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <Wordmark />
+            <span className="bg-primary/15 hidden h-5 w-px md:block" />
+            <p className="text-surface-text/55 hidden text-[14px] md:block">
+              Ista novica. Vsi vidiki.
             </p>
-            <div className="flex space-x-4 pt-2">
-              <a
-                key="facebook"
-                href="https://www.facebook.com/share/1BHYtu1oJB/?mibextid=wwXIfr"
-                target="_blank"
-                className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
-              >
-                <Facebook size={20} />
-                <span className="sr-only">Facebook</span>
-              </a>
-              <a
-                key="instagram"
-                href="https://www.instagram.com/vidikslo?igsh=MTNnMW1vYXQyYXpvMQ%3D%3D&utm_source=qr"
-                target="_blank"
-                className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
-              >
-                <Instagram size={20} />
-                <span className="sr-only">Instagram</span>
-              </a>
-              <a
-                key="x"
-                href="https://x.com/VidikSlo"
-                target="_blank"
-                className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
-              >
-                <XIcon size={20} />
-                <span className="sr-only">X</span>
-              </a>
-              <a
-                key="email"
-                href="mailto:info@vidik.si"
-                className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
-              >
-                <Mail size={20} />
-                <span className="sr-only">Email</span>
-              </a>
-            </div>
           </div>
-
-          <div className="w-full md:w-1/3">
-            <h3 className="pb-2 text-lg font-semibold tracking-wide">
-              Hitre Povezave
-            </h3>
-            <ul className="text-surface-light-text space-y-2 text-sm">
-              <li>
-                <Link
-                  to={href("/metodologija")}
-                  className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
-                >
-                  Kako smo klasificirali medije?
-                </Link>
-              </li>
+          <nav aria-label="Noga">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-[14px]">
+              {LINKS.map(({ name, to }) => (
+                <li key={to}>
+                  <Link
+                    to={to}
+                    prefetch="intent"
+                    className="text-surface-text/70 hover:text-surface-text transition-colors"
+                  >
+                    {name}
+                  </Link>
+                </li>
+              ))}
             </ul>
-          </div>
-          <div className="w-full md:w-1/3">
-            <h3 className="pb-2 text-lg font-semibold tracking-wide">Drugo</h3>
-            <ul className="text-surface-light-text space-y-2 text-sm">
-              <li>
-                <Link
-                  to={href("/kontakt")}
-                  className="text-surface-light-text/70 hover:text-surface-light-text transition-colors"
-                >
-                  Kontakt & Podpora
-                </Link>
-              </li>
-              <li>
-                <NavLink
-                  to={href("/politika-zasebnosti")}
-                  className="text-surface-light-text/70 hover:text-surface-light-text transition-colors active:text-black"
-                >
-                  Politika zasebnosti
-                </NavLink>
-              </li>
-            </ul>
-          </div>
+          </nav>
         </div>
 
-        <div className="border-text-surface-light-text/40 text-surface-light-text/40 mt-12 flex flex-col items-center justify-between border-t pt-8 text-sm md:flex-row">
-          <p>@vidik.si - {year}</p>
-          <p className="mt-4 md:mt-0">
-            <b>M</b>&<b>B</b> Production{" "}
+        <div className="border-primary/10 mt-6 flex flex-col-reverse gap-3 border-t pt-4 md:flex-row md:items-center md:justify-between">
+          <p
+            className="text-surface-text/45 flex items-center gap-2 text-[13px]"
+            suppressHydrationWarning
+          >
+            <BiasSpectrum className="w-10" />© {year} vidik.si · <b>M</b>&amp;
+            <b>B</b> Production
           </p>
-          <p className="mt-4 md:mt-0">Vse pravice pridržane.</p>
+          <SocialLinks className="-ml-2 md:-mr-2 md:ml-0" />
         </div>
       </div>
     </footer>
