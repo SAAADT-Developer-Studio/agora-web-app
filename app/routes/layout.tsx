@@ -4,7 +4,6 @@ import { Outlet } from "react-router";
 import { ErrorComponent } from "~/components/error-component";
 import Footer from "~/components/footer";
 import { Header } from "~/components/header";
-import { TutorialPopup } from "~/components/tutorial-popup";
 
 export default function RootLayout({}: Route.ComponentProps) {
   return (
@@ -18,8 +17,6 @@ export default function RootLayout({}: Route.ComponentProps) {
       <div className="mt-auto">
         <Footer />
       </div>
-
-      <TutorialPopup />
     </>
   );
 }
