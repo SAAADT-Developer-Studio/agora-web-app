@@ -1,4 +1,5 @@
 import { breadcrumbJsonLd, faqPageJsonLd, getSeoMetas } from "~/lib/seo";
+import { Page, PageHeader } from "~/components/page";
 import type { Route } from "./+types/bias-methodology";
 import { ExternalLink, BookOpen } from "lucide-react";
 import { cn } from "~/lib/utils";
@@ -72,17 +73,14 @@ export function headers() {
 
 export default function BiasMethodologyPage({}: Route.ComponentProps) {
   return (
-    <div className="mx-auto max-w-5xl px-1 py-6 sm:px-4 md:px-6 md:py-8">
-      <div className="text mb-10">
-        <LastUpdatedBadge date={LAST_UPDATED} className="mb-3" />
-        <h1 className="text-surface-text mb-4 text-4xl font-bold tracking-tight md:text-4xl">
-          Metodologija
-        </h1>
-        <p className="text-surface-text/70 max-w-3xl leading-normal">
-          Ocenjujemo politično pristranskost slovenskih medijskih hiš na podlagi
-          znanstvenih raziskav in analize lastništva.
-        </p>
-      </div>
+    <Page>
+      <PageHeader
+        title="Metodologija"
+        before={<LastUpdatedBadge date={LAST_UPDATED} className="mb-3" />}
+      >
+        Ocenjujemo politično pristranskost slovenskih medijskih hiš na podlagi
+        znanstvenih raziskav in analize lastništva.
+      </PageHeader>
 
       <BiasRatingsLegend />
 
@@ -156,7 +154,7 @@ export default function BiasMethodologyPage({}: Route.ComponentProps) {
           </div>
         </div>
       </section>
-    </div>
+    </Page>
   );
 }
 

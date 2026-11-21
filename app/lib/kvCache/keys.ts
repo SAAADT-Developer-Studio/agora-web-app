@@ -42,4 +42,4 @@ export function utrinkiCacheKey(
 }
 
 /** `/mediji` outlet landscape. Bump the version when `MediaLandscape` changes shape. */
-export const MEDIA_LANDSCAPE_CACHE_KEY = "data:media-landscape:v1" as CacheKey;
+export const MEDIA_LANDSCAPE_CACHE_KEY = "data:media-landscape:v2" as CacheKey;

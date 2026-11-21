@@ -1,4 +1,4 @@
-import { Link, href, useSearchParams } from "react-router";
+import { href } from "react-router";
 import { ProviderImage } from "~/components/provider-image";
 import { isCategoryKey, getCategory } from "~/config";
 import { BiasRatingKey, type BiasRating } from "~/enums/biasRatingKey";
@@ -8,7 +8,7 @@ import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import type { BiasSide } from "~/utils/biasSide";
 
-export const BIAS_ORDER = Object.values(BiasRatingKey) as BiasRating[];
+const BIAS_ORDER = Object.values(BiasRatingKey) as BiasRating[];
 
 /** Fill for a bias rating inside bars and swatches (brand colours, center outlined). */
 export const BIAS_FILL: Record<BiasRating, string> = {
@@ -23,12 +23,6 @@ export const SIDE_FILL: Record<BiasSide, string> = {
   left: BIAS_FILL.left,
   center: BIAS_FILL.center,
   right: BIAS_FILL.right,
-};
-
-export const SIDE_LABEL: Record<BiasSide, string> = {
-  left: "leva",
-  center: "center",
-  right: "desna",
 };
 
 const SIDE_ACCUSATIVE: Record<BiasSide, string> = {
@@ -163,10 +157,7 @@ export function VoteBar({
   if (votes.total === 0) {
     return (
       <div
-        className={cn(
-          "bg-primary/8 h-2 w-full rounded-full",
-          className,
-        )}
+        className={cn("bg-primary/8 h-2 w-full rounded-full", className)}
         aria-label="Še ni glasov"
       />
     );
@@ -235,98 +226,15 @@ export function MeterBar({
 }) {
   return (
     <div
-      className={cn("bg-primary/8 h-1.5 w-full overflow-hidden rounded-full", className)}
+      className={cn(
+        "bg-primary/8 h-1.5 w-full overflow-hidden rounded-full",
+        className,
+      )}
     >
       <div
         className={cn("bg-primary/70 h-full rounded-full", fillClassName)}
         style={{ width: `${Math.max(0, Math.min(1, value)) * 100}%` }}
       />
-    </div>
-  );
-}
-
-export function OutletNameLink({
-  outlet,
-  className,
-}: {
-  outlet: Pick<MediaOutlet, "key" | "name">;
-  className?: string;
-}) {
-  return (
-    <Link
-      to={outletHref(outlet.key)}
-      prefetch="intent"
-      className={cn(
-        "hover:text-link decoration-current/30 underline-offset-4 hover:underline",
-        className,
-      )}
-    >
-      {outlet.name}
-    </Link>
-  );
-}
-
-export const VARIANTS = [
-  { id: "a", label: "Moje branje" },
-  { id: "b", label: "Spekter" },
-  { id: "c", label: "Primerjava" },
-] as const;
-
-export type VariantId = (typeof VARIANTS)[number]["id"];
-
-export function useVariant(): [VariantId, (id: VariantId) => void] {
-  const [params, setParams] = useSearchParams();
-  const raw = params.get("v");
-  const current = (VARIANTS.find((v) => v.id === raw)?.id ?? "a") as VariantId;
-  const set = (id: VariantId) =>
-    setParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        next.set("v", id);
-        return next;
-      },
-      { replace: true, preventScrollReset: true },
-    );
-  return [current, set];
-}
-
-/** Prototype-only switcher between the three /mediji designs. */
-export function VariantSwitcher({
-  current,
-  onChange,
-}: {
-  current: VariantId;
-  onChange: (id: VariantId) => void;
-}) {
-  return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 md:bottom-6">
-      <div
-        role="radiogroup"
-        aria-label="Različica oblikovanja"
-        className="bg-vidikblack/92 text-vidikwhite pointer-events-auto flex items-center gap-1 rounded-full p-1 shadow-[0_8px_28px_-6px_rgb(0_0_0/0.45)] backdrop-blur dark:bg-white/92 dark:text-black"
-      >
-        <span className="px-2.5 text-[11px] font-semibold tracking-wide opacity-60 max-sm:hidden">
-          Različica
-        </span>
-        {VARIANTS.map((v) => (
-          <button
-            key={v.id}
-            type="button"
-            role="radio"
-            aria-checked={current === v.id}
-            onClick={() => onChange(v.id)}
-            className={cn(
-              "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-electricblue)]",
-              current === v.id
-                ? "bg-vidikwhite text-vidikblack dark:bg-vidikblack dark:text-vidikwhite"
-                : "opacity-75 hover:opacity-100",
-            )}
-          >
-            <span className="font-bold uppercase">{v.id}</span>
-            <span className="max-sm:hidden">{v.label}</span>
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { ErrorComponent } from "~/components/error-component";
+import { Page, PageHeader } from "~/components/page";
 import type { Route } from "./+types/contact";
 import { getSeoMetas } from "~/lib/seo";
 import { Mail, MessageSquare } from "lucide-react";
@@ -16,20 +17,13 @@ export function headers() {
 
 export default function ContactPage({}: Route.ComponentProps) {
   return (
-    <div className="mx-auto max-w-5xl px-1 py-6 sm:px-4 md:px-6 md:py-8">
-      <div className="">
-        <div className="text-start">
-          <h1 className="text-surface-text mb-6 text-4xl font-bold tracking-tight">
-            Kontakt
-          </h1>
-          <p className="text-surface-text/70 w-full text-lg leading-relaxed md:w-1/2">
-            Imate vprašanje, predlog ali želite povezavo z nami? Spodaj sta dva
-            najhitrejša načina.
-          </p>
-        </div>
-      </div>
+    <Page>
+      <PageHeader title="Kontakt">
+        Imate vprašanje, predlog ali želite povezavo z nami? Spodaj sta dva
+        najhitrejša načina.
+      </PageHeader>
 
-      <div className="mx-auto mt-6 max-w-5xl pb-12">
+      <div>
         <div className="grid gap-8 md:grid-cols-2">
           <div className="group bg-primary/5 border-primary/10 relative flex flex-col items-start justify-between overflow-hidden rounded-lg border p-4 shadow-sm transition-all duration-300 hover:shadow-lg sm:p-5">
             <div className="mb-2 flex w-full items-center justify-between rounded-full">
@@ -74,7 +68,7 @@ export default function ContactPage({}: Route.ComponentProps) {
           </div>
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
 

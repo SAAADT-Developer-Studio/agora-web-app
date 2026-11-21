@@ -34,7 +34,9 @@ function readStored(): string[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((x) => typeof x === "string")
+      : [];
   } catch {
     return [];
   }
@@ -57,7 +59,7 @@ function sideCounts(story: BigStory, sideOf: Map<string, BiasSide | null>) {
   return counts;
 }
 
-export function MojeBranjeVariant({ data }: { data: MediaLandscape }) {
+export function MojeBranje({ data }: { data: MediaLandscape }) {
   const { outlets, bigStories, windowDays } = data;
   const [selected, setSelected] = useState<string[]>([]);
   const [filter, setFilter] = useState<SideFilter>("all");
@@ -123,7 +125,12 @@ export function MojeBranjeVariant({ data }: { data: MediaLandscape }) {
             selected={selected}
             onAdd={(k) => update([...selected, k])}
             onPreset={() =>
-              update(byReach.filter((o) => o.reach).slice(0, 3).map((o) => o.key))
+              update(
+                byReach
+                  .filter((o) => o.reach)
+                  .slice(0, 3)
+                  .map((o) => o.key),
+              )
             }
             onClear={() => update([])}
           />
@@ -147,7 +154,11 @@ function SideTabs({
     { key: "right", label: "Desna" },
   ];
   return (
-    <div role="tablist" aria-label="Pokaži medije" className="flex flex-wrap gap-2">
+    <div
+      role="tablist"
+      aria-label="Pokaži medije"
+      className="flex flex-wrap gap-2"
+    >
       {tabs.map((t) => (
         <button
           key={t.key}
@@ -239,7 +250,9 @@ function OutletPickRow({
         </span>
 
         <span className="flex items-center gap-2 pl-[68px] md:pl-0">
-          <span className="text-primary/70 text-xs md:hidden">Glavne zgodbe</span>
+          <span className="text-primary/70 text-xs md:hidden">
+            Glavne zgodbe
+          </span>
           <MeterBar
             value={coverage}
             className={cn("w-16 md:w-full", outlet.limitedData && "opacity-50")}
@@ -314,7 +327,14 @@ function ReadingPanel({
       .filter((c) => c.gain > 0)
       .sort((a, b) => b.score - a.score);
 
-    return { seen, missed, mix, mixTotal, weakest, suggestions: candidates.slice(0, 2) };
+    return {
+      seen,
+      missed,
+      mix,
+      mixTotal,
+      weakest,
+      suggestions: candidates.slice(0, 2),
+    };
   }, [selected, bigStories, outlets, sideOf]);
 
   const total = bigStories.length;
@@ -376,7 +396,11 @@ function ReadingPanel({
         </strong>{" "}
         od {total} glavnih zgodb zadnjih {windowDays} dni.
       </p>
-      <MeterBar value={seenShare} className="mt-2 h-2" fillClassName="bg-primary" />
+      <MeterBar
+        value={seenShare}
+        className="mt-2 h-2"
+        fillClassName="bg-primary"
+      />
 
       <h3 className="text-primary mt-6 text-sm font-bold">
         Od kod prihajajo tvoje zgodbe
@@ -387,22 +411,34 @@ function ReadingPanel({
             className="mt-2 flex h-3 overflow-hidden rounded-full"
             role="img"
             aria-label={SIDES.map(
-              (s) => `${SIDE_TITLE[s]}: ${formatPercent(result.mix[s] / result.mixTotal)}`,
+              (s) =>
+                `${SIDE_TITLE[s]}: ${formatPercent(result.mix[s] / result.mixTotal)}`,
             ).join(", ")}
           >
             {SIDES.map((s) =>
               result.mix[s] > 0 ? (
                 <span
                   key={s}
-                  className={cn("transition-[width] duration-500 ease-out", SIDE_FILL[s])}
-                  style={{ width: `${(result.mix[s] / result.mixTotal) * 100}%` }}
+                  className={cn(
+                    "transition-[width] duration-500 ease-out",
+                    SIDE_FILL[s],
+                  )}
+                  style={{
+                    width: `${(result.mix[s] / result.mixTotal) * 100}%`,
+                  }}
                 />
               ) : null,
             )}
           </div>
           <dl className="mt-2 grid grid-cols-3 text-xs">
             {SIDES.map((s) => (
-              <div key={s} className={cn(s === "center" && "text-center", s === "right" && "text-right")}>
+              <div
+                key={s}
+                className={cn(
+                  s === "center" && "text-center",
+                  s === "right" && "text-right",
+                )}
+              >
                 <dt className="text-primary/55">{SIDE_TITLE[s]}</dt>
                 <dd className="text-primary font-semibold tabular-nums">
                   {formatPercent(result.mix[s] / result.mixTotal)}
@@ -419,7 +455,9 @@ function ReadingPanel({
 
       {result.suggestions.length > 0 && (
         <>
-          <h3 className="text-primary mt-6 text-sm font-bold">Za širši pogled dodaj</h3>
+          <h3 className="text-primary mt-6 text-sm font-bold">
+            Za širši pogled dodaj
+          </h3>
           <ul className="mt-2 flex flex-col gap-2">
             {result.suggestions.map(({ outlet, gain }) => (
               <li
@@ -475,7 +513,13 @@ function ReadingPanel({
                     <span className="flex gap-0.5" aria-hidden>
                       {SIDES.flatMap((s) =>
                         Array.from({ length: counts[s] }, (_, i) => (
-                          <span key={`${s}${i}`} className={cn("size-1.5 rounded-full", SIDE_FILL[s])} />
+                          <span
+                            key={`${s}${i}`}
+                            className={cn(
+                              "size-1.5 rounded-full",
+                              SIDE_FILL[s],
+                            )}
+                          />
                         )),
                       )}
                     </span>
