@@ -3,7 +3,7 @@ import { href, Link, NavLink } from "react-router";
 import { useClientNow } from "~/components/render-clock";
 import { formatSlovenianYear } from "~/lib/date";
 
-const XIcon = createLucideIcon("X", [
+export const XIcon = createLucideIcon("X", [
   [
     "path",
     {

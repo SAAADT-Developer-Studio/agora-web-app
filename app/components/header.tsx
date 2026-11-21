@@ -1,22 +1,28 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Link, NavLink, href, useLocation } from "react-router";
+import { NavLink, useLocation } from "react-router";
 import {
   formatSlovenianLongDate,
   formatSlovenianWeekdayDate,
 } from "~/lib/date";
 import { useClientNow } from "~/components/render-clock";
 import { config } from "~/config";
-import { ChevronRight, Menu, X } from "lucide-react";
-import logoNoText from "~/assets/logo-no-text.svg";
+import { Menu } from "lucide-react";
 import { ThemeSwitch } from "./theme-switch";
 import { cn } from "~/lib/utils";
 import { LoadingBar } from "~/components/loading-bar";
 import { useLocalStorage } from "~/hooks/use-local-storage";
+import {
+  SIDE_MENU_VARIANTS,
+  SideMenu,
+  Wordmark,
+  sentenceCase,
+  type SideMenuVariant,
+} from "~/components/side-menu";
 
 /**
  * Three header designs, switchable from a floating control so they can be
  * compared on the live site. Once one is picked, delete the other two and
- * `HeaderVariantSwitcher`.
+ * the floating picker.
  */
 const HEADER_VARIANTS = [
   { key: "a", name: "Ena vrstica" },
@@ -27,28 +33,6 @@ type HeaderVariant = (typeof HEADER_VARIANTS)[number]["key"];
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
-
-/** "TEHNOLOGIJA & ZNANOST" -> "Tehnologija & znanost" */
-function sentenceCase(name: string) {
-  const lower = name.toLocaleLowerCase("sl-SI");
-  return lower.charAt(0).toLocaleUpperCase("sl-SI") + lower.slice(1);
-}
-
-function Wordmark({ className }: { className?: string }) {
-  return (
-    <Link
-      to="/"
-      prefetch="intent"
-      aria-label="Vidik, domača stran"
-      className={cn("flex shrink-0 items-center gap-[5px]", className)}
-    >
-      <img src={logoNoText} alt="" className="size-6" />
-      <span className="font-sarabun text-[23px] leading-none font-medium tracking-wide lowercase">
-        Vidik
-      </span>
-    </Link>
-  );
-}
 
 function MenuButton({
   open,
@@ -124,127 +108,6 @@ function CategoryNav({
         ))}
       </div>
     </nav>
-  );
-}
-
-const SITE_LINKS = [
-  {
-    to: href("/mediji"),
-    name: "Mediji",
-    description: "Ocene pristranskosti vseh medijev",
-  },
-  {
-    to: href("/metodologija"),
-    name: "Metodologija",
-    description: "Kako ocenjujemo medije",
-  },
-  { to: href("/kontakt"), name: "Kontakt", description: "Pišite nam" },
-];
-
-function SideMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const closeRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (open) closeRef.current?.focus();
-  }, [open]);
-
-  return (
-    <>
-      <aside
-        id="site-menu"
-        aria-label="Meni"
-        inert={!open}
-        className={cn(
-          "bg-surface text-surface-text border-primary/10 fixed top-0 left-0 z-40 flex h-full w-[300px] max-w-[85vw] flex-col border-r",
-          "transition-[translate,visibility] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]",
-          open ? "visible translate-x-0" : "invisible -translate-x-full",
-        )}
-      >
-        <div className="flex h-14 shrink-0 items-center justify-between pr-3 pl-5">
-          <Wordmark />
-          <button
-            ref={closeRef}
-            type="button"
-            aria-label="Zapri meni"
-            onClick={onClose}
-            className="hover:bg-primary/10 focus-visible:ring-primary/40 grid size-9 place-items-center rounded-full focus-visible:ring-2 focus-visible:outline-none"
-          >
-            <X className="size-5" aria-hidden />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-3 pt-2 pb-6">
-          <p className="text-surface-text/55 px-2 pb-1.5 text-xs font-semibold">
-            Rubrike
-          </p>
-          <nav aria-label="Rubrike v meniju">
-            {config.navigation.map((item) => (
-              <NavLink
-                to={item.path}
-                key={item.path}
-                end
-                prefetch="intent"
-                onClick={onClose}
-                className={({ isActive }) =>
-                  cn(
-                    "block rounded-lg px-2 py-2 text-[15px] transition-colors",
-                    isActive
-                      ? "bg-primary/[0.07] font-semibold"
-                      : "text-surface-text/85 hover:bg-primary/5 hover:text-surface-text",
-                  )
-                }
-              >
-                {sentenceCase(item.name)}
-              </NavLink>
-            ))}
-          </nav>
-
-          <div className="border-primary/10 mx-2 my-4 border-t" />
-
-          <p className="text-surface-text/55 px-2 pb-1.5 text-xs font-semibold">
-            O Vidiku
-          </p>
-          <nav aria-label="O Vidiku">
-            {SITE_LINKS.map((item) => (
-              <NavLink
-                to={item.to}
-                key={item.to}
-                prefetch="intent"
-                onClick={onClose}
-                className={({ isActive }) =>
-                  cn(
-                    "group flex items-center justify-between gap-3 rounded-lg px-2 py-2 transition-colors",
-                    isActive ? "bg-primary/[0.07]" : "hover:bg-primary/5",
-                  )
-                }
-              >
-                <span>
-                  <span className="block text-[15px] font-medium">
-                    {item.name}
-                  </span>
-                  <span className="text-surface-text/60 block text-[13px]">
-                    {item.description}
-                  </span>
-                </span>
-                <ChevronRight
-                  className="text-surface-text/35 size-4 shrink-0 transition-transform group-hover:translate-x-0.5"
-                  aria-hidden
-                />
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-      </aside>
-
-      <div
-        aria-hidden
-        onClick={onClose}
-        className={cn(
-          "fixed inset-0 z-30 bg-black/40 transition-opacity duration-300",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-      />
-    </>
   );
 }
 
@@ -382,21 +245,25 @@ function HeaderC({ open, onOpen }: { open: boolean; onOpen: () => void }) {
   );
 }
 
-function HeaderVariantSwitcher({
+function VariantPicker<K extends string>({
+  label,
+  options,
   value,
   onChange,
 }: {
-  value: HeaderVariant;
-  onChange: (v: HeaderVariant) => void;
+  label: string;
+  options: readonly { key: K; name: string }[];
+  value: K;
+  onChange: (v: K) => void;
 }) {
   return (
     <div
       role="radiogroup"
-      aria-label="Različica glave"
-      className="bg-vidikblack/90 text-vidikwhite fixed bottom-4 left-4 z-[35] flex items-center gap-1 rounded-full p-1 pl-3 text-[13px] shadow-[0_6px_24px_rgba(0,0,0,0.25)] ring-1 ring-white/10 backdrop-blur"
+      aria-label={`Različica: ${label}`}
+      className="flex items-center gap-1"
     >
-      <span className="pr-1 text-white/60">Glava</span>
-      {HEADER_VARIANTS.map((v) => (
+      <span className="w-12 pl-2 text-white/60">{label}</span>
+      {options.map((v) => (
         <button
           key={v.key}
           type="button"
@@ -419,15 +286,25 @@ function HeaderVariantSwitcher({
   );
 }
 
+function pick<K extends string>(
+  options: readonly { key: K }[],
+  stored: string,
+): K {
+  return options.find((o) => o.key === stored)?.key ?? options[0].key;
+}
+
 export function Header() {
   const [open, setOpen] = useState(false);
-  const [stored, setVariant] = useLocalStorage<HeaderVariant>(
+  const [storedHeader, setVariant] = useLocalStorage<string>(
     "header-variant",
     "a",
   );
-  const variant: HeaderVariant = HEADER_VARIANTS.some((v) => v.key === stored)
-    ? stored
-    : "a";
+  const [storedMenu, setMenuVariant] = useLocalStorage<string>(
+    "menu-variant",
+    "a",
+  );
+  const variant = pick<HeaderVariant>(HEADER_VARIANTS, storedHeader);
+  const menuVariant = pick<SideMenuVariant>(SIDE_MENU_VARIANTS, storedMenu);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -447,8 +324,25 @@ export function Header() {
         {variant === "b" && <HeaderB open={open} onOpen={onOpen} />}
         {variant === "c" && <HeaderC open={open} onOpen={onOpen} />}
       </header>
-      <SideMenu open={open} onClose={() => setOpen(false)} />
-      <HeaderVariantSwitcher value={variant} onChange={setVariant} />
+      <SideMenu
+        open={open}
+        variant={menuVariant}
+        onClose={() => setOpen(false)}
+      />
+      <div className="bg-vidikblack/90 text-vidikwhite fixed right-4 bottom-4 z-[45] flex flex-col gap-0.5 rounded-[22px] p-1 text-[13px] shadow-[0_6px_24px_rgba(0,0,0,0.25)] ring-1 ring-white/10 backdrop-blur">
+        <VariantPicker
+          label="Glava"
+          options={HEADER_VARIANTS}
+          value={variant}
+          onChange={setVariant}
+        />
+        <VariantPicker
+          label="Meni"
+          options={SIDE_MENU_VARIANTS}
+          value={menuVariant}
+          onChange={setMenuVariant}
+        />
+      </div>
     </>
   );
 }
