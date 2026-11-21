@@ -15,24 +15,28 @@ const LINKS = [
 export default function Footer() {
   const year = formatSlovenianYear(new Date(useClientNow()));
   return (
-    <footer className="bg-surface text-surface-text border-primary/10 mt-20 border-t">
-      <div className="mx-auto max-w-[1200px] px-4 py-8 md:px-6">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col items-start gap-2 md:flex-row md:items-center md:gap-4">
-            <Wordmark />
-            <span className="bg-primary/15 hidden h-5 w-px md:block" />
-            <p className="text-surface-text/55 text-[14px]">
-              Ista novica. Vsi vidiki.
-            </p>
+    <footer className="bg-surface text-surface-text border-primary/10 mt-12 border-t md:mt-20">
+      <div className="mx-auto max-w-[1200px] px-4 pt-7 pb-[max(1.75rem,env(safe-area-inset-bottom))] md:px-6 md:py-8">
+        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-4">
+              <Wordmark />
+              <span className="bg-primary/15 hidden h-5 w-px md:block" />
+              <p className="text-surface-text/55 text-[14px]">
+                Ista novica. Vsi vidiki.
+              </p>
+            </div>
+            {/* On phones the icons share the brand row instead of floating alone. */}
+            <SocialLinks className="-mt-1.5 -mr-2 md:hidden" />
           </div>
           <nav aria-label="Noga">
-            <ul className="grid grid-cols-2 gap-x-4 gap-y-3 text-[14px] md:flex md:gap-x-5">
+            <ul className="flex flex-col text-[15px] md:flex-row md:gap-x-5 md:text-[14px]">
               {LINKS.map(({ name, to }) => (
                 <li key={to}>
                   <Link
                     to={to}
                     prefetch="intent"
-                    className="text-surface-text/70 hover:text-surface-text transition-colors"
+                    className="text-surface-text/70 hover:text-surface-text block py-2 transition-colors md:py-0"
                   >
                     {name}
                   </Link>
@@ -42,15 +46,14 @@ export default function Footer() {
           </nav>
         </div>
 
-        <div className="border-primary/10 text-surface-text/45 mt-6 grid grid-cols-2 items-center gap-y-3 border-t pt-4 text-[13px] md:grid-cols-3">
+        <div className="border-primary/10 text-surface-text/45 mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 border-t pt-4 text-[13px] md:mt-6 md:grid md:grid-cols-3">
           <p className="flex items-center gap-2" suppressHydrationWarning>
             <BiasSpectrum className="w-10" />© {year} vidik.si
           </p>
-          <p className="text-right md:text-center">
+          <p className="before:mr-2 before:content-['·'] md:text-center md:before:content-none">
             <b>M</b>&amp;<b>B</b> Production
           </p>
-          {/* First on phones, so the icons don't dangle under the small print. */}
-          <SocialLinks className="order-first col-span-2 -ml-2 md:order-none md:col-span-1 md:-mr-2 md:ml-0 md:justify-end" />
+          <SocialLinks className="hidden md:-mr-2 md:flex md:justify-end" />
         </div>
       </div>
     </footer>
