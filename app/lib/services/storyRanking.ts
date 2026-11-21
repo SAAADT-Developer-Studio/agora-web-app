@@ -187,6 +187,12 @@ export async function resolveObservedStoryRankRun(
   }
 }
 
+/** Omitted on the first page so the home listing SQL stays unchanged. */
+function pageOffset(offset: number | undefined) {
+  if (!offset) return sql``;
+  return sql`OFFSET ${offset}`;
+}
+
 /**
  * Same candidate set as the in-app home formula, ordered by `story_rank.score`
  * from one ranking run. Stories that run did not score (created after it, or
@@ -201,10 +207,13 @@ export function observedStoryHomeSql({
   count,
   side,
   observedRunId,
+  offset,
 }: {
   count: number;
   side?: BlindspotSide;
   observedRunId: number;
+  /** Skip this many stories. Omit or 0 to keep the first page. */
+  offset?: number;
 }): SQL {
   return sql`
   WITH provider_counts AS (
@@ -283,6 +292,7 @@ export function observedStoryHomeSql({
            ${story.lastArticlePublishedAt} DESC,
            ${story.id} DESC
   LIMIT ${count}
+  ${pageOffset(offset)}
 `;
 }
 
@@ -399,6 +409,7 @@ export async function getStoryHomeArticles({
   db,
   count,
   side,
+  offset = 0,
   observedRunId,
   rankSession,
 }: {
@@ -406,6 +417,11 @@ export async function getStoryHomeArticles({
   count: number;
   /** Only this side's blindspots, still in ranking order. */
   side?: BlindspotSide;
+  /**
+   * Skip this many stories after ranking. Existing callers omit it, which
+   * keeps the first page and the same SQL.
+   */
+  offset?: number;
   /** Fresh succeeded story ranking run. Omit to keep the in-app formula. */
   observedRunId?: number;
   /** Shared with the other sections of this render so a failure is logged once. */
@@ -414,7 +430,7 @@ export async function getStoryHomeArticles({
   if (observedRunId != null && !rankSession?.failed) {
     const ranked = await selectObserved(
       db,
-      observedStoryHomeSql({ count, side, observedRunId }),
+      observedStoryHomeSql({ count, side, observedRunId, offset }),
       rankSession,
     );
     if (ranked) return await hydrateStories(db, ranked, true);
@@ -495,6 +511,7 @@ export async function getStoryHomeArticles({
   ${blindspotFilter(side)}
   ORDER BY combined_score DESC
   LIMIT ${count}
+  ${pageOffset(offset)}
 `);
   return await hydrateStories(
     db,

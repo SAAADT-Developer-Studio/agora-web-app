@@ -4,11 +4,16 @@ import * as SwitchPrimitive from "@radix-ui/react-switch";
 
 import { cn } from "~/lib/utils";
 import { useLocalStorage } from "~/hooks/use-local-storage";
+import moonIcon from "~/assets/utrinki/moon.svg";
 
 export function ThemeSwitch({
   className,
+  variant = "switch",
   ...props
-}: React.ComponentProps<typeof SwitchPrimitive.Root>) {
+}: React.ComponentProps<typeof SwitchPrimitive.Root> & {
+  /** `reel` is the round control on the Utrinki top bar. */
+  variant?: "switch" | "reel";
+}) {
   const [theme, setTheme] = useLocalStorage("theme", "light");
 
   const handleSwitch = () => {
@@ -17,6 +22,27 @@ export function ThemeSwitch({
     document.documentElement.classList.add(newTheme);
     setTheme(newTheme);
   };
+
+  if (variant === "reel") {
+    const dark = theme === "dark";
+    return (
+      <button
+        type="button"
+        onClick={handleSwitch}
+        aria-label={dark ? "Preklopi na svetlo temo" : "Preklopi na temno temo"}
+        className={cn(
+          "grid size-[34px] shrink-0 place-items-center rounded-full bg-[#414141] focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none",
+          className,
+        )}
+      >
+        {dark ? (
+          <img src={moonIcon} alt="" width={18} height={18} />
+        ) : (
+          <Sun size={18} color="#F3F8FE" aria-hidden />
+        )}
+      </button>
+    );
+  }
 
   return (
     <SwitchPrimitive.Root

@@ -50,6 +50,8 @@ type SeoInput = {
   /** When false, skips site-wide WebSite/Organization JSON-LD (e.g. lean error pages). */
   includeSiteSchema?: boolean;
   jsonLd?: object[];
+  /** Overrides the robots meta content. Hidden routes pass `noindex, nofollow`. */
+  robots?: string;
 };
 
 export function getSeoMetas({
@@ -70,6 +72,7 @@ export function getSeoMetas({
   authors = [],
   includeSiteSchema = true,
   jsonLd = [],
+  robots,
 }: SeoInput): MetaDescriptor[] {
   const url = new URL(pathname || "/", SITE_URL).href;
   const ogImage = image || DEFAULT_OG_IMAGE;
@@ -82,9 +85,11 @@ export function getSeoMetas({
 
     {
       name: "robots",
-      content: noindex
-        ? "noindex, nofollow, noarchive"
-        : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+      content:
+        robots ??
+        (noindex
+          ? "noindex, nofollow, noarchive"
+          : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"),
     },
 
     { tagName: "link", rel: "canonical", href: url },

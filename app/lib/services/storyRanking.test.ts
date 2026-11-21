@@ -102,7 +102,17 @@ describe("getStoryHomeArticles", () => {
     expect(calls[0].sql).not.toMatch(/story_rank/);
     expect(calls[0].sql).not.toMatch(/ranking_run/);
     expect(calls[0].sql).not.toMatch(/merged_into_story_id/);
+    expect(calls[0].sql).not.toMatch(/offset/i);
     expect(calls[0].sql).toMatch(/order by combined_score desc/i);
+  });
+
+  it("pages the formula order when an offset is set", async () => {
+    const { db, calls } = executor(() => ({ rows: [] }));
+    await getStoryHomeArticles({ db, count: 11, offset: 20 });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].sql).not.toMatch(/story_rank/);
+    expect(calls[0].sql).toMatch(/OFFSET/i);
+    expect(calls[0].params).toEqual(expect.arrayContaining([11, 20]));
   });
 
   it("uses the observed query for a fresh run", async () => {
@@ -111,6 +121,37 @@ describe("getStoryHomeArticles", () => {
     expect(calls).toEqual([
       compile(observedStoryHomeSql({ count: 6, observedRunId: 42 })),
     ]);
+    expect(calls[0].sql).not.toMatch(/OFFSET/i);
+  });
+
+  it("pages the observed home order and keeps that offset on fallback", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    let attempt = 0;
+    const { db, calls } = executor(() => {
+      attempt += 1;
+      if (attempt === 1) throw new Error("connection reset");
+      return { rows: [] };
+    });
+    await getStoryHomeArticles({
+      db,
+      count: 11,
+      offset: 20,
+      observedRunId: 42,
+    });
+    expect(calls[0]).toEqual(
+      compile(
+        observedStoryHomeSql({
+          count: 11,
+          offset: 20,
+          observedRunId: 42,
+        }),
+      ),
+    );
+    expect(calls[0].params).toContain(20);
+    expect(calls[1].sql).not.toMatch(/story_rank/);
+    expect(calls[1].sql).toMatch(/OFFSET/i);
+    expect(calls[1].params).toContain(20);
+    expect(warn).toHaveBeenCalledOnce();
   });
 
   it("falls back to the formula when story_rank is missing", async () => {

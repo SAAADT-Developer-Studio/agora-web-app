@@ -6,6 +6,6 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
-    include: ["app/**/*.test.ts"],
+    include: ["app/**/*.test.ts", "app/**/*.test.tsx"],
   },
 });

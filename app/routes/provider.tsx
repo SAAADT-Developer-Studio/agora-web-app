@@ -67,16 +67,13 @@ export async function loader({ context, params }: Route.LoaderArgs) {
     });
   });
 
-  const latestArticle = await measurer.time(
-    "get-latest-article",
-    async () => {
-      return await db.query.article.findFirst({
-        where: (article, { eq }) =>
-          eq(article.newsProviderKey, params.providerKey),
-        orderBy: (article, { desc }) => [desc(article.publishedAt)],
-      });
-    },
-  );
+  const latestArticle = await measurer.time("get-latest-article", async () => {
+    return await db.query.article.findFirst({
+      where: (article, { eq }) =>
+        eq(article.newsProviderKey, params.providerKey),
+      orderBy: (article, { desc }) => [desc(article.publishedAt)],
+    });
+  });
 
   const numberOfVotesByBias = await db
     .select({
@@ -97,7 +94,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
   const { provider, stats, mossData, latestArticle, numberOfVotesByBias } =
     loaderData;
   const queryClient = useQueryClient();
-  const [userId] = useLocalStorage("user_id", null);
+  const [userId] = useLocalStorage<string | null>("user_id", null);
   const revalidator = useRevalidator();
 
   const queryKey = ["vote", provider.key, userId];
@@ -105,6 +102,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
   const voteResult = useQuery({
     queryKey,
     queryFn: async () => {
+      if (!userId) return undefined;
       return await get<Vote | undefined>(
         href("/api/votes/:providerKey/:userId", {
           providerKey: provider.key,
@@ -117,6 +115,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
 
   const mutation = useMutation({
     mutationFn: async (value: BiasRating) => {
+      if (!userId) return;
       await post(href("/api/votes"), {
         providerKey: provider.key,
         userId,
@@ -147,6 +146,7 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
   const voteSuggestions = useQuery({
     queryKey: ["provider-suggestions", provider.key, userId],
     queryFn: async () => {
+      if (!userId) return undefined;
       return await get<ProviderSuggestionsData>(
         href("/api/provider-suggestions/:providerKey/:userId", {
           userId,

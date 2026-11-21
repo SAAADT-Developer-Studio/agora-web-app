@@ -13,16 +13,30 @@ export const META_CACHE_KEY = "meta" as CacheKey;
  */
 const OBSERVED_RANK_CACHE_SUFFIX = ":observed-rank";
 
+function cacheKeyForOrder(base: string, storyRankOrder: boolean): CacheKey {
+  if (!storyRankOrder) return base as CacheKey;
+  return `${base}${OBSERVED_RANK_CACHE_SUFFIX}` as CacheKey;
+}
+
 export function homeCacheKey(storyRankOrder = false): CacheKey {
-  if (!storyRankOrder) return HOME_CACHE_KEY;
-  return `${HOME_CACHE_KEY}${OBSERVED_RANK_CACHE_SUFFIX}` as CacheKey;
+  return cacheKeyForOrder(HOME_CACHE_KEY, storyRankOrder);
 }
 
 export function getCategoryCacheKey(
   category: CategoryKeyValue,
   storyRankOrder = false,
 ): CacheKey {
-  const base = `data:story:category:${category}`;
-  if (!storyRankOrder) return base as CacheKey;
-  return `${base}${OBSERVED_RANK_CACHE_SUFFIX}` as CacheKey;
+  return cacheKeyForOrder(`data:story:category:${category}`, storyRankOrder);
+}
+
+/** One page of the hidden `/utrinki` reel. */
+export function utrinkiCacheKey(
+  category: string,
+  page: number,
+  storyRankOrder = false,
+): CacheKey {
+  return cacheKeyForOrder(
+    `data:story:utrinki:v1:${category}:${page}`,
+    storyRankOrder,
+  );
 }
