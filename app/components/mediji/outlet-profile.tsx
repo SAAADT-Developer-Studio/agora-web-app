@@ -1,12 +1,18 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { CircleCheck } from "lucide-react";
+import type { BiasRating } from "~/enums/biasRatingKey";
 import type { MediaOutlet } from "~/lib/services/mediaLandscape";
+import { Spinner } from "~/components/ui/spinner";
 import { cn } from "~/lib/utils";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import {
+  BIAS_FILL,
+  BIAS_ORDER,
+  BiasChip,
+  InfoTip,
   MeterBar,
   OutletLogo,
-  VoteBar,
   categoryLabel,
   formatLag,
   formatPeople,
@@ -20,227 +26,314 @@ export type RelatedOutlet = Pick<
   "key" | "name" | "biasRating" | "owner"
 >;
 
-function Fact({ label, children }: { label: string; children: ReactNode }) {
+/** "Kam spada X?": the reader vote; `children` renders under it (suggestions after voting). */
+export function OutletVoting({
+  outlet,
+  voteValue,
+  pending,
+  onVote,
+  children,
+}: {
+  outlet: MediaOutlet;
+  /** The viewer's current vote, as stored. */
+  voteValue: string | undefined;
+  pending: boolean;
+  onVote: (value: BiasRating) => void;
+  children?: ReactNode;
+}) {
+  const verdict = votesVerdict(outlet);
   return (
-    <div className="grid gap-1.5 border-t border-current/10 py-5 md:grid-cols-[200px_minmax(0,1fr)] md:gap-6">
-      <dt className="text-primary/60 text-sm font-semibold">{label}</dt>
-      <dd className="text-primary min-w-0 text-[15px] leading-snug">
+    <section className="bg-surface-light shadow-vidik rounded-xl p-4 md:p-6">
+      <h2 className="text-primary text-xl font-bold tracking-tight md:text-2xl">
+        Kam spada {outlet.name}?
+      </h2>
+      <p className="text-primary/70 mt-1 text-[15px] leading-snug">
+        {verdict.text}
+        {outlet.votes.total > 0 && ` Skupaj ${outlet.votes.total} glasov.`}
+      </p>
+
+      <div className="mt-4 grid grid-cols-5 gap-1.5 md:gap-2">
+        {BIAS_ORDER.map((value) => {
+          const selected = voteValue === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => onVote(value)}
+              disabled={pending}
+              aria-pressed={selected}
+              className={cn(
+                "relative flex min-w-0 flex-col items-start rounded-lg border p-2 text-left transition-colors disabled:cursor-wait md:p-3",
+                selected
+                  ? "border-primary bg-primary/6"
+                  : "hover:border-primary/40 hover:bg-primary/3 border-current/12",
+              )}
+            >
+              <span
+                className={cn("h-1.5 w-full rounded-full", BIAS_FILL[value])}
+              />
+              <span className="text-primary mt-2 text-xs leading-tight font-bold md:text-[15px]">
+                {biasKeyToLabel(value)}
+              </span>
+              <span className="text-primary/55 mt-0.5 text-[11px] tabular-nums md:text-xs">
+                {outlet.votes.byRating[value]} glasov
+              </span>
+              {outlet.biasRating === value && (
+                <span className="text-primary/55 mt-1 text-[10px] leading-tight md:text-[11px]">
+                  naša ocena
+                </span>
+              )}
+              {selected && (
+                <span className="absolute top-2 right-1.5 md:top-3 md:right-2.5">
+                  {pending ? (
+                    <Spinner className="size-3 fill-current" />
+                  ) : (
+                    <CircleCheck className="size-4" />
+                  )}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {children}
+    </section>
+  );
+}
+
+export function VoteSuggestions({ outlets }: { outlets: RelatedOutlet[] }) {
+  return (
+    <div className="animate-in fade-in slide-in-from-top-2 mt-5 border-t border-current/10 pt-5 duration-500">
+      <h3 className="text-primary font-bold">
+        Hvala! Glasuj še za druge medije
+      </h3>
+      <ul className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
+        {outlets.map((o) => (
+          <li key={o.key}>
+            <OutletRow outlet={o} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Stat({
+  value,
+  label,
+  info,
+  children,
+}: {
+  value: ReactNode;
+  label: string;
+  info: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col-reverse justify-end py-4 sm:px-5 sm:first:pl-0">
+      <dt className="text-primary/65 mt-1.5 flex items-center gap-1 text-sm">
+        {label}
+        <InfoTip label={label}>{info}</InfoTip>
+      </dt>
+      <dd className="text-primary text-3xl leading-none font-bold tracking-tight tabular-nums">
+        {value}
         {children}
       </dd>
     </div>
   );
 }
 
-function OutletChip({
+/** How the outlet reports: big-story coverage, speed, topics. */
+export function OutletCoverage({
   outlet,
-  note,
+  bigStoriesTotal,
+  windowDays,
 }: {
-  outlet: RelatedOutlet;
-  note?: string;
+  outlet: MediaOutlet;
+  bigStoriesTotal: number;
+  windowDays: number;
 }) {
+  const coverage = bigStoriesTotal
+    ? outlet.bigStoriesCovered / bigStoriesTotal
+    : 0;
+  const noSpeed = outlet.medianLagMinutes === null;
+  return (
+    <section>
+      <h2 className="text-primary text-xl font-bold tracking-tight md:text-2xl">
+        Kako poroča
+      </h2>
+      <p className="text-primary/60 mt-1 text-sm">Zadnjih {windowDays} dni.</p>
+
+      <dl className="mt-3 grid border-y border-current/10 sm:grid-cols-3 sm:divide-x sm:divide-current/10">
+        <Stat
+          value={formatPercent(coverage)}
+          label="glavnih zgodb pokrije"
+          info={`Glavne zgodbe so tiste, o katerih je v zadnjih ${windowDays} dneh pisalo vsaj pet medijev. ${outlet.name}: ${outlet.bigStoriesCovered} od ${bigStoriesTotal}.`}
+        >
+          <MeterBar value={coverage} className="mt-3 max-w-40" />
+        </Stat>
+        <Stat
+          value={noSpeed ? "—" : formatPercent(outlet.firstShare)}
+          label="zgodb objavi prvi"
+          info="Med zgodbami, o katerih so pisali vsaj trije mediji: kako pogosto je ta medij objavil prvi."
+        />
+        <Stat
+          value={formatLag(outlet.medianLagMinutes)}
+          label="običajno za prvim medijem"
+          info="Mediana časa med prvo objavo zgodbe na katerem koli mediju in objavo na tem mediju."
+        />
+      </dl>
+
+      {outlet.topCategories.length > 0 && (
+        <>
+          <h3 className="text-primary mt-6 text-sm font-bold">O čem piše</h3>
+          <ul className="mt-3 flex max-w-md flex-col gap-2.5">
+            {outlet.topCategories.map((c) => (
+              <li
+                key={c.key}
+                className="grid grid-cols-[120px_minmax(0,1fr)_44px] items-center gap-3 text-sm"
+              >
+                <span className="text-primary font-semibold">
+                  {categoryLabel(c.key)}
+                </span>
+                <MeterBar value={c.share} />
+                <span className="text-primary/70 text-right tabular-nums">
+                  {formatPercent(c.share)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  );
+}
+
+function OutletRow({ outlet, note }: { outlet: RelatedOutlet; note?: string }) {
   return (
     <Link
       to={outletHref(outlet.key)}
       prefetch="intent"
-      className="hover:bg-primary/5 flex w-fit items-center gap-2 rounded-lg border border-current/10 py-1 pr-2.5 pl-1 transition-colors"
+      className="hover:bg-primary/5 -mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors"
     >
-      <OutletLogo outlet={outlet} className="size-7" />
-      <span className="text-sm font-semibold">{outlet.name}</span>
+      <OutletLogo outlet={outlet} className="size-9" />
+      <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+        <span className="text-primary truncate text-sm font-bold">
+          {outlet.name}
+        </span>
+        <BiasChip rating={outlet.biasRating} />
+      </span>
       {note && (
-        <span className="text-primary/55 text-xs tabular-nums">{note}</span>
+        <span className="text-primary/60 text-sm tabular-nums">{note}</span>
       )}
     </Link>
   );
 }
 
-/** Everything we know about one outlet, as label/value rows. `voting` renders under the reader verdict. */
-export function OutletProfile({
+function SideSection({
+  title,
+  info,
+  children,
+}: {
+  title: string;
+  info: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="border-t border-current/10 py-5 first:border-t-0 first:pt-0">
+      <h2 className="text-primary flex items-center gap-1 text-sm font-bold">
+        {title}
+        <InfoTip label={title}>{info}</InfoTip>
+      </h2>
+      <div className="mt-3">{children}</div>
+    </section>
+  );
+}
+
+/** Readership, related outlets and publisher. */
+export function OutletSidebar({
   outlet,
   related,
-  bigStoriesTotal,
-  windowDays,
-  voting,
 }: {
   outlet: MediaOutlet;
   related: Record<string, RelatedOutlet>;
-  bigStoriesTotal: number;
-  windowDays: number;
-  voting?: ReactNode;
 }) {
-  const verdict = votesVerdict(outlet);
   const counterpart = outlet.counterpart && related[outlet.counterpart.key];
   const siblings = Object.values(related).filter(
     (o) => o.owner === outlet.owner && o.key !== outlet.key,
   );
 
   return (
-    <dl>
-      <Fact label="Kdo ga bere">
+    <div>
+      <SideSection
+        title="Bralci"
+        info="Mesečni doseg po meritvi MOSS: delež slovenskih uporabnikov spleta, ki medij obiščejo vsaj enkrat na mesec."
+      >
         {outlet.reach ? (
           <>
-            <p>
-              <strong className="text-2xl font-bold tabular-nums">
-                {formatPercent(outlet.reach.percent / 100)}
-              </strong>{" "}
-              slovenskih uporabnikov spleta mesečno, približno{" "}
-              {formatPeople(outlet.reach.people)} ljudi.
+            <p className="text-primary text-3xl leading-none font-bold tabular-nums">
+              {formatPercent(outlet.reach.percent / 100)}
             </p>
-            <p className="text-primary/60 mt-1 text-sm">
-              Povprečen obisk traja {outlet.reach.avgSessionDuration} min. Vir:
-              MOSS.
+            <p className="text-primary/70 mt-1.5 text-sm leading-snug">
+              slovenskih uporabnikov spleta mesečno, približno{" "}
+              {formatPeople(outlet.reach.people)} ljudi. Povprečen obisk traja{" "}
+              {outlet.reach.avgSessionDuration} min.
             </p>
           </>
         ) : (
-          <p className="text-primary/60">Medij ni vključen v merjenje MOSS.</p>
-        )}
-      </Fact>
-
-      <Fact label="Kaj pravijo bralci">
-        <VoteBar votes={outlet.votes} className="max-w-sm" />
-        <p
-          className={cn(
-            "mt-2",
-            verdict.tone === "disagree" && "font-semibold",
-            verdict.tone === "few" && "text-primary/60",
-          )}
-        >
-          {verdict.text}
-          {outlet.votes.total > 0 && (
-            <span className="text-primary/55 text-sm font-normal">
-              {" "}
-              ({outlet.votes.total} glasov)
-            </span>
-          )}
-        </p>
-        {voting}
-      </Fact>
-
-      <Fact label="Glavne zgodbe">
-        <div className="flex max-w-sm items-center gap-3">
-          <MeterBar
-            value={
-              bigStoriesTotal ? outlet.bigStoriesCovered / bigStoriesTotal : 0
-            }
-            className="h-2"
-          />
-          <span className="font-semibold whitespace-nowrap tabular-nums">
-            {outlet.bigStoriesCovered} / {bigStoriesTotal}
-          </span>
-        </div>
-        <p className="text-primary/60 mt-1.5 text-sm">
-          Zgodbe, o katerih je v zadnjih {windowDays} dneh pisalo vsaj pet
-          medijev.
-        </p>
-      </Fact>
-
-      <Fact label="Hitrost">
-        {outlet.medianLagMinutes !== null ? (
-          <p>
-            Prvi objavi pri{" "}
-            <strong className="tabular-nums">
-              {formatPercent(outlet.firstShare)}
-            </strong>{" "}
-            skupnih zgodb. Sicer običajno{" "}
-            <strong className="tabular-nums">
-              {formatLag(outlet.medianLagMinutes)}
-            </strong>{" "}
-            za prvim medijem.
+          <p className="text-primary/60 text-sm">
+            Medij ni vključen v merjenje MOSS.
           </p>
-        ) : (
-          <p className="text-primary/60">Premalo skupnih zgodb za oceno.</p>
         )}
-      </Fact>
-
-      {outlet.agenda !== null && (
-        <Fact label="Izbor zgodb">
-          <AgendaScale value={outlet.agenda} />
-          <p className="text-primary/60 mt-2 text-sm">
-            Kdo še piše o zgodbah, ki jih izbere {outlet.name}, v primerjavi s
-            povprečnim medijem. Meri izbor tem, ne tona.
-          </p>
-        </Fact>
-      )}
-
-      {outlet.topCategories.length > 0 && (
-        <Fact label="O čem piše">
-          <ul className="flex flex-wrap gap-2">
-            {outlet.topCategories.map((c) => (
-              <li
-                key={c.key}
-                className="bg-primary/6 rounded-md px-2 py-1 text-sm font-semibold"
-              >
-                {categoryLabel(c.key)}{" "}
-                <span className="text-primary/55 font-normal tabular-nums">
-                  {formatPercent(c.share)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Fact>
-      )}
+      </SideSection>
 
       {outlet.similar.length > 0 && (
-        <Fact label="Podoben izbor zgodb">
-          <div className="flex flex-wrap gap-2">
+        <SideSection
+          title="Podoben izbor zgodb"
+          info="Mediji, ki pišejo o največ istih zgodbah. Odstotek je delež skupnih zgodb med medijema."
+        >
+          <ul className="flex flex-col gap-1">
             {outlet.similar.map((s) =>
               related[s.key] ? (
-                <OutletChip
-                  key={s.key}
-                  outlet={related[s.key]}
-                  note={formatPercent(s.overlap)}
-                />
+                <li key={s.key}>
+                  <OutletRow
+                    outlet={related[s.key]}
+                    note={formatPercent(s.overlap)}
+                  />
+                </li>
               ) : null,
             )}
-          </div>
-          <p className="text-primary/55 mt-2 text-xs">
-            Delež skupnih zgodb med medijema.
-          </p>
-        </Fact>
+          </ul>
+        </SideSection>
       )}
 
       {counterpart && (
-        <Fact label="Iste zgodbe z druge strani">
-          <OutletChip
-            outlet={counterpart}
-            note={biasKeyToLabel(counterpart.biasRating ?? "")}
-          />
-        </Fact>
+        <SideSection
+          title="Iste zgodbe z druge strani"
+          info="Medij, ocenjen na drugi strani spektra, ki piše o največ istih zgodbah."
+        >
+          <OutletRow outlet={counterpart} />
+        </SideSection>
       )}
 
       {outlet.owner && (
-        <Fact label="Izdajatelj">
-          <p>{outlet.owner}</p>
+        <SideSection
+          title="Izdajatelj"
+          info="Izdajatelj, kot je vpisan v merjenje MOSS."
+        >
+          <p className="text-primary text-sm font-semibold">{outlet.owner}</p>
           {siblings.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
+            <ul className="mt-2 flex flex-col gap-1">
               {siblings.map((o) => (
-                <OutletChip key={o.key} outlet={o} />
+                <li key={o.key}>
+                  <OutletRow outlet={o} />
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-          <p className="text-primary/55 mt-2 text-xs">
-            Izdajatelj, kot je vpisan v MOSS.
-          </p>
-        </Fact>
+        </SideSection>
       )}
-    </dl>
-  );
-}
-
-function AgendaScale({ value }: { value: number }) {
-  return (
-    <div className="max-w-sm">
-      <div className="relative h-2 rounded-full bg-gradient-to-r from-[#FA2D36]/60 via-current/10 to-[#2D7EFF]/60">
-        <span className="bg-primary/40 absolute top-1/2 left-1/2 h-3.5 w-px -translate-y-1/2" />
-        <span
-          className="bg-primary ring-surface absolute top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2"
-          style={{ left: `${((value + 1) / 2) * 100}%` }}
-        />
-      </div>
-      <div className="text-primary/55 mt-1.5 flex justify-between text-xs">
-        <span>kot levi mediji</span>
-        <span>povprečje</span>
-        <span>kot desni mediji</span>
-      </div>
     </div>
   );
 }

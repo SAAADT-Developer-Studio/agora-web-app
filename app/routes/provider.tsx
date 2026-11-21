@@ -6,14 +6,13 @@ import {
   newsMediaOrganizationJsonLd,
   SITE_URL,
 } from "~/lib/seo";
-import { ArrowLeft, CircleCheck, Globe } from "lucide-react";
+import { ArrowLeft, Globe } from "lucide-react";
 import { getProviderImageUrl } from "~/components/provider-image";
 import { ErrorComponent } from "~/components/error-component";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, post } from "~/lib/fetcher";
 import type { VoteInput } from "~/routes/api/post-vote";
 import { type Vote } from "~/routes/api/get-vote";
-import { cn } from "~/lib/utils";
 import { removeUrlProtocol } from "~/utils/removeUrlProtocol";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import { biasSide } from "~/utils/biasSide";
@@ -21,7 +20,7 @@ import { useLocalStorage } from "~/hooks/use-local-storage";
 import { Spinner } from "~/components/ui/spinner";
 import { toast } from "sonner";
 import type { ProviderSuggestionsData } from "~/routes/api/get-provider-suggestions";
-import { BiasRatingKey, type BiasRating } from "~/enums/biasRatingKey";
+import type { BiasRating } from "~/enums/biasRatingKey";
 import { BiasInfoTooltip } from "~/components/bias-info-tooltip";
 import { vote } from "~/drizzle/schema";
 import { RelativeTime } from "~/components/render-clock";
@@ -35,11 +34,13 @@ import {
   summarizeVotes,
 } from "~/lib/services/mediaLandscape";
 import {
-  OutletProfile,
+  OutletCoverage,
+  OutletSidebar,
+  OutletVoting,
+  VoteSuggestions,
   type RelatedOutlet,
 } from "~/components/mediji/outlet-profile";
 import {
-  BIAS_FILL,
   BiasChip,
   LimitedDataNote,
   OutletLogo,
@@ -224,76 +225,39 @@ export default function ProviderPage({ loaderData }: Route.ComponentProps) {
         </div>
       </PageHeader>
 
-      <OutletProfile
-        outlet={outlet}
-        related={related}
-        bigStoriesTotal={bigStoriesTotal}
-        windowDays={windowDays}
-        voting={
-          <div className="mt-4">
-            <p className="text-primary/70 text-sm font-semibold">
-              Kam po tvoje spada {provider.name}?
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {Object.values(BiasRatingKey).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => mutation.mutate(value)}
-                  disabled={mutation.isPending}
-                  aria-pressed={voteValue === value}
-                  className={cn(
-                    "text-primary flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors disabled:cursor-wait",
-                    voteValue === value
-                      ? "border-primary bg-primary/8"
-                      : "hover:border-primary/40 border-current/15",
-                  )}
-                >
-                  <span
-                    className={cn("size-2.5 rounded-full", BIAS_FILL[value])}
-                  />
-                  {biasKeyToLabel(value)}
-                  <span className="text-primary/50 font-normal tabular-nums">
-                    {outlet.votes.byRating[value]}
-                  </span>
-                  {voteValue === value &&
-                    (mutation.isPending ? (
-                      <Spinner className="size-3 fill-current" />
-                    ) : (
-                      <CircleCheck className="size-4" />
-                    ))}
-                </button>
-              ))}
-            </div>
-          </div>
-        }
-      />
-
-      {voteValue && !voteSuggestions.isError && (
-        <section className="animate-in slide-in-from-top-4 fade-in mt-12 duration-500">
-          <h2 className="text-primary text-xl font-bold md:text-2xl">
-            Glasuj še za druge medije
-          </h2>
-          {voteSuggestions.isLoading && (
-            <Spinner className="m-auto mt-6 size-8" />
-          )}
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {voteSuggestions.data?.providers.map((p) => (
-              <li key={p.key}>
-                <Link
-                  to={href("/medij/:providerKey", { providerKey: p.key })}
-                  prefetch="intent"
-                  className="hover:bg-primary/5 flex items-center gap-2 rounded-lg border border-current/10 py-1 pr-2.5 pl-1 transition-colors"
-                >
-                  <OutletLogo outlet={p} className="size-8" />
-                  <span className="text-sm font-semibold">{p.name}</span>
-                  <BiasChip rating={p.biasRating} />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <div className="grid gap-x-10 gap-y-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="flex min-w-0 flex-col gap-10">
+          <OutletVoting
+            outlet={outlet}
+            voteValue={voteValue}
+            pending={mutation.isPending}
+            onVote={(value) => mutation.mutate(value)}
+          >
+            {voteValue &&
+              !voteSuggestions.isError &&
+              (voteSuggestions.isLoading ? (
+                <Spinner className="m-auto mt-5 size-6" />
+              ) : voteSuggestions.data?.providers.length ? (
+                <VoteSuggestions
+                  outlets={voteSuggestions.data.providers.map((p) => ({
+                    key: p.key,
+                    name: p.name,
+                    biasRating: p.biasRating as RelatedOutlet["biasRating"],
+                    owner: null,
+                  }))}
+                />
+              ) : null)}
+          </OutletVoting>
+          <OutletCoverage
+            outlet={outlet}
+            bigStoriesTotal={bigStoriesTotal}
+            windowDays={windowDays}
+          />
+        </div>
+        <aside>
+          <OutletSidebar outlet={outlet} related={related} />
+        </aside>
+      </div>
     </Page>
   );
 }

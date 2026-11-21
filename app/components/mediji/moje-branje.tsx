@@ -10,6 +10,7 @@ import { cn } from "~/lib/utils";
 import type { BiasSide } from "~/utils/biasSide";
 import {
   BiasChip,
+  InfoTip,
   LimitedDataNote,
   MeterBar,
   OutletLogo,
@@ -96,14 +97,23 @@ export function MojeBranje({ data }: { data: MediaLandscape }) {
     <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="min-w-0 lg:order-1">
         <SideTabs value={filter} onChange={setFilter} />
-        <div
-          className="text-primary/55 mt-5 hidden grid-cols-[minmax(0,1fr)_120px_150px_36px] gap-4 border-b border-current/10 px-3 pb-2 text-xs font-semibold md:grid"
-          aria-hidden
-        >
-          <span>Medij</span>
-          <span>Mesečni doseg</span>
-          <span>Glavne zgodbe ({windowDays} dni)</span>
-          <span />
+        <div className="text-primary/55 mt-5 flex flex-wrap gap-x-4 gap-y-1 border-b border-current/10 px-3 pb-2 text-xs font-semibold md:grid md:grid-cols-[minmax(0,1fr)_120px_150px_36px] md:gap-4">
+          <span className="max-md:hidden">Medij</span>
+          <span className="flex items-center gap-1">
+            Mesečni doseg
+            <InfoTip label="Mesečni doseg">
+              Delež slovenskih uporabnikov spleta, ki medij obiščejo vsaj enkrat
+              na mesec. Vir: MOSS. Pri nekaterih medijih ni merjeno.
+            </InfoTip>
+          </span>
+          <span className="flex items-center gap-1">
+            Glavne zgodbe ({windowDays} dni)
+            <InfoTip label="Glavne zgodbe">
+              Delež od {bigStories.length} zgodb, o katerih je v zadnjih{" "}
+              {windowDays} dneh pisalo vsaj pet medijev, ki jih je pokril ta
+              medij.
+            </InfoTip>
+          </span>
         </div>
         <ul className="mt-2 flex flex-col gap-1 md:mt-0">
           {visible.map((outlet) => (

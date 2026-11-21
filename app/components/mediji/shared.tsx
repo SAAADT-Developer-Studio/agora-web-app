@@ -1,4 +1,11 @@
+import { useState, type ReactNode } from "react";
 import { href } from "react-router";
+import { Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { ProviderImage } from "~/components/provider-image";
 import { isCategoryKey, getCategory } from "~/config";
 import { BiasRatingKey, type BiasRating } from "~/enums/biasRatingKey";
@@ -8,7 +15,7 @@ import { biasKeyToColor } from "~/utils/biasKeyToColor";
 import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
 import type { BiasSide } from "~/utils/biasSide";
 
-const BIAS_ORDER = Object.values(BiasRatingKey) as BiasRating[];
+export const BIAS_ORDER = Object.values(BiasRatingKey) as BiasRating[];
 
 /** Fill for a bias rating inside bars and swatches (brand colours, center outlined). */
 export const BIAS_FILL: Record<BiasRating, string> = {
@@ -236,5 +243,37 @@ export function MeterBar({
         style={{ width: `${Math.max(0, Math.min(1, value)) * 100}%` }}
       />
     </div>
+  );
+}
+
+/** Small (i) that explains a label; opens on hover, focus, or tap. */
+export function InfoTip({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  // ponytail: controlled so a tap opens it too; Radix tooltips ignore touch.
+  const [open, setOpen] = useState(false);
+  return (
+    <Tooltip open={open} onOpenChange={setOpen}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Kaj pomeni: ${label}`}
+          onClick={() => setOpen((o) => !o)}
+          className="text-primary/45 hover:text-primary inline-flex size-4 shrink-0 items-center justify-center rounded-full"
+        >
+          <Info className="size-3.5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent
+        side="top"
+        className="max-w-64 text-left text-xs leading-snug"
+      >
+        {children}
+      </TooltipContent>
+    </Tooltip>
   );
 }
