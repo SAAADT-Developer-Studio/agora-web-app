@@ -54,7 +54,7 @@ export function BiasInfoTooltip({ iconClassName }: { iconClassName?: string }) {
             <div className="flex justify-end">
               <Link
                 to={href("/metodologija")}
-                className="text-electricblue text-sm hover:underline"
+                className="text-link text-sm hover:underline"
                 onClick={() => setOpen(false)}
               >
                 Več o metodologiji

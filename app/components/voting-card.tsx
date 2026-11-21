@@ -62,7 +62,7 @@ export function VotingCard({
 
       <Link
         to={href("/mediji")}
-        className="text-primary/60 hover:text-electricblue group border-primary/10 flex items-center gap-1 self-stretch border-t pt-3 text-sm font-semibold transition-colors"
+        className="text-primary/60 hover:text-link group border-primary/10 flex items-center gap-1 self-stretch border-t pt-3 text-sm font-semibold transition-colors"
       >
         Vsi mediji in ocene
         <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -91,7 +91,7 @@ function ProviderRow({ provider: p }: { provider: RandomProvider }) {
         />
 
         <div className="min-w-0 flex-1">
-          <p className="text-primary group-hover:text-electricblue truncate font-semibold transition-colors">
+          <p className="text-primary group-hover:text-link truncate font-semibold transition-colors">
             {name}
           </p>
           <div className="mt-1.5 flex items-center gap-2">

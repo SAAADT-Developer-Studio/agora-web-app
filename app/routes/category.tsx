@@ -6,7 +6,8 @@ import { useMediaQuery } from "~/hooks/use-media-query";
 import HeroArticles from "~/components/hero-articles";
 import { Article } from "~/components/article";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Loader } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useRef } from "react";
 import type { Database } from "~/lib/db";
 import { getMaxAge } from "~/utils/getMaxAge";
 import type { ArticleType } from "~/lib/services/ranking";
@@ -157,20 +158,86 @@ export default function CategoryPage({
               <Article key={article.id} {...article} />
             )),
           )}
+        {isFetchingNextPage &&
+          Array.from({ length: 6 }, (_, i) => <TileSkeleton key={i} />)}
       </div>
-      {hasNextPage && (
-        <button
-          className="bg-primary hover:bg-primary/80 text-primary-text mt-4 flex w-full cursor-pointer items-center justify-center rounded-md py-2"
-          onClick={() => fetchNextPage()}
-          disabled={isFetchingNextPage}
-        >
-          {isFetchingNextPage ? (
-            <Loader className="animate-spin" />
-          ) : (
-            "Naloži več člankov"
-          )}
-        </button>
-      )}
+      <LoadMore
+        loadedPages={data.pages.length}
+        hasNextPage={hasNextPage}
+        isFetching={isFetchingNextPage}
+        onLoad={fetchNextPage}
+      />
+    </div>
+  );
+}
+
+function TileSkeleton() {
+  return (
+    <div
+      aria-hidden
+      className="border-primary/10 bg-primary/[0.05] h-[240px] rounded-xl border motion-safe:animate-pulse"
+    />
+  );
+}
+
+/** Pages loaded on scroll before we ask; keeps the footer reachable. */
+const AUTO_LOAD_PAGES = 4;
+
+function LoadMore({
+  loadedPages,
+  hasNextPage,
+  isFetching,
+  onLoad,
+}: {
+  loadedPages: number;
+  hasNextPage: boolean;
+  isFetching: boolean;
+  onLoad: () => void;
+}) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const autoLoad = hasNextPage && loadedPages < AUTO_LOAD_PAGES;
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !autoLoad || isFetching) return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) onLoad();
+      },
+      { rootMargin: "800px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [autoLoad, isFetching, onLoad]);
+
+  if (!hasNextPage) {
+    if (loadedPages < 2) return null;
+    return (
+      <p className="text-primary/50 mt-10 flex items-center gap-4 text-sm font-medium">
+        <span className="bg-primary/10 h-px flex-1" />
+        To so vse zgodbe
+        <span className="bg-primary/10 h-px flex-1" />
+      </p>
+    );
+  }
+
+  if (autoLoad) {
+    return <div ref={sentinelRef} aria-hidden className="h-px" />;
+  }
+
+  return (
+    <div className="mt-10 flex items-center gap-4">
+      <span className="bg-primary/10 h-px flex-1" />
+      <button
+        type="button"
+        onClick={() => onLoad()}
+        disabled={isFetching}
+        className="border-primary/15 text-primary/80 hover:border-primary/30 hover:bg-primary/5 hover:text-primary focus-visible:ring-electricblue focus-visible:ring-offset-surface inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-60"
+      >
+        {isFetching ? "Nalagam …" : "Več zgodb"}
+        <ChevronDown aria-hidden className="size-4" />
+      </button>
+      <span className="bg-primary/10 h-px flex-1" />
     </div>
   );
 }

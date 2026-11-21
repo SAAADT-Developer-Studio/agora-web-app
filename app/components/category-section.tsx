@@ -56,7 +56,7 @@ export default function CategorySection({
         action={
           <Link
             to={href("/:category", { category: categoryKey })}
-            className="text-primary/60 hover:text-electricblue group flex shrink-0 items-center gap-1 text-sm font-semibold transition-colors"
+            className="text-primary/60 hover:text-link group flex shrink-0 items-center gap-1 text-sm font-semibold transition-colors"
           >
             Vse novice
             <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />

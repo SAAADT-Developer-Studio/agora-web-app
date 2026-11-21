@@ -124,7 +124,7 @@ export default function StoryPage({ data }: { data: StoryPageData }) {
   return (
     <article className="mx-auto max-w-6xl px-1 py-1 md:py-6">
       <nav className="text-primary/60 mb-6 flex items-center gap-3 text-xs font-semibold tracking-widest uppercase md:mb-8">
-        <Link to="/" className="text-primary hover:text-electricblue">
+        <Link to="/" className="text-primary hover:text-link">
           Vidik
         </Link>
         <div className="flex max-h-5 flex-wrap gap-3 overflow-clip">
@@ -563,7 +563,7 @@ function StoryArticleCard({
           )}
         </div>
 
-        <h4 className="text-primary group-hover:text-electricblue line-clamp-2 text-base leading-snug font-semibold text-pretty transition-colors md:text-lg">
+        <h4 className="text-primary group-hover:text-link line-clamp-2 text-base leading-snug font-semibold text-pretty transition-colors md:text-lg">
           {article.title}
           <ArrowUpRight className="ml-1 inline size-4 opacity-0 transition-opacity group-hover:opacity-60" />
         </h4>
@@ -648,7 +648,7 @@ function SocialMentions({
                   <MessageCircle className="size-7 shrink-0" />
                 )}
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <p className="text-primary group-hover:text-electricblue line-clamp-2 text-sm leading-snug font-semibold transition-colors">
+                  <p className="text-primary group-hover:text-link line-clamp-2 text-sm leading-snug font-semibold transition-colors">
                     {mention.title ?? article?.title ?? mention.url}
                   </p>
                   <p
@@ -685,7 +685,7 @@ function SocialMentions({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-electricblue mt-3 hidden text-xs font-semibold hover:underline sm:block"
+          className="text-link mt-3 hidden text-xs font-semibold hover:underline sm:block"
         >
           {expanded ? "Pokaži manj" : `Pokaži vse (${mentions.length})`}
         </button>
