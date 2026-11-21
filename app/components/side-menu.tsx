@@ -102,7 +102,7 @@ function MenuFooter() {
   return (
     <div className="border-primary/10 flex shrink-0 items-center justify-between border-t px-3 py-2">
       <SocialLinks />
-      <ThemeSwitch variant="icon" className="text-surface-text/70" />
+      <ThemeSwitch className="text-surface-text/70" />
     </div>
   );
 }
