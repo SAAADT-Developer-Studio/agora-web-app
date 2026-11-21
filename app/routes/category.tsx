@@ -12,7 +12,11 @@ import { getMaxAge } from "~/utils/getMaxAge";
 import type { ArticleType } from "~/lib/services/ranking";
 import { getStoryCategoryArticles } from "~/lib/services/storyRanking";
 import { getAppContext } from "~/lib/appContext";
-import { getCategoryCacheKey } from "~/lib/kvCache/keys";
+import {
+  FEED_EXPIRATION_TTL,
+  FEED_STALE_AFTER,
+  getCategoryCacheKey,
+} from "~/lib/kvCache/keys";
 import { get } from "~/lib/fetcher";
 import {
   breadcrumbJsonLd,
@@ -67,7 +71,8 @@ export async function loader({ params, context }: Route.LoaderArgs) {
         async () => await fetchCategoryArticlesData({ db, category }),
         {
           key: getCategoryCacheKey(category),
-          expirationTtl: 10 * 60,
+          staleAfter: FEED_STALE_AFTER,
+          expirationTtl: FEED_EXPIRATION_TTL,
         },
       ),
   );

@@ -9,7 +9,11 @@ import { data } from "react-router";
 import { getMaxAge } from "~/utils/getMaxAge";
 import { ErrorComponent } from "~/components/error-component";
 import { getAppContext } from "~/lib/appContext";
-import { HOME_CACHE_KEY } from "~/lib/kvCache/keys";
+import {
+  FEED_EXPIRATION_TTL,
+  FEED_STALE_AFTER,
+  HOME_CACHE_KEY,
+} from "~/lib/kvCache/keys";
 
 export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
@@ -40,7 +44,8 @@ export async function loader({ context }: Route.LoaderArgs) {
           }),
         {
           key: HOME_CACHE_KEY,
-          expirationTtl: 10 * 60,
+          staleAfter: FEED_STALE_AFTER,
+          expirationTtl: FEED_EXPIRATION_TTL,
         },
       ),
   );

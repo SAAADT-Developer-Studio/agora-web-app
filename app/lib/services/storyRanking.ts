@@ -6,7 +6,7 @@ import {
   story,
   storyArticle,
 } from "~/drizzle/schema";
-import { sql } from "drizzle-orm";
+import { sql, type SQL } from "drizzle-orm";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import {
   extractCarouselImages,
@@ -73,6 +73,46 @@ export const STORY_WINDOW_DAYS = 14;
 
 export const recentStoriesFilter = sql`${story.lastArticlePublishedAt} > now() - make_interval(days => ${STORY_WINDOW_DAYS})`;
 
+/**
+ * Per-story aggregates, pre-grouped so the scoring query joins one row per
+ * story. Joining the per-provider counts or `article_social_post` straight
+ * into the article rows multiplied them, which inflated `count(article.id)`
+ * and `sum(llm_rank)` and made the query slow.
+ *
+ * Dominance always looks at every article in the story; social posts only at
+ * articles that pass `articleFilter`, like the scoring query.
+ */
+function storyAggregateCtes(articleFilter: SQL) {
+  return sql`
+  story_dominance AS (
+    SELECT story_id, max(provider_article_count) as max_provider_articles
+    FROM (
+      SELECT
+        ${storyArticle.storyId} as story_id,
+        count(*) as provider_article_count
+      FROM ${storyArticle}
+      INNER JOIN ${article} ON ${storyArticle.articleId} = ${article.id}
+      INNER JOIN ${story} ON ${story.id} = ${storyArticle.storyId}
+      WHERE ${recentStoriesFilter}
+      GROUP BY ${storyArticle.storyId}, ${article.newsProviderKey}
+    ) per_provider
+    GROUP BY story_id
+  ),
+
+  story_social AS (
+    SELECT
+      ${storyArticle.storyId} as story_id,
+      count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count
+    FROM ${articleSocialPost}
+    INNER JOIN ${storyArticle} ON ${storyArticle.articleId} = ${articleSocialPost.articleId}
+    INNER JOIN ${article} ON ${storyArticle.articleId} = ${article.id}
+    INNER JOIN ${story} ON ${story.id} = ${storyArticle.storyId}
+    WHERE ${recentStoriesFilter}
+      ${articleFilter}
+    GROUP BY ${storyArticle.storyId}
+  )`;
+}
+
 export async function getStoryHomeArticles({
   db,
   count,
@@ -84,17 +124,7 @@ export async function getStoryHomeArticles({
   side?: BlindspotSide;
 }): Promise<ArticleType[]> {
   const topStoryIds = await db.execute(sql`
-  WITH provider_counts AS (
-    SELECT
-      ${storyArticle.storyId} as story_id,
-      ${article.newsProviderKey} as provider_key,
-      count(*) as provider_article_count
-    FROM ${storyArticle}
-    INNER JOIN ${article} ON ${storyArticle.articleId} = ${article.id}
-    INNER JOIN ${story} ON ${story.id} = ${storyArticle.storyId}
-    WHERE ${recentStoriesFilter}
-    GROUP BY ${storyArticle.storyId}, ${article.newsProviderKey}
-  ),
+  WITH ${storyAggregateCtes(sql``)},
 
   cluster_scores AS (
     SELECT
@@ -103,15 +133,15 @@ export async function getStoryHomeArticles({
       sum(${article.llmRank}) as sum_llm_rank,
       ${recencyScoreExpr} as recency_score,
       ${categoryScoreExpr} as category_score,
-      count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count,
-      max(pc.provider_article_count) as max_provider_articles,
+      coalesce(max(ss.social_post_count), 0) as social_post_count,
+      max(sd.max_provider_articles) as max_provider_articles,
       ${biasCountColumns}
     FROM ${story}
     INNER JOIN ${storyArticle} ON ${story.id} = ${storyArticle.storyId}
     INNER JOIN ${article} ON ${storyArticle.articleId} = ${article.id}
-    LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
     LEFT JOIN ${newsProvider} ON ${article.newsProviderKey} = ${newsProvider.key}
-    LEFT JOIN provider_counts pc ON pc.story_id = ${story.id}
+    LEFT JOIN story_dominance sd ON sd.story_id = ${story.id}
+    LEFT JOIN story_social ss ON ss.story_id = ${story.id}
     WHERE ${recentStoriesFilter}
     GROUP BY ${story.id}
     HAVING count(${article.id}) > 0
@@ -179,18 +209,9 @@ export async function getStoryCategoryArticles({
   count: number;
   offset?: number;
 }): Promise<ArticleType[]> {
+  const categoryFilter = sql`AND (${category} = ANY(ARRAY[${article.categories}[1], ${article.categories}[2]]))`;
   const topStoryIds = await db.execute(sql`
-  WITH provider_counts AS (
-    SELECT
-      ${storyArticle.storyId} as story_id,
-      ${article.newsProviderKey} as provider_key,
-      count(*) as provider_article_count
-    FROM ${storyArticle}
-    INNER JOIN ${article} ON ${storyArticle.articleId} = ${article.id}
-    INNER JOIN ${story} ON ${story.id} = ${storyArticle.storyId}
-    WHERE ${recentStoriesFilter}
-    GROUP BY ${storyArticle.storyId}, ${article.newsProviderKey}
-  ),
+  WITH ${storyAggregateCtes(categoryFilter)},
 
   cluster_scores AS (
     SELECT
@@ -198,15 +219,15 @@ export async function getStoryCategoryArticles({
       count(${article.id}) as article_count,
       sum(${article.llmRank}) as sum_llm_rank,
       ${recencyScoreExpr} as recency_score,
-      count(DISTINCT ${articleSocialPost.socialPostId}) as social_post_count,
-      max(pc.provider_article_count) as max_provider_articles
+      coalesce(max(ss.social_post_count), 0) as social_post_count,
+      max(sd.max_provider_articles) as max_provider_articles
     FROM ${story}
     INNER JOIN ${storyArticle} ON ${story.id} = ${storyArticle.storyId}
     INNER JOIN ${article} ON ${storyArticle.articleId} = ${article.id}
-    LEFT JOIN ${articleSocialPost} ON ${article.id} = ${articleSocialPost.articleId}
-    LEFT JOIN provider_counts pc ON pc.story_id = ${story.id}
+    LEFT JOIN story_dominance sd ON sd.story_id = ${story.id}
+    LEFT JOIN story_social ss ON ss.story_id = ${story.id}
     WHERE ${recentStoriesFilter}
-      AND (${category} = ANY(ARRAY[${article.categories}[1], ${article.categories}[2]]))
+      ${categoryFilter}
       ${ignoredClusterIds.length > 0 ? sql`AND ${story.id} NOT IN ${ignoredClusterIds}` : sql``}
     GROUP BY ${story.id}
     HAVING count(${article.id}) > 0

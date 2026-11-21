@@ -4,6 +4,7 @@ import type { Route } from "./+types/populate-cache";
 import { fetchHomeArticlesData } from "~/lib/services/storyRanking";
 import { config } from "~/config";
 import {
+  FEED_EXPIRATION_TTL,
   getCategoryCacheKey,
   HOME_CACHE_KEY,
   META_CACHE_KEY,
@@ -23,7 +24,9 @@ export async function action({ context }: Route.ActionArgs) {
 
   const articles = await fetchHomeArticlesData({ db });
 
-  kvCache.putDeferred(HOME_CACHE_KEY, articles, { expirationTtl: 30 * 60 });
+  kvCache.putDeferred(HOME_CACHE_KEY, articles, {
+    expirationTtl: FEED_EXPIRATION_TTL,
+  });
 
   const categoryResults = await Promise.allSettled(
     config.categories.map((c) =>
@@ -35,7 +38,7 @@ export async function action({ context }: Route.ActionArgs) {
     if (result.status === "fulfilled") {
       const category = config.categories[index].key;
       kvCache.putDeferred(getCategoryCacheKey(category), result.value, {
-        expirationTtl: 30 * 60,
+        expirationTtl: FEED_EXPIRATION_TTL,
       });
     } else {
       console.error(
