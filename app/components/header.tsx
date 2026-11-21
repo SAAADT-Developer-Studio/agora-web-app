@@ -1,29 +1,80 @@
-import { useEffect, useState } from "react";
-import { Link, NavLink, href } from "react-router";
-import { formatSlovenianDateTime } from "~/lib/date";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { NavLink, useLocation } from "react-router";
+import { Menu } from "lucide-react";
+import { formatSlovenianWeekdayDate } from "~/lib/date";
 import { useClientNow } from "~/components/render-clock";
 import { config } from "~/config";
-import { Menu, X } from "lucide-react";
-import logo from "~/assets/logo.svg";
-import logoLight from "~/assets/logo-light.svg";
-import logoNoText from "~/assets/logo-no-text.svg";
-import { ThemeSwitch } from "./theme-switch";
 import { cn } from "~/lib/utils";
 import { LoadingBar } from "~/components/loading-bar";
+import { SideMenu, Wordmark, sentenceCase } from "~/components/side-menu";
+import { ThemeSwitch } from "~/components/theme-switch";
 
-const SIDEPANEL_WIDTH = 280;
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-function HeaderClock() {
-  const now = useClientNow();
+function HeaderDate() {
+  const now = new Date(useClientNow());
   return (
     <span
-      className="text-vidikwhite hidden text-xs md:block"
-      // Live clock. Hydration paints the server render time; the browser
-      // time replaces it after mount, which is the one mismatch we allow.
+      className="text-surface-text/60 hidden text-[13px] tabular-nums md:block"
+      // Hydration paints the server render date; the browser date replaces
+      // it after mount.
       suppressHydrationWarning
     >
-      {formatSlovenianDateTime(new Date(now))}
+      {sentenceCase(formatSlovenianWeekdayDate(now))}
     </span>
+  );
+}
+
+/**
+ * Category row. On narrow screens it scrolls sideways instead of hiding, and
+ * keeps the active category in view. The active category is underlined with
+ * the left/center/right bar.
+ */
+function CategoryNav() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { pathname } = useLocation();
+
+  useIsomorphicLayoutEffect(() => {
+    const scroller = ref.current;
+    const active = scroller?.querySelector<HTMLElement>(
+      '[aria-current="page"]',
+    );
+    if (!scroller || !active) return;
+    if (scroller.scrollWidth <= scroller.clientWidth) return;
+    scroller.scrollLeft =
+      active.offsetLeft - scroller.clientWidth / 2 + active.offsetWidth / 2;
+  }, [pathname]);
+
+  return (
+    <nav aria-label="Rubrike" className="border-primary/10 h-11 border-t">
+      <div
+        ref={ref}
+        className="flex h-full overflow-x-auto [mask-image:linear-gradient(to_right,transparent,black_16px,black_calc(100%-24px),transparent)] px-2 [scrollbar-width:none] md:justify-center md:[mask-image:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {config.navigation.map((item) => (
+          <NavLink
+            to={item.path}
+            key={item.path}
+            prefetch="intent"
+            end
+            className={({ isActive, isPending }) =>
+              cn(
+                "relative flex shrink-0 items-center px-3 text-[15px] text-nowrap transition-colors",
+                "after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:transition-opacity",
+                "after:bg-[linear-gradient(to_right,var(--color-leftred)_0_33.3%,var(--color-primary)_33.3%_66.6%,var(--color-electricblue)_66.6%)]",
+                isActive
+                  ? "font-semibold after:opacity-100"
+                  : "text-surface-text/70 hover:text-surface-text after:opacity-0",
+                isPending && "animate-pulse",
+              )
+            }
+          >
+            {sentenceCase(item.name)}
+          </NavLink>
+        ))}
+      </div>
+    </nav>
   );
 }
 
@@ -39,130 +90,29 @@ export function Header() {
   }, []);
 
   return (
-    <header className="bg-header sticky top-0 z-30">
-      <LoadingBar />
-      <div className="flex h-[62px] items-center justify-between pr-4 pl-6 sm:pr-8">
-        <div className="flex items-center justify-between gap-4">
+    <>
+      <header className="bg-surface text-surface-text border-primary/10 sticky top-0 z-30 border-b">
+        <LoadingBar />
+        <div className="mx-auto flex h-14 max-w-[1200px] items-center gap-3 px-4 md:px-6">
           <button
             type="button"
-            aria-label="Open menu"
+            aria-label="Odpri meni"
             aria-expanded={open}
+            aria-controls="site-menu"
             onClick={() => setOpen(true)}
-            className="hover:bg-primary/10 focus:ring-primary/40 inline-flex items-center justify-center rounded-xl p-1 focus:ring-2 focus:outline-none sm:p-2 xl:hidden"
+            className="-ml-1.5 grid size-9 shrink-0 place-items-center rounded-full transition-colors hover:bg-current/10 focus-visible:ring-2 focus-visible:ring-current/50 focus-visible:outline-none"
           >
-            <Menu className="h-6 w-6" color="var(--color-vidikwhite)" />
+            <Menu className="size-[22px]" aria-hidden />
           </button>
-          <div className="bg-vidikwhite h-10 w-[1px] opacity-30 xl:hidden" />
-          <Link to="/" prefetch="intent">
-            <div className="flex items-center gap-[5px]">
-              <img src={logoNoText} alt="logo" className="h-6 w-6" />
-              <h1 className="font-sarabun text-vidikwhite text-[23px] font-medium tracking-wide lowercase">
-                Vidik
-              </h1>
-            </div>
-          </Link>
+          <Wordmark />
+          <div className="ml-auto flex items-center gap-3">
+            <HeaderDate />
+            <ThemeSwitch className="-mr-1.5" />
+          </div>
         </div>
-        <div className="flex items-center gap-5">
-          <HeaderClock />
-          <ThemeSwitch />
-          <Link
-            to={href("/mediji")}
-            className="bg-vidikwhite dark:text-vidikdarkgray hover:bg-vidikwhite/90 text-md rounded-lg px-3 py-1 font-medium text-black"
-            prefetch="intent"
-          >
-            Mediji
-          </Link>
-        </div>
-      </div>
-
-      <nav className="border-primary/10 bg-surface-light hidden w-full justify-center border-b md:flex">
-        <div className="flex overflow-hidden">
-          {config.navigation.map((item) => (
-            <NavLink
-              to={item.path}
-              key={item.path}
-              prefetch="intent"
-              end
-              className={({ isActive, isPending }) =>
-                cn(
-                  "text-surface-light-text/70 hover:text-surface-light-text px-4 py-3.5 text-sm font-medium text-nowrap transition-colors",
-                  isPending &&
-                    "border-surface-light-text/30 animate-pulse border-b",
-                  isActive &&
-                    "text-surface-light-text border-surface-light-text border-b",
-                )
-              }
-            >
-              {item.name}
-            </NavLink>
-          ))}
-        </div>
-      </nav>
-
-      <aside
-        aria-hidden={!open}
-        className={cn(
-          "bg-surface border-primary/10 fixed top-0 left-0 z-40 h-full w-[280px] border-r xl:hidden",
-          "transition-transform duration-200 ease-out",
-          open ? "translate-x-0" : "-translate-x-full",
-        )}
-        style={{ width: SIDEPANEL_WIDTH }}
-      >
-        <div className="flex h-[62px] items-center justify-between px-4">
-          <Link
-            to="/"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-3"
-          >
-            <img src={logo} alt="logo" className="hidden h-6 w-20 dark:block" />
-            <img
-              src={logoLight}
-              alt="logo"
-              className="block h-6 w-20 dark:hidden"
-            />
-          </Link>
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setOpen(false)}
-            className="hover:bg-primary/10 focus:ring-primary/40 inline-flex items-center justify-center rounded-xl p-2 focus:ring-2 focus:outline-none"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-        <div className="border-primary/10 border-b" />
-
-        <nav className="p-2">
-          {config.navigation.map((item) => (
-            <NavLink
-              to={item.path}
-              key={item.path}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                cn(
-                  "block rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary/10 text-surface-light-text"
-                    : "text-surface-light-text/80 hover:text-surface-light-text hover:bg-primary/5",
-                )
-              }
-            >
-              {item.name}
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
-
-      <button
-        aria-hidden={!open}
-        tabIndex={-1}
-        onClick={() => setOpen(false)}
-        className={cn(
-          "fixed inset-0 z-30 bg-black/30 backdrop-blur-sm xl:hidden",
-          "transition-opacity duration-200",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-      />
-    </header>
+        <CategoryNav />
+      </header>
+      <SideMenu open={open} onClose={() => setOpen(false)} />
+    </>
   );
 }

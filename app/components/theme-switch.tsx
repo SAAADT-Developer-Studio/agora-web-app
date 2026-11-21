@@ -1,74 +1,31 @@
-import { Sun, Moon } from "lucide-react";
-import * as React from "react";
-import * as SwitchPrimitive from "@radix-ui/react-switch";
+import { Moon, Sun } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 import { useLocalStorage } from "~/hooks/use-local-storage";
-import moonIcon from "~/assets/utrinki/moon.svg";
 
-export function ThemeSwitch({
-  className,
-  variant = "switch",
-  ...props
-}: React.ComponentProps<typeof SwitchPrimitive.Root> & {
-  /** `reel` is the round control on the Utrinki top bar. */
-  variant?: "switch" | "reel";
-}) {
+/** Round icon button that flips light/dark and inherits the text color. */
+export function ThemeSwitch({ className }: { className?: string }) {
   const [theme, setTheme] = useLocalStorage("theme", "light");
+  const dark = theme === "dark";
 
   const handleSwitch = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
+    const newTheme = dark ? "light" : "dark";
     document.documentElement.classList.remove(theme);
     document.documentElement.classList.add(newTheme);
     setTheme(newTheme);
   };
 
-  if (variant === "reel") {
-    const dark = theme === "dark";
-    return (
-      <button
-        type="button"
-        onClick={handleSwitch}
-        aria-label={dark ? "Preklopi na svetlo temo" : "Preklopi na temno temo"}
-        className={cn(
-          "grid size-[34px] shrink-0 place-items-center rounded-full bg-[#414141] focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:outline-none",
-          className,
-        )}
-      >
-        {dark ? (
-          <img src={moonIcon} alt="" width={18} height={18} />
-        ) : (
-          <Sun size={18} color="#F3F8FE" aria-hidden />
-        )}
-      </button>
-    );
-  }
-
   return (
-    <SwitchPrimitive.Root
-      data-slot="switch"
+    <button
+      type="button"
+      onClick={handleSwitch}
+      aria-label={dark ? "Preklopi na svetlo temo" : "Preklopi na temno temo"}
       className={cn(
-        "bg-white",
-        "peer focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-vidikdarkgray inline-flex h-7 w-10 shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+        "grid size-9 shrink-0 place-items-center rounded-full transition-colors hover:bg-current/10 focus-visible:ring-2 focus-visible:ring-current/50 focus-visible:outline-none",
         className,
       )}
-      onCheckedChange={handleSwitch}
-      checked={theme === "light"}
-      {...props}
     >
-      <SwitchPrimitive.Thumb
-        data-slot="switch-thumb"
-        className={cn(
-          "pointer-events-none flex size-6 items-center justify-center rounded-full bg-black ring-0 transition-transform dark:bg-white",
-          "translate-x-[1px] dark:translate-x-[calc(50%+1px)]",
-        )}
-      >
-        <Moon
-          className="fill-vidikblack stroke-vidikblack hidden dark:block"
-          size={15}
-        />
-        <Sun className="fill-vidikblack stroke-white dark:hidden" size={15} />
-      </SwitchPrimitive.Thumb>
-    </SwitchPrimitive.Root>
+      {dark ? <Moon size={18} aria-hidden /> : <Sun size={18} aria-hidden />}
+    </button>
   );
 }
