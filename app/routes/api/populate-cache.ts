@@ -1,7 +1,10 @@
 import { fetchCategoryArticlesData } from "~/routes/category";
 import { getAppContext } from "~/lib/appContext";
 import type { Route } from "./+types/populate-cache";
-import { fetchHomeArticlesData } from "~/lib/services/storyRanking";
+import {
+  createObservedRankSession,
+  fetchHomeArticlesData,
+} from "~/lib/services/storyRanking";
 import { config } from "~/config";
 import {
   getCategoryCacheKey,
@@ -20,10 +23,15 @@ export type CacheMeta = {
 export async function action({ context }: Route.ActionArgs) {
   const { db, kvCache, cloudflare } = getAppContext(context);
   const storyRankOrder = storyRankOrderFromEnv(cloudflare.env);
+  const rankSession = createObservedRankSession();
 
   console.log("Populating cache...");
 
-  const articles = await fetchHomeArticlesData({ db, storyRankOrder });
+  const articles = await fetchHomeArticlesData({
+    db,
+    storyRankOrder,
+    rankSession,
+  });
 
   kvCache.putDeferred(homeCacheKey(storyRankOrder), articles, {
     expirationTtl: 30 * 60,
@@ -35,6 +43,7 @@ export async function action({ context }: Route.ActionArgs) {
         db,
         category: c.key,
         storyRankOrder,
+        rankSession,
       }),
     ),
   );

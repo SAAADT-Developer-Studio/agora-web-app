@@ -12,7 +12,7 @@ import {
   STORY_RANKING_SUCCEEDED,
   compareCoalescedRank,
   freshStoryRankingRunSql,
-  isMissingRankingSchema,
+  observedRankFailureLabel,
   storyRankOrderEnabled,
   storyRankOrderFromEnv,
 } from "~/lib/storyRankOrder";
@@ -82,20 +82,21 @@ describe("compareCoalescedRank", () => {
   });
 });
 
-describe("isMissingRankingSchema", () => {
-  it("recognizes a missing relation or column, including a wrapped cause", () => {
+describe("observedRankFailureLabel", () => {
+  it("includes the postgres code, including when it is wrapped", () => {
     expect(
-      isMissingRankingSchema(
-        Object.assign(new Error("nope"), { code: "42P01" }),
+      observedRankFailureLabel(
+        Object.assign(new Error("permission denied for table story_rank"), {
+          code: "42501",
+        }),
       ),
-    ).toBe(true);
-    expect(isMissingRankingSchema({ cause: { code: "42703" } })).toBe(true);
-    expect(
-      isMissingRankingSchema(
-        Object.assign(new Error("timeout"), { code: "57014" }),
-      ),
-    ).toBe(false);
-    expect(isMissingRankingSchema(new Error("other"))).toBe(false);
+    ).toBe("42501 permission denied for table story_rank");
+    expect(observedRankFailureLabel({ cause: { code: "42703" } })).toBe(
+      "42703 unknown error",
+    );
+    expect(observedRankFailureLabel(new Error("statement timeout"))).toBe(
+      "statement timeout",
+    );
   });
 });
 

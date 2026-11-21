@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { config, CategoryKey } from "~/config";
 import type { Database } from "~/lib/db";
 import {
+  createObservedRankSession,
   fetchHomeArticlesData,
   getStoryCategoryArticles,
   getStoryHomeArticles,
@@ -130,13 +131,49 @@ describe("getStoryHomeArticles", () => {
     expect(warn).toHaveBeenCalledOnce();
   });
 
-  it("does not hide other database errors", async () => {
-    const { db } = executor(() => {
-      throw Object.assign(new Error("statement timeout"), { code: "57014" });
+  it("falls back when story_rank rejects the role", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    let attempt = 0;
+    const { db, calls } = executor(() => {
+      attempt += 1;
+      if (attempt === 1) {
+        throw Object.assign(
+          new Error("permission denied for table story_rank"),
+          { code: "42501" },
+        );
+      }
+      return { rows: [] };
     });
     await expect(
       getStoryHomeArticles({ db, count: 6, observedRunId: 42 }),
-    ).rejects.toThrow(/statement timeout/);
+    ).resolves.toEqual([]);
+    expect(calls[1].sql).not.toMatch(/story_rank/);
+    expect(calls[1].sql).toMatch(/order by combined_score desc/i);
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn.mock.calls[0]?.[0]).toMatch(/42501/);
+  });
+
+  it("falls back on a timeout and on an error without a postgres code", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    for (const failure of [
+      Object.assign(new Error("canceling statement due to statement timeout"), {
+        code: "57014",
+      }),
+      new Error("connection reset"),
+    ]) {
+      let attempt = 0;
+      const { db, calls } = executor(() => {
+        attempt += 1;
+        if (attempt === 1) throw failure;
+        return { rows: [] };
+      });
+      await expect(
+        getStoryHomeArticles({ db, count: 6, observedRunId: 42 }),
+      ).resolves.toEqual([]);
+      expect(calls[1].sql).toMatch(/order by combined_score desc/i);
+      expect(calls[1].sql).not.toMatch(/story_rank/);
+    }
+    expect(warn).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -185,6 +222,34 @@ describe("resolveObservedStoryRankRun", () => {
     ).resolves.toBeUndefined();
     expect(warn).toHaveBeenCalledOnce();
   });
+
+  it("falls back when the role cannot read ranking_run", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { db } = executor(() => {
+      throw Object.assign(
+        new Error("permission denied for table ranking_run"),
+        {
+          code: "42501",
+        },
+      );
+    });
+    await expect(
+      resolveObservedStoryRankRun(db, true),
+    ).resolves.toBeUndefined();
+    expect(warn).toHaveBeenCalledOnce();
+    expect(warn.mock.calls[0]?.[0]).toMatch(/42501/);
+  });
+
+  it("falls back when the lookup throws without a postgres code", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { db } = executor(() => {
+      throw new Error("connect ECONNRESET");
+    });
+    await expect(
+      resolveObservedStoryRankRun(db, true),
+    ).resolves.toBeUndefined();
+    expect(warn).toHaveBeenCalledOnce();
+  });
 });
 
 describe("fetchHomeArticlesData", () => {
@@ -219,6 +284,47 @@ describe("fetchHomeArticlesData", () => {
       expect(section.sql).toMatch(/left join story_rank/i);
       expect(section.params).toContain(9);
     }
+  });
+
+  it("logs a story_rank failure once and does not query it again", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { db, calls } = executor((compiled) => {
+      if (/from ranking_run/i.test(compiled.sql)) return { rows: [{ id: 9 }] };
+      if (/story_rank/i.test(compiled.sql)) {
+        throw Object.assign(
+          new Error("permission denied for table story_rank"),
+          { code: "42501" },
+        );
+      }
+      return { rows: [] };
+    });
+    await fetchHomeArticlesData({ db, storyRankOrder: true });
+    const ranked = calls.filter((call) => /story_rank/i.test(call.sql));
+    const formula = calls.filter(
+      (call) => !/ranking_run|story_rank/i.test(call.sql),
+    );
+    expect(ranked).toHaveLength(1);
+    // The failed section still runs the formula, and the rest never touch story_rank.
+    expect(formula).toHaveLength(1 + config.categories.length + 2);
+    expect(warn).toHaveBeenCalledOnce();
+  });
+
+  it("logs a shared session's failure once across two fetches", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const rankSession = createObservedRankSession();
+    const { db, calls } = executor((compiled) => {
+      if (/ranking_run|story_rank/i.test(compiled.sql)) {
+        throw new Error("connection reset");
+      }
+      return { rows: [] };
+    });
+    await fetchHomeArticlesData({ db, storyRankOrder: true, rankSession });
+    await fetchHomeArticlesData({ db, storyRankOrder: true, rankSession });
+    const ranked = calls.filter((call) =>
+      /story_rank|ranking_run/i.test(call.sql),
+    );
+    expect(ranked).toHaveLength(1);
+    expect(warn).toHaveBeenCalledOnce();
   });
 
   it("uses the formula for every section when the run is stale", async () => {

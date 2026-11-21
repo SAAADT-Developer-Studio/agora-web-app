@@ -2,6 +2,7 @@ import { getAppContext } from "~/lib/appContext";
 import type { Route } from "./+types/category";
 import { isCategoryKey } from "~/config";
 import {
+  createObservedRankSession,
   getStoryCategoryArticles,
   resolveObservedStoryRankRun,
 } from "~/lib/services/storyRanking";
@@ -29,9 +30,11 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
     throw new Response("Category Not Found", { status: 404 });
   }
   const { db, cloudflare } = getAppContext(context);
+  const rankSession = createObservedRankSession();
   const observedRunId = await resolveObservedStoryRankRun(
     db,
     storyRankOrderFromEnv(cloudflare.env),
+    rankSession,
   );
   const articles = await getStoryCategoryArticles({
     db,
@@ -40,6 +43,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
     count: Number(count),
     offset: Number(offset) || 0,
     observedRunId,
+    rankSession,
   });
   return { articles };
 }

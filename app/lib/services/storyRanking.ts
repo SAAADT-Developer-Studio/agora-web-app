@@ -11,7 +11,7 @@ import {
   STORY_RANK_MAX_AGE,
   compareCoalescedRank,
   freshStoryRankingRunSql,
-  isMissingRankingSchema,
+  observedRankFailureLabel,
 } from "~/lib/storyRankOrder";
 import { getBiasDistribution } from "~/utils/getBiasDistribution";
 import {
@@ -126,15 +126,45 @@ function selectedStories(
 }
 
 /**
+ * One home or category render. A failed ranking lookup is logged once, then
+ * every later section in the same render uses the formula without querying again.
+ */
+export type ObservedRankSession = {
+  failed: boolean;
+  warned: boolean;
+};
+
+export function createObservedRankSession(): ObservedRankSession {
+  return { failed: false, warned: false };
+}
+
+function noteObservedRankFailure(
+  session: ObservedRankSession | undefined,
+  error: unknown,
+) {
+  if (session) {
+    const alreadyWarned = session.warned;
+    session.failed = true;
+    session.warned = true;
+    if (alreadyWarned) return;
+  }
+  console.warn(
+    `STORY_RANK_ORDER lookup failed (${observedRankFailureLabel(error)}); using the current story ordering.`,
+  );
+}
+
+/**
  * Id of the latest fresh succeeded `source = 'story'` run, or undefined when
- * the flag is off, no such run exists, or the ranking columns are not there yet.
- * Callers then keep the in-app formula.
+ * the flag is off, no such run exists, or the lookup errors. Callers then
+ * keep the in-app formula. Any error (missing relation, permission denied,
+ * timeout, or anything else) is logged once per session and does not throw.
  */
 export async function resolveObservedStoryRankRun(
   db: Database,
   enabled: boolean,
+  session?: ObservedRankSession,
 ): Promise<number | undefined> {
-  if (!enabled) return undefined;
+  if (!enabled || session?.failed) return undefined;
   try {
     const result = await db.execute(freshStoryRankingRunSql());
     const id = result.rows[0]?.id;
@@ -152,10 +182,7 @@ export async function resolveObservedStoryRankRun(
     }
     return runId;
   } catch (error) {
-    if (!isMissingRankingSchema(error)) throw error;
-    console.warn(
-      "STORY_RANK_ORDER is true but ranking_run.source is unavailable; using the current story ordering.",
-    );
+    noteObservedRankFailure(session, error);
     return undefined;
   }
 }
@@ -356,15 +383,14 @@ export function observedStoryCategorySql({
 async function selectObserved(
   db: Database,
   query: SQL,
+  session?: ObservedRankSession,
 ): Promise<SelectedStory[] | undefined> {
+  if (session?.failed) return undefined;
   try {
     const result = await db.execute(query);
     return selectedStories(result.rows, true);
   } catch (error) {
-    if (!isMissingRankingSchema(error)) throw error;
-    console.warn(
-      "STORY_RANK_ORDER query failed because story_rank or story.merged_into_story_id is missing; using the current story ordering.",
-    );
+    noteObservedRankFailure(session, error);
     return undefined;
   }
 }
@@ -374,6 +400,7 @@ export async function getStoryHomeArticles({
   count,
   side,
   observedRunId,
+  rankSession,
 }: {
   db: Database;
   count: number;
@@ -381,11 +408,14 @@ export async function getStoryHomeArticles({
   side?: BlindspotSide;
   /** Fresh succeeded story ranking run. Omit to keep the in-app formula. */
   observedRunId?: number;
+  /** Shared with the other sections of this render so a failure is logged once. */
+  rankSession?: ObservedRankSession;
 }): Promise<ArticleType[]> {
-  if (observedRunId != null) {
+  if (observedRunId != null && !rankSession?.failed) {
     const ranked = await selectObserved(
       db,
       observedStoryHomeSql({ count, side, observedRunId }),
+      rankSession,
     );
     if (ranked) return await hydrateStories(db, ranked, true);
   }
@@ -480,6 +510,7 @@ export async function getStoryCategoryArticles({
   count,
   offset,
   observedRunId,
+  rankSession,
 }: {
   db: Database;
   ignoredClusterIds: number[];
@@ -488,8 +519,10 @@ export async function getStoryCategoryArticles({
   offset?: number;
   /** Fresh succeeded story ranking run. Omit to keep the in-app formula. */
   observedRunId?: number;
+  /** Shared with the other sections of this render so a failure is logged once. */
+  rankSession?: ObservedRankSession;
 }): Promise<ArticleType[]> {
-  if (observedRunId != null) {
+  if (observedRunId != null && !rankSession?.failed) {
     const ranked = await selectObserved(
       db,
       observedStoryCategorySql({
@@ -499,6 +532,7 @@ export async function getStoryCategoryArticles({
         offset,
         observedRunId,
       }),
+      rankSession,
     );
     if (ranked) return await hydrateStories(db, ranked, true);
   }
@@ -666,16 +700,25 @@ async function hydrateStories(
 export async function fetchHomeArticlesData({
   db,
   storyRankOrder = false,
+  rankSession,
 }: {
   db: Database;
   /** When true, order by the latest fresh story ranking run. */
   storyRankOrder?: boolean;
+  /** Reuse across the home feed and category pages of one populate-cache call. */
+  rankSession?: ObservedRankSession;
 }) {
-  const observedRunId = await resolveObservedStoryRankRun(db, storyRankOrder);
+  const session = rankSession ?? createObservedRankSession();
+  const observedRunId = await resolveObservedStoryRankRun(
+    db,
+    storyRankOrder,
+    session,
+  );
   const homeArticles = await getStoryHomeArticles({
     db,
     count: 6,
     observedRunId,
+    rankSession: session,
   });
   let ignoredClusterIds = homeArticles.map((a) => Number(a.id));
 
@@ -688,6 +731,7 @@ export async function fetchHomeArticlesData({
       count: 6,
       category: category.key,
       observedRunId,
+      rankSession: session,
     });
 
     ignoredClusterIds = [
@@ -709,12 +753,14 @@ export async function fetchHomeArticlesData({
         count: BLINDSPOTS_PER_SIDE,
         side: "left",
         observedRunId,
+        rankSession: session,
       }),
       right: await getStoryHomeArticles({
         db,
         count: BLINDSPOTS_PER_SIDE,
         side: "right",
         observedRunId,
+        rankSession: session,
       }),
     },
   };
