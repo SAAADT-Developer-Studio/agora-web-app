@@ -24,6 +24,9 @@
   --color-leftred: oklch(0.756 0.203 23.7);
   --color-centerwhite: oklch(1 0 0);
   --color-electricblue: oklch(0.6 0.18 248.1);
+  /* Blue for text (links, hovered titles). Light mode uses electricblue;
+     dark mode needs a lighter, softer tint to stay legible on gray. */
+  --color-link: oklch(0.6 0.18 248.1);
 
   --color-vidikwhite: oklch(0.978 0.009 247.5);
   --color-vidikblack: oklch(0.258 0 0);
@@ -64,6 +67,7 @@
   --color-primary-text: oklch(28.09% 0 0);
 
   --color-electricblue: oklch(0.6 0.18 248.1);
+  --color-link: oklch(0.82 0.09 248);
   --color-vidikgreen: oklch(0.4995 0.16 139.63);
 
   --color-header: oklch(23.93% 0 0);

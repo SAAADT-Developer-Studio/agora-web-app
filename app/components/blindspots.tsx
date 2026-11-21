@@ -101,7 +101,7 @@ function BlindspotRow({
         className="bg-primary/5 aspect-[4/3] w-20 shrink-0 self-start rounded-md object-cover sm:w-24"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <p className="text-primary group-hover:text-electricblue line-clamp-2 leading-snug font-semibold text-pretty transition-colors first-letter:uppercase">
+        <p className="text-primary group-hover:text-link line-clamp-2 leading-snug font-semibold text-pretty transition-colors first-letter:uppercase">
           {story.title}
         </p>
         <div className="mt-auto flex items-center gap-2.5 text-xs">
