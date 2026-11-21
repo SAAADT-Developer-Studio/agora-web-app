@@ -1,9 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router";
-import {
-  formatSlovenianLongDate,
-  formatSlovenianWeekdayDate,
-} from "~/lib/date";
+import { formatSlovenianWeekdayDate } from "~/lib/date";
 import { useClientNow } from "~/components/render-clock";
 import { config } from "~/config";
 import { Menu } from "lucide-react";
@@ -11,23 +8,17 @@ import { ThemeSwitch } from "./theme-switch";
 import { cn } from "~/lib/utils";
 import { LoadingBar } from "~/components/loading-bar";
 import { useLocalStorage } from "~/hooks/use-local-storage";
-import {
-  SIDE_MENU_VARIANTS,
-  SideMenu,
-  Wordmark,
-  sentenceCase,
-  type SideMenuVariant,
-} from "~/components/side-menu";
+import { SideMenu, Wordmark, sentenceCase } from "~/components/side-menu";
 
 /**
- * Three header designs, switchable from a floating control so they can be
- * compared on the live site. Once one is picked, delete the other two and
+ * Three takes on the "Časopis" header, switchable from a floating control so
+ * they can be compared on the live site. Once one is picked, delete the other two and
  * the floating picker.
  */
 const HEADER_VARIANTS = [
-  { key: "a", name: "Ena vrstica" },
-  { key: "b", name: "Časopis" },
-  { key: "c", name: "Kompakt" },
+  { key: "b1", name: "Levo" },
+  { key: "b2", name: "Naslovnica" },
+  { key: "b3", name: "Ena vrstica" },
 ] as const;
 type HeaderVariant = (typeof HEADER_VARIANTS)[number]["key"];
 
@@ -112,10 +103,11 @@ function CategoryNav({
 }
 
 /* ------------------------------------------------------------------ */
-/* A. Ena vrstica: one dark bar; categories inline on wide screens and */
-/*    as a scrolling strip below on narrow ones.                       */
+/* All three keep the "Časopis" category row: light, sentence case, a  */
+/* left/center/right bar under the active category. They differ in how */
+/* the top row carries the wordmark.                                   */
 /* ------------------------------------------------------------------ */
-const headerALink = ({
+const bLink = ({
   isActive,
   isPending,
 }: {
@@ -123,46 +115,20 @@ const headerALink = ({
   isPending: boolean;
 }) =>
   cn(
-    "relative flex items-center px-3 text-[13px] font-semibold tracking-[0.04em]",
-    "after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:transition-colors",
+    "relative flex items-center px-3 text-[15px]",
+    "after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:transition-opacity",
+    "after:bg-[linear-gradient(to_right,var(--color-leftred)_0_33.3%,var(--color-primary)_33.3%_66.6%,var(--color-electricblue)_66.6%)]",
     isActive
-      ? "text-vidikwhite after:bg-vidikwhite"
-      : "text-vidikwhite/60 hover:text-vidikwhite after:bg-transparent",
+      ? "font-semibold after:opacity-100"
+      : "text-surface-text/70 hover:text-surface-text after:opacity-0",
     isPending && "animate-pulse",
   );
 
-function HeaderA({ open, onOpen }: { open: boolean; onOpen: () => void }) {
-  return (
-    <div className="bg-header text-vidikwhite">
-      <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-3 px-4 sm:px-6">
-        <MenuButton open={open} onOpen={onOpen} />
-        <Wordmark />
-        <CategoryNav
-          className="hidden h-full min-w-0 flex-1 xl:block [&>div]:h-full"
-          linkClassName={headerALink}
-        />
-        <div className="ml-auto flex items-center xl:ml-0">
-          <ThemeSwitch variant="icon" />
-        </div>
-      </div>
-      <CategoryNav
-        className="border-vidikwhite/10 h-11 border-t xl:hidden [&>div]:h-full"
-        linkClassName={headerALink}
-      />
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* B. Časopis: a light masthead in the page's own colors, wordmark     */
-/*    centered over the date, categories in sentence case with the     */
-/*    left/center/right bar marking the active one.                    */
-/* ------------------------------------------------------------------ */
-function MastheadDate() {
+function MastheadDate({ className }: { className?: string }) {
   const now = new Date(useClientNow());
   return (
     <span
-      className="text-surface-text/60 hidden text-[13px] tabular-nums md:block"
+      className={cn("text-surface-text/60 text-[13px] tabular-nums", className)}
       suppressHydrationWarning
     >
       {sentenceCase(formatSlovenianWeekdayDate(now))}
@@ -170,76 +136,82 @@ function MastheadDate() {
   );
 }
 
-function HeaderB({ open, onOpen }: { open: boolean; onOpen: () => void }) {
+type HeaderProps = { open: boolean; onOpen: () => void };
+
+const shell = "bg-surface text-surface-text border-primary/10 border-b";
+const navRow = "border-primary/10 h-11 border-t [&>div]:h-full";
+
+/* B1. Levo: wordmark at the left edge next to the menu, the date and   */
+/*     theme toggle on the right. The usual reading order for a site.  */
+function HeaderB1({ open, onOpen }: HeaderProps) {
   return (
-    <div className="bg-surface text-surface-text border-primary/10 border-b">
-      <div className="mx-auto grid h-16 max-w-[1200px] grid-cols-[1fr_auto_1fr] items-center px-4 md:px-6">
-        <div className="flex items-center gap-4">
-          <MenuButton open={open} onOpen={onOpen} />
-          <MastheadDate />
-        </div>
-        <Wordmark className="[&>img]:size-7 [&>span]:text-[27px]" />
-        <div className="flex justify-end">
+    <div className={shell}>
+      <div className="mx-auto flex h-14 max-w-[1200px] items-center gap-3 px-4 md:px-6">
+        <MenuButton open={open} onOpen={onOpen} />
+        <Wordmark />
+        <div className="ml-auto flex items-center gap-3">
+          <MastheadDate className="hidden md:block" />
           <ThemeSwitch variant="icon" className="-mr-1.5" />
         </div>
       </div>
       <CategoryNav
-        className="border-primary/10 h-11 border-t [&>div]:h-full"
+        className={navRow}
         label={sentenceCase}
-        linkClassName={({ isActive, isPending }) =>
-          cn(
-            "relative flex items-center px-3 text-[15px]",
-            "after:absolute after:inset-x-3 after:bottom-0 after:h-[3px] after:transition-opacity",
-            "after:bg-[linear-gradient(to_right,var(--color-leftred)_0_33.3%,var(--color-primary)_33.3%_66.6%,var(--color-electricblue)_66.6%)]",
-            isActive
-              ? "font-semibold after:opacity-100"
-              : "text-surface-text/70 hover:text-surface-text after:opacity-0",
-            isPending && "animate-pulse",
-          )
-        }
+        linkClassName={bLink}
       />
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* C. Kompakt: today's two rows, tightened. Quiet date, icon theme     */
-/*    toggle, menu on the right, active category as a pill.            */
-/* ------------------------------------------------------------------ */
-function HeaderClock() {
-  const now = useClientNow();
+/* B2. Naslovnica: a real newspaper nameplate. The wordmark is big      */
+/*     enough to own the center, with the date set under it, so the    */
+/*     row reads as one masthead instead of three loose pieces.        */
+function HeaderB2({ open, onOpen }: HeaderProps) {
   return (
-    <span
-      className="text-vidikwhite/55 hidden text-[13px] tabular-nums md:block"
-      suppressHydrationWarning
-    >
-      {formatSlovenianLongDate(new Date(now))}
-    </span>
-  );
-}
-
-function HeaderC({ open, onOpen }: { open: boolean; onOpen: () => void }) {
-  return (
-    <div className="bg-header text-vidikwhite">
-      <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-4 md:px-6">
-        <Wordmark />
-        <div className="flex items-center gap-2">
-          <HeaderClock />
-          <ThemeSwitch variant="icon" className="md:ml-2" />
-          <MenuButton open={open} onOpen={onOpen} className="mr-[-6px] ml-0" />
+    <div className={shell}>
+      <div className="mx-auto grid h-14 max-w-[1200px] grid-cols-[1fr_auto_1fr] items-center px-4 md:h-[88px] md:px-6">
+        <div>
+          <MenuButton open={open} onOpen={onOpen} />
+        </div>
+        <div className="flex flex-col items-center">
+          <Wordmark className="gap-[7px] md:[&>img]:size-[34px] md:[&>span]:text-[38px] md:[&>span]:tracking-[0.01em]" />
+          <MastheadDate className="mt-1 hidden md:block" />
+        </div>
+        <div className="flex justify-end">
+          <ThemeSwitch variant="icon" className="-mr-1.5" />
         </div>
       </div>
       <CategoryNav
-        className="border-vidikwhite/10 border-t py-2"
-        linkClassName={({ isActive, isPending }) =>
-          cn(
-            "rounded-full px-3 py-1.5 text-[13px] font-semibold tracking-[0.03em]",
-            isActive
-              ? "bg-vidikwhite text-vidikblack"
-              : "text-vidikwhite/65 hover:text-vidikwhite hover:bg-vidikwhite/10",
-            isPending && "animate-pulse",
-          )
-        }
+        className={navRow}
+        label={sentenceCase}
+        linkClassName={bLink}
+      />
+    </div>
+  );
+}
+
+/* B3. Ena vrstica: on wide screens the wordmark, categories and        */
+/*     toggles share one row; below xl it falls back to B1.            */
+function HeaderB3({ open, onOpen }: HeaderProps) {
+  return (
+    <div className={shell}>
+      <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-3 px-4 md:px-6">
+        <MenuButton open={open} onOpen={onOpen} />
+        <Wordmark />
+        <CategoryNav
+          className="hidden h-full min-w-0 flex-1 xl:block [&>div]:h-full"
+          label={sentenceCase}
+          linkClassName={bLink}
+        />
+        <div className="ml-auto flex items-center gap-3 xl:ml-0">
+          <MastheadDate className="hidden md:block xl:hidden" />
+          <ThemeSwitch variant="icon" className="-mr-1.5" />
+        </div>
+      </div>
+      <CategoryNav
+        className={cn(navRow, "xl:hidden")}
+        label={sentenceCase}
+        linkClassName={bLink}
       />
     </div>
   );
@@ -297,14 +269,9 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const [storedHeader, setVariant] = useLocalStorage<string>(
     "header-variant",
-    "a",
-  );
-  const [storedMenu, setMenuVariant] = useLocalStorage<string>(
-    "menu-variant",
-    "a",
+    "b1",
   );
   const variant = pick<HeaderVariant>(HEADER_VARIANTS, storedHeader);
-  const menuVariant = pick<SideMenuVariant>(SIDE_MENU_VARIANTS, storedMenu);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -320,27 +287,17 @@ export function Header() {
     <>
       <header className="sticky top-0 z-30">
         <LoadingBar />
-        {variant === "a" && <HeaderA open={open} onOpen={onOpen} />}
-        {variant === "b" && <HeaderB open={open} onOpen={onOpen} />}
-        {variant === "c" && <HeaderC open={open} onOpen={onOpen} />}
+        {variant === "b1" && <HeaderB1 open={open} onOpen={onOpen} />}
+        {variant === "b2" && <HeaderB2 open={open} onOpen={onOpen} />}
+        {variant === "b3" && <HeaderB3 open={open} onOpen={onOpen} />}
       </header>
-      <SideMenu
-        open={open}
-        variant={menuVariant}
-        onClose={() => setOpen(false)}
-      />
-      <div className="bg-vidikblack/90 text-vidikwhite fixed right-4 bottom-4 z-[45] flex flex-col gap-0.5 rounded-[22px] p-1 text-[13px] shadow-[0_6px_24px_rgba(0,0,0,0.25)] ring-1 ring-white/10 backdrop-blur">
+      <SideMenu open={open} onClose={() => setOpen(false)} />
+      <div className="bg-vidikblack/90 text-vidikwhite fixed right-4 bottom-4 z-[45] flex rounded-full p-1 text-[13px] shadow-[0_6px_24px_rgba(0,0,0,0.25)] ring-1 ring-white/10 backdrop-blur">
         <VariantPicker
           label="Glava"
           options={HEADER_VARIANTS}
           value={variant}
           onChange={setVariant}
-        />
-        <VariantPicker
-          label="Meni"
-          options={SIDE_MENU_VARIANTS}
-          value={menuVariant}
-          onChange={setMenuVariant}
         />
       </div>
     </>

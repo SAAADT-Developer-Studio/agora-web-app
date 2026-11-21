@@ -1,43 +1,13 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef } from "react";
 import { Link, NavLink, href } from "react-router";
-import {
-  ArrowRight,
-  Atom,
-  BookOpen,
-  ChevronRight,
-  Facebook,
-  HeartPulse,
-  Instagram,
-  Landmark,
-  Leaf,
-  Mail,
-  MapPin,
-  Newspaper,
-  Palette,
-  Siren,
-  TrendingUp,
-  Trophy,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowRight, Facebook, Instagram, Mail, X } from "lucide-react";
 import logoNoText from "~/assets/logo-no-text.svg";
 import { XIcon } from "~/components/footer";
 import { useClientNow } from "~/components/render-clock";
 import { ThemeSwitch } from "~/components/theme-switch";
-import { categories, CategoryKey, defineCategoryMap } from "~/config";
+import { categories } from "~/config";
 import { formatSlovenianWeekdayDate } from "~/lib/date";
 import { cn } from "~/lib/utils";
-
-/**
- * Three side menu designs, picked from the floating switcher next to the
- * header one. Once one is chosen, delete the other two.
- */
-export const SIDE_MENU_VARIANTS = [
-  { key: "a", name: "Ikone" },
-  { key: "b", name: "Mreža" },
-  { key: "c", name: "Uredniško" },
-] as const;
-export type SideMenuVariant = (typeof SIDE_MENU_VARIANTS)[number]["key"];
 
 /** "TEHNOLOGIJA & ZNANOST" -> "Tehnologija & znanost" */
 export function sentenceCase(name: string) {
@@ -68,25 +38,9 @@ export function Wordmark({
   );
 }
 
-const CATEGORY_ICONS = defineCategoryMap<LucideIcon>({
-  [CategoryKey.politika]: Landmark,
-  [CategoryKey.gospodarstvo]: TrendingUp,
-  [CategoryKey.kriminal]: Siren,
-  [CategoryKey.lokalno]: MapPin,
-  [CategoryKey.sport]: Trophy,
-  [CategoryKey.kultura]: Palette,
-  [CategoryKey.zdravje]: HeartPulse,
-  [CategoryKey.okolje]: Leaf,
-  [CategoryKey.tehnologijaZnanost]: Atom,
-});
-
-const MENU_CATEGORIES: { name: string; path: string; icon: LucideIcon }[] = [
-  { name: "Aktualno", path: "/", icon: Newspaper },
-  ...categories.map((c) => ({
-    name: sentenceCase(c.name),
-    path: c.path,
-    icon: CATEGORY_ICONS[c.key],
-  })),
+const MENU_CATEGORIES = [
+  { name: "Aktualno", path: "/" },
+  ...categories.map((c) => ({ name: sentenceCase(c.name), path: c.path })),
 ];
 
 const SOCIALS = [
@@ -153,175 +107,8 @@ function MenuFooter() {
   );
 }
 
-type VariantProps = { onClose: () => void };
-
 /* ------------------------------------------------------------------ */
-/* A. Ikone: Mediji up top as a feature row with the bias spectrum,    */
-/*    categories as an icon list, the rest small at the bottom.        */
-/* ------------------------------------------------------------------ */
-function MenuA({ onClose }: VariantProps) {
-  return (
-    <>
-      <div className="flex-1 overflow-y-auto px-3 pb-5">
-        <Link
-          to={href("/mediji")}
-          prefetch="intent"
-          onClick={onClose}
-          className="group bg-primary/[0.05] hover:bg-primary/[0.08] mt-1 block rounded-2xl p-4 transition-colors"
-        >
-          <span className="flex items-center justify-between">
-            <span className="text-[17px] font-semibold">Mediji</span>
-            <ArrowRight
-              className="text-surface-text/50 size-4 transition-transform group-hover:translate-x-0.5"
-              aria-hidden
-            />
-          </span>
-          <span className="text-surface-text/65 mt-0.5 block text-[13px] leading-snug">
-            Kje na političnem spektru stoji vsak medij
-          </span>
-          <BiasSpectrum className="mt-3" />
-        </Link>
-
-        <p className="text-surface-text/50 px-2 pt-5 pb-1.5 text-xs font-semibold">
-          Rubrike
-        </p>
-        <nav aria-label="Rubrike v meniju" className="flex flex-col gap-0.5">
-          {MENU_CATEGORIES.map(({ name, path, icon: Icon }) => (
-            <NavLink
-              to={path}
-              key={path}
-              end
-              prefetch="intent"
-              onClick={onClose}
-              className="group hover:bg-primary/5 flex items-center gap-3 rounded-xl px-2 py-1.5 transition-colors aria-[current=page]:font-semibold"
-            >
-              <span className="bg-primary/[0.06] text-surface-text/75 group-aria-[current=page]:bg-primary group-aria-[current=page]:text-primary-text grid size-8 shrink-0 place-items-center rounded-lg transition-colors">
-                <Icon size={16} strokeWidth={2} aria-hidden />
-              </span>
-              <span className="text-[15px]">{name}</span>
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="mt-4 flex flex-col gap-0.5">
-          {[
-            {
-              to: href("/metodologija"),
-              name: "Kako ocenjujemo medije",
-              icon: BookOpen,
-            },
-            { to: href("/kontakt"), name: "Kontakt in podpora", icon: Mail },
-          ].map(({ to, name, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              prefetch="intent"
-              onClick={onClose}
-              className="text-surface-text/70 hover:text-surface-text hover:bg-primary/5 flex items-center gap-3 rounded-xl px-2 py-1.5 text-sm transition-colors"
-            >
-              <span className="grid size-8 place-items-center">
-                <Icon size={16} aria-hidden />
-              </span>
-              {name}
-            </NavLink>
-          ))}
-        </div>
-      </div>
-      <MenuFooter />
-    </>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* B. Mreža: today's date and what Vidik does, categories as a         */
-/*    two-column grid of tiles, then Mediji as a panel.                */
-/* ------------------------------------------------------------------ */
-function MenuB({ onClose }: VariantProps) {
-  const date = useMenuDate();
-  return (
-    <>
-      <div className="flex-1 overflow-y-auto px-4 pb-5">
-        <p
-          className="font-sarabun pt-2 text-[22px] leading-tight font-medium"
-          suppressHydrationWarning
-        >
-          {date}
-        </p>
-        <p className="text-surface-text/60 mt-1 text-[13px] leading-snug">
-          Kako različni slovenski mediji poročajo o istih novicah.
-        </p>
-
-        <nav
-          aria-label="Rubrike v meniju"
-          className="mt-5 grid grid-cols-2 gap-2"
-        >
-          {MENU_CATEGORIES.map(({ name, path, icon: Icon }) => (
-            <NavLink
-              to={path}
-              key={path}
-              end
-              prefetch="intent"
-              onClick={onClose}
-              className={({ isActive }) =>
-                cn(
-                  "flex min-h-[76px] flex-col justify-between rounded-xl p-3 transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-text"
-                    : "bg-primary/[0.05] hover:bg-primary/[0.09]",
-                )
-              }
-            >
-              <Icon size={18} aria-hidden className="opacity-80" />
-              <span className="text-[14px] leading-tight font-semibold">
-                {name}
-              </span>
-            </NavLink>
-          ))}
-        </nav>
-
-        <Link
-          to={href("/mediji")}
-          prefetch="intent"
-          onClick={onClose}
-          className="group border-primary/12 hover:bg-primary/[0.04] mt-5 block rounded-xl border p-4 transition-colors"
-        >
-          <BiasSpectrum />
-          <span className="mt-3 flex items-center justify-between">
-            <span className="text-[15px] font-semibold">Vsi mediji</span>
-            <ChevronRight
-              className="text-surface-text/45 size-4 transition-transform group-hover:translate-x-0.5"
-              aria-hidden
-            />
-          </span>
-          <span className="text-surface-text/60 block text-[13px]">
-            Ocene pristranskosti in glasovanje
-          </span>
-        </Link>
-
-        <div className="text-surface-text/65 mt-4 flex gap-4 px-1 text-[13px]">
-          <Link
-            to={href("/metodologija")}
-            onClick={onClose}
-            className="hover:text-surface-text underline-offset-4 hover:underline"
-          >
-            Metodologija
-          </Link>
-          <Link
-            to={href("/kontakt")}
-            onClick={onClose}
-            className="hover:text-surface-text underline-offset-4 hover:underline"
-          >
-            Kontakt
-          </Link>
-        </div>
-      </div>
-      <MenuFooter />
-    </>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* C. Uredniško: no icons, type does the work. Large category names,   */
+/* Uredniško: no icons, type does the work. Large category names,   */
 /*    a small spectrum mark on the active one, Mediji as a headline.   */
 /* ------------------------------------------------------------------ */
 function ActiveMark() {
@@ -334,7 +121,7 @@ function ActiveMark() {
   );
 }
 
-function MenuC({ onClose }: VariantProps) {
+function MenuBody({ onClose }: { onClose: () => void }) {
   const date = useMenuDate();
   return (
     <>
@@ -419,22 +206,15 @@ function MenuC({ onClose }: VariantProps) {
 export function SideMenu({
   open,
   onClose,
-  variant,
 }: {
   open: boolean;
   onClose: () => void;
-  variant: SideMenuVariant;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (open) closeRef.current?.focus();
   }, [open]);
-
-  let body: ReactNode;
-  if (variant === "b") body = <MenuB onClose={onClose} />;
-  else if (variant === "c") body = <MenuC onClose={onClose} />;
-  else body = <MenuA onClose={onClose} />;
 
   return (
     <>
@@ -460,7 +240,7 @@ export function SideMenu({
             <X className="size-5" aria-hidden />
           </button>
         </div>
-        {body}
+        <MenuBody onClose={onClose} />
       </aside>
 
       <div
