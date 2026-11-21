@@ -53,7 +53,7 @@ export default function ArticleBig(article: ArticleType) {
       </div>
 
       <div className="relative flex flex-col gap-3 p-4 md:gap-4 md:p-6">
-        <h2 className="max-w-[34ch] text-[1.4rem] leading-[1.15] font-bold tracking-tight text-balance md:text-[2.1rem] md:leading-[1.1]">
+        <h2 className="max-w-[34ch] text-[1.4rem] leading-[1.15] font-bold tracking-tight text-balance first-letter:uppercase md:text-[2.1rem] md:leading-[1.1]">
           {title}
         </h2>
         <StoryMetaLine

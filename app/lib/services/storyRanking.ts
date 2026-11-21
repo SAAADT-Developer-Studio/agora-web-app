@@ -65,8 +65,13 @@ const categoryScoreExpr = sql<number>`
   ) / ${MAX_CATEGORY_PRIORITY}
 `;
 
-// Stories aren't run-scoped; 14d window stands in for latest cluster_run
-const recentStoriesFilter = sql`${story.lastArticlePublishedAt} > now() - interval '14 days'`;
+/**
+ * Stories aren't run-scoped; this window bounds the listing candidates.
+ * Outside it a story page is an archive, like a clanek from an older run.
+ */
+export const STORY_WINDOW_DAYS = 14;
+
+export const recentStoriesFilter = sql`${story.lastArticlePublishedAt} > now() - make_interval(days => ${STORY_WINDOW_DAYS})`;
 
 export async function getStoryHomeArticles({
   db,
@@ -319,8 +324,8 @@ async function hydrateStories(
   });
 }
 
-/** Hidden `/novo` homepage: same shape as the public home feed, ranked from stories. */
-export async function fetchStoryHomeArticlesData({ db }: { db: Database }) {
+/** Home feed (`/`): hero stories, per-category sections, and blindspots. */
+export async function fetchHomeArticlesData({ db }: { db: Database }) {
   const homeArticles = await getStoryHomeArticles({ db, count: 6 });
   let ignoredClusterIds = homeArticles.map((a) => Number(a.id));
 

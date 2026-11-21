@@ -143,7 +143,7 @@ export default function StoryPage({ data }: { data: StoryPageData }) {
       <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="min-w-0">
           <header className="mb-5 md:mb-6">
-            <h1 className="text-primary text-[1.65rem] leading-[1.15] font-bold tracking-tight text-balance md:text-4xl lg:text-[2.6rem] lg:leading-[1.08]">
+            <h1 className="text-primary text-[1.65rem] leading-[1.15] font-bold tracking-tight text-balance first-letter:uppercase md:text-4xl lg:text-[2.6rem] lg:leading-[1.08]">
               {story.title}
             </h1>
 

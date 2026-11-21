@@ -4,7 +4,6 @@ import { KVCache } from "~/lib/kvCache";
 import { getDb } from "~/lib/db";
 import { Measurer } from "~/lib/measurer";
 import { shouldStorePageCache } from "~/lib/pageCache";
-import { withUnindexedRobots } from "~/lib/seo/unindexed";
 
 const requestHandler = createRequestHandler(
   () => import("virtual:react-router/server-build"),
@@ -38,12 +37,9 @@ export default {
           "public, max-age=0, must-revalidate",
         );
       }
-      response = withUnindexedRobots(response, url.pathname);
       if (shouldStorePageCache(url.pathname, response.headers)) {
         ctx.waitUntil(cache.put(request, response.clone()));
       }
-    } else {
-      response = withUnindexedRobots(response, url.pathname);
     }
 
     return response;

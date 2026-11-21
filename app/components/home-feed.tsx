@@ -17,7 +17,7 @@ export type HomeFeedArticles = ArticlesByCategory & {
   blindspots?: BlindspotsData;
 };
 
-/** Home layout shared by `/` (cluster_v2) and `/novo` (stories). */
+/** Story-ranked home layout for `/`. */
 export function HomeFeed({
   articles,
   randomProviders,

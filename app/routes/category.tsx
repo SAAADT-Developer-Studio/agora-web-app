@@ -9,7 +9,8 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Loader } from "lucide-react";
 import type { Database } from "~/lib/db";
 import { getMaxAge } from "~/utils/getMaxAge";
-import { getCategoryArticles, type ArticleType } from "~/lib/services/ranking";
+import type { ArticleType } from "~/lib/services/ranking";
+import { getStoryCategoryArticles } from "~/lib/services/storyRanking";
 import { getAppContext } from "~/lib/appContext";
 import { getCategoryCacheKey } from "~/lib/kvCache/keys";
 import { get } from "~/lib/fetcher";
@@ -38,7 +39,7 @@ export async function fetchCategoryArticlesData({
   db: Database;
   category: CategoryKeyValue;
 }) {
-  const articles = await getCategoryArticles({
+  const articles = await getStoryCategoryArticles({
     db,
     ignoredClusterIds: [],
     category,
