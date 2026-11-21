@@ -1,7 +1,11 @@
 import { getAppContext } from "~/lib/appContext";
 import type { Route } from "./+types/category";
 import { isCategoryKey } from "~/config";
-import { getStoryCategoryArticles } from "~/lib/services/storyRanking";
+import {
+  getStoryCategoryArticles,
+  resolveObservedStoryRankRun,
+} from "~/lib/services/storyRanking";
+import { storyRankOrderFromEnv } from "~/lib/storyRankOrder";
 
 export async function loader({ params, request, context }: Route.LoaderArgs) {
   const category = params.category;
@@ -24,13 +28,18 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
   if (!isCategoryKey(category)) {
     throw new Response("Category Not Found", { status: 404 });
   }
-  const { db } = getAppContext(context);
+  const { db, cloudflare } = getAppContext(context);
+  const observedRunId = await resolveObservedStoryRankRun(
+    db,
+    storyRankOrderFromEnv(cloudflare.env),
+  );
   const articles = await getStoryCategoryArticles({
     db,
     ignoredClusterIds: [],
     category,
     count: Number(count),
     offset: Number(offset) || 0,
+    observedRunId,
   });
   return { articles };
 }

@@ -5,9 +5,10 @@ import { fetchHomeArticlesData } from "~/lib/services/storyRanking";
 import { config } from "~/config";
 import {
   getCategoryCacheKey,
-  HOME_CACHE_KEY,
+  homeCacheKey,
   META_CACHE_KEY,
 } from "~/lib/kvCache/keys";
+import { storyRankOrderFromEnv } from "~/lib/storyRankOrder";
 
 export type CacheMeta = {
   lastUpdated: number;
@@ -17,26 +18,37 @@ export type CacheMeta = {
 // TODO: protect this route with a secret token or something
 
 export async function action({ context }: Route.ActionArgs) {
-  const { db, kvCache } = getAppContext(context);
+  const { db, kvCache, cloudflare } = getAppContext(context);
+  const storyRankOrder = storyRankOrderFromEnv(cloudflare.env);
 
   console.log("Populating cache...");
 
-  const articles = await fetchHomeArticlesData({ db });
+  const articles = await fetchHomeArticlesData({ db, storyRankOrder });
 
-  kvCache.putDeferred(HOME_CACHE_KEY, articles, { expirationTtl: 30 * 60 });
+  kvCache.putDeferred(homeCacheKey(storyRankOrder), articles, {
+    expirationTtl: 30 * 60,
+  });
 
   const categoryResults = await Promise.allSettled(
     config.categories.map((c) =>
-      fetchCategoryArticlesData({ db, category: c.key }),
+      fetchCategoryArticlesData({
+        db,
+        category: c.key,
+        storyRankOrder,
+      }),
     ),
   );
 
   categoryResults.forEach((result, index) => {
     if (result.status === "fulfilled") {
       const category = config.categories[index].key;
-      kvCache.putDeferred(getCategoryCacheKey(category), result.value, {
-        expirationTtl: 30 * 60,
-      });
+      kvCache.putDeferred(
+        getCategoryCacheKey(category, storyRankOrder),
+        result.value,
+        {
+          expirationTtl: 30 * 60,
+        },
+      );
     } else {
       console.error(
         `Failed to fetch articles for category ${config.categories[index].key}: ${result.reason}`,

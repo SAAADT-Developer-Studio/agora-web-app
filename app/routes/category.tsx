@@ -10,7 +10,11 @@ import { Loader } from "lucide-react";
 import type { Database } from "~/lib/db";
 import { getMaxAge } from "~/utils/getMaxAge";
 import type { ArticleType } from "~/lib/services/ranking";
-import { getStoryCategoryArticles } from "~/lib/services/storyRanking";
+import {
+  getStoryCategoryArticles,
+  resolveObservedStoryRankRun,
+} from "~/lib/services/storyRanking";
+import { storyRankOrderFromEnv } from "~/lib/storyRankOrder";
 import { getAppContext } from "~/lib/appContext";
 import { getCategoryCacheKey } from "~/lib/kvCache/keys";
 import { get } from "~/lib/fetcher";
@@ -35,16 +39,20 @@ async function fetchCategoryData(
 export async function fetchCategoryArticlesData({
   db,
   category,
+  storyRankOrder = false,
 }: {
   db: Database;
   category: CategoryKeyValue;
+  storyRankOrder?: boolean;
 }) {
+  const observedRunId = await resolveObservedStoryRankRun(db, storyRankOrder);
   const articles = await getStoryCategoryArticles({
     db,
     ignoredClusterIds: [],
     category,
     count: 21,
     offset: 0,
+    observedRunId,
   });
   return articles;
 }
@@ -55,18 +63,20 @@ export function headers({ loaderHeaders }: Route.HeadersArgs) {
 
 export async function loader({ params, context }: Route.LoaderArgs) {
   const category = params.category;
-  const { db, kvCache, measurer } = getAppContext(context);
+  const { db, kvCache, measurer, cloudflare } = getAppContext(context);
   if (!isCategoryKey(category)) {
     throw new Response("Category Not Found", { status: 404 });
   }
+  const storyRankOrder = storyRankOrderFromEnv(cloudflare.env);
 
   const articles = await measurer.time(
     "fetchCategoryArticles",
     async () =>
       await kvCache.cached(
-        async () => await fetchCategoryArticlesData({ db, category }),
+        async () =>
+          await fetchCategoryArticlesData({ db, category, storyRankOrder }),
         {
-          key: getCategoryCacheKey(category),
+          key: getCategoryCacheKey(category, storyRankOrder),
           expirationTtl: 10 * 60,
         },
       ),
