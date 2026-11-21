@@ -1,191 +1,31 @@
+import { Link, data, href } from "react-router";
 import { ErrorComponent } from "~/components/error-component";
 import type { Route } from "./+types/providers";
 import { getSeoMetas } from "~/lib/seo";
-import {
-  getProviderImageUrl,
-  ProviderImage,
-} from "~/components/provider-image";
-import { ArrowLeftRight, Globe, Newspaper } from "lucide-react";
-import { Link, data, href } from "react-router";
-import { gte, desc, count } from "drizzle-orm";
-import { article } from "~/drizzle/schema";
-import { Card } from "~/components/ui/card";
-import { useState, useMemo } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { Button } from "~/components/ui/button";
-import { removeUrlProtocol } from "~/utils/removeUrlProtocol";
-import { biasKeyToColor } from "~/utils/biasKeyToColor";
-import { biasKeyToLabel } from "~/utils/biasKeyToLabel";
-import { BiasRatingKey } from "~/enums/biasRatingKey";
-import { cn } from "~/lib/utils";
 import { getAppContext } from "~/lib/appContext";
+import { MEDIA_LANDSCAPE_CACHE_KEY } from "~/lib/kvCache/keys";
+import { fetchMediaLandscape } from "~/lib/services/mediaLandscape";
+import { VariantSwitcher, useVariant } from "~/components/mediji/shared";
+import { MojeBranjeVariant } from "~/components/mediji/variant-moje-branje";
+import { SpekterVariant } from "~/components/mediji/variant-spekter";
+import { PrimerjavaVariant } from "~/components/mediji/variant-primerjava";
 
-export interface PeriodStats {
-  count: number;
-  rank: number | null;
-  totalProviders: number;
-}
+/** Coverage metrics move slowly; an hour keeps the heavy queries rare. */
+const LANDSCAPE_TTL_SECONDS = 60 * 60;
 
-export interface ProviderStats {
-  providerKey: string;
-  today: PeriodStats;
-  week: PeriodStats;
-  month: PeriodStats;
-}
+export async function loader({ context }: Route.LoaderArgs) {
+  const { db, kvCache, measurer } = getAppContext(context);
 
-async function fetchAllProviderStats(db: any): Promise<ProviderStats[]> {
-  const now = new Date();
-
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    0,
-    0,
-    0,
-    0,
+  const landscape = await measurer.time("fetchMediaLandscape", () =>
+    kvCache.cached(() => fetchMediaLandscape(db), {
+      key: MEDIA_LANDSCAPE_CACHE_KEY,
+      expirationTtl: LANDSCAPE_TTL_SECONDS,
+    }),
   );
 
-  const currentDay = now.getDay();
-  const daysToSubtract = currentDay === 0 ? 6 : currentDay - 1;
-
-  const startOfWeek = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() - daysToSubtract,
-    0,
-    0,
-    0,
-    0,
-  );
-
-  const startOfMonth = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    1,
-    0,
-    0,
-    0,
-    0,
-  );
-
-  function buildDenseRankMap(
-    rows: Array<{ providerKey: string; count: number }>,
-  ) {
-    const rankMap = new Map<string, number>();
-    let currentRank = 0;
-    let lastCount: number | null = null;
-
-    for (const r of rows) {
-      if (lastCount === null || r.count < lastCount) {
-        currentRank += 1;
-        lastCount = r.count;
-      }
-      rankMap.set(r.providerKey, currentRank);
-    }
-    return rankMap;
-  }
-
-  const [todayAgg, weekAgg, monthAgg] = await Promise.all([
-    db
-      .select({ providerKey: article.newsProviderKey, count: count() })
-      .from(article)
-      .where(gte(article.publishedAt, startOfToday.toISOString()))
-      .groupBy(article.newsProviderKey)
-      .orderBy(desc(count())),
-    db
-      .select({ providerKey: article.newsProviderKey, count: count() })
-      .from(article)
-      .where(gte(article.publishedAt, startOfWeek.toISOString()))
-      .groupBy(article.newsProviderKey)
-      .orderBy(desc(count())),
-    db
-      .select({ providerKey: article.newsProviderKey, count: count() })
-      .from(article)
-      .where(gte(article.publishedAt, startOfMonth.toISOString()))
-      .groupBy(article.newsProviderKey)
-      .orderBy(desc(count())),
-  ]);
-
-  const todayCountMap = new Map(
-    todayAgg.map((r: { providerKey: any; count: any }) => [
-      r.providerKey,
-      Number(r.count),
-    ]),
-  );
-  const weekCountMap = new Map(
-    weekAgg.map((r: { providerKey: any; count: any }) => [
-      r.providerKey,
-      Number(r.count),
-    ]),
-  );
-  const monthCountMap = new Map(
-    monthAgg.map((r: { providerKey: any; count: any }) => [
-      r.providerKey,
-      Number(r.count),
-    ]),
-  );
-
-  const todayRankMap = buildDenseRankMap(todayAgg);
-  const weekRankMap = buildDenseRankMap(weekAgg);
-  const monthRankMap = buildDenseRankMap(monthAgg);
-
-  const totalTodayProviders = todayAgg.length;
-  const totalWeekProviders = weekAgg.length;
-  const totalMonthProviders = monthAgg.length;
-
-  const allProviderKeys = Array.from(
-    new Set<string>([
-      ...todayAgg.map((r: { providerKey: any }) => r.providerKey),
-      ...weekAgg.map((r: { providerKey: any }) => r.providerKey),
-      ...monthAgg.map((r: { providerKey: any }) => r.providerKey),
-    ]),
-  );
-
-  const results: ProviderStats[] = allProviderKeys.map((providerKey) => ({
-    providerKey,
-    today: {
-      count: (todayCountMap.get(providerKey) ?? 0) as number,
-      rank: todayRankMap.get(providerKey) ?? null,
-      totalProviders: totalTodayProviders,
-    },
-    week: {
-      count: (weekCountMap.get(providerKey) ?? 0) as number,
-      rank: weekRankMap.get(providerKey) ?? null,
-      totalProviders: totalWeekProviders,
-    },
-    month: {
-      count: (monthCountMap.get(providerKey) ?? 0) as number,
-      rank: monthRankMap.get(providerKey) ?? null,
-      totalProviders: totalMonthProviders,
-    },
-  }));
-
-  return results;
-}
-
-function buildProviderMap<T extends { providerKey: string }>(
-  providers: readonly T[],
-): Map<string, Omit<T, "providerKey">> {
-  const map = new Map<string, Omit<T, "providerKey">>();
-  for (const { providerKey, ...rest } of providers) {
-    map.set(providerKey, rest as Omit<T, "providerKey">);
-  }
-  return map;
+  return data(landscape, {
+    headers: { "Cache-Control": "max-age=60, s-maxage=60" },
+  });
 }
 
 export function headers() {
@@ -195,192 +35,37 @@ export function headers() {
   };
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
-  const { db, measurer } = getAppContext(context);
-
-  const providersPromise = measurer.time(
-    "fetchAllProviders",
-    async () =>
-      await db.query.newsProvider.findMany({
-        orderBy: (provider, { asc }) => [asc(provider.rank)],
-      }),
-  );
-
-  const providerStatsPromise = measurer.time(
-    "fetchAllProviderStats",
-    async () => await fetchAllProviderStats(db),
-  );
-
-  const [providers, providerStats] = await Promise.all([
-    providersPromise,
-    providerStatsPromise,
-  ]);
-
-  const providerStatsMap = buildProviderMap(providerStats);
-
-  return data(
-    { providers, providerStatsMap },
-    { headers: { "Cache-Control": "max-age=60, s-maxage=60" } },
-  );
-}
+const LEDES = {
+  a: "Označi medije, ki jih bereš, in poglej, s katere strani dobivaš novice ter katere glavne zgodbe ti uidejo.",
+  b: "Vsi mediji na enem spektru. Večji logotip pomeni več bralcev. Izberi medij za podroben profil.",
+  c: "Primerjaj medije po dosegu, pokritosti glavnih zgodb, hitrosti in tem, ali se bralci strinjajo z oceno.",
+} as const;
 
 export default function ProvidersPage({ loaderData }: Route.ComponentProps) {
-  const { providers, providerStatsMap } = loaderData;
-
-  const [selectedBiasRatings, setSelectedBiasRatings] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<string>("rank");
-
-  const toggleBiasRating = (rating: string) => {
-    setSelectedBiasRatings((prev) =>
-      prev.includes(rating)
-        ? prev.filter((r) => r !== rating)
-        : [...prev, rating],
-    );
-  };
-
-  const filteredAndSortedProviders = useMemo(() => {
-    let result = [...providers];
-
-    if (selectedBiasRatings.length > 0) {
-      result = result.filter((p) =>
-        selectedBiasRatings.includes(p.biasRating ?? ""),
-      );
-    }
-
-    result.sort((a, b) => {
-      const statsA = providerStatsMap.get(a.key);
-      const statsB = providerStatsMap.get(b.key);
-
-      switch (sortBy) {
-        case "rank":
-          return a.rank - b.rank;
-        case "today-most":
-          return (statsB?.today.count ?? 0) - (statsA?.today.count ?? 0);
-        case "today-least":
-          return (statsA?.today.count ?? 0) - (statsB?.today.count ?? 0);
-        case "week-most":
-          return (statsB?.week.count ?? 0) - (statsA?.week.count ?? 0);
-        case "week-least":
-          return (statsA?.week.count ?? 0) - (statsB?.week.count ?? 0);
-        case "month-most":
-          return (statsB?.month.count ?? 0) - (statsA?.month.count ?? 0);
-        case "month-least":
-          return (statsA?.month.count ?? 0) - (statsB?.month.count ?? 0);
-        default:
-          return 0;
-      }
-    });
-
-    return result;
-  }, [providers, providerStatsMap, selectedBiasRatings, sortBy]);
+  const [variant, setVariant] = useVariant();
 
   return (
-    <section>
-      <div className="mt-0 flex flex-wrap items-center justify-between p-0 md:mt-8 md:p-4">
-        <h1 className="text-surface-text text-2xl font-bold md:text-5xl">
+    <section className="mx-auto max-w-6xl px-1 pt-1 pb-24 md:pt-6">
+      <header className="mb-6 md:mb-8">
+        <h1 className="text-primary text-[1.9rem] leading-none font-bold tracking-tight md:text-5xl">
           Mediji
         </h1>
-
-        <div className="mt-4 flex flex-wrap items-start justify-start gap-3 md:mt-0">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              asChild
-              className="bg-surface shadow-vidik text-primary font-semibold !outline-none"
-            >
-              <Button variant="outline">
-                Pristranskost
-                {selectedBiasRatings.length > 0 && (
-                  <span className="bg-surface text-primary ml-2 rounded-full px-2 py-0.5 text-xs">
-                    {selectedBiasRatings.length}
-                  </span>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-surface text-primary shadow-vidik w-56">
-              <DropdownMenuLabel>Filtriraj po pristranskosti</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {Object.values(BiasRatingKey).map((biasRatingKey) => (
-                <DropdownMenuCheckboxItem
-                  key={biasRatingKey}
-                  checked={selectedBiasRatings.includes(biasRatingKey)}
-                  onCheckedChange={() => toggleBiasRating(biasRatingKey)}
-                >
-                  {biasKeyToLabel(biasRatingKey)}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="bg-surface text-primary w-[120px] font-semibold !outline-none md:w-[240px]">
-              <SelectValue placeholder="Razvrsti po" />
-            </SelectTrigger>
-            <SelectContent className="bg-surface text-primary shadow-vidik">
-              <SelectItem value="rank" className="hover:bg-surface-light/10">
-                Privzeto
-              </SelectItem>
-              <SelectItem
-                value="month-most"
-                className="hover:bg-surface-light/10"
-              >
-                Največ člankov
-              </SelectItem>
-              <SelectItem
-                value="month-least"
-                className="hover:bg-surface-light/10"
-              >
-                Najmanj člankov
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="mt-6 grid w-full grid-cols-1 gap-2 md:grid-cols-2 md:gap-6 xl:grid-cols-3">
-        {filteredAndSortedProviders.map((provider) => (
+        <p className="text-primary/70 mt-3 max-w-2xl text-[15px] leading-snug md:text-lg">
+          {LEDES[variant]}{" "}
           <Link
-            className="bg-surface-light/50 shadow-vidik flex flex-col items-start justify-between gap-4 rounded-md p-4 transition-all hover:bg-current/5"
-            to={href("/medij/:providerKey", { providerKey: provider.key })}
-            key={provider.key}
+            to={href("/metodologija")}
+            className="text-link font-semibold whitespace-nowrap hover:underline"
           >
-            <div className="flex w-full flex-col">
-              <div className="flex items-center gap-4">
-                <ProviderImage
-                  className="shadow-vidik size-[60px] rounded-md"
-                  size={160}
-                  provider={provider}
-                ></ProviderImage>
-
-                <div className="flex flex-col gap-2">
-                  <h2
-                    className={cn("mt-2 ml-1 text-[20px] leading-6 font-bold")}
-                  >
-                    {provider.name}
-                  </h2>
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    <div className="bg-surface-light/70 shadow-vidik hover:bg-surface-light text-surface-light-text flex items-center justify-center gap-1 rounded-lg border border-current/10 px-2 py-1 text-xs font-semibold">
-                      <Globe className="size-3" />
-                      {removeUrlProtocol(provider.url)}
-                    </div>
-                    <div
-                      className={`${biasKeyToColor(provider.biasRating ?? "")} shadow-vidik flex items-center justify-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold`}
-                    >
-                      <ArrowLeftRight className="size-3" />
-                      {biasKeyToLabel(provider.biasRating ?? "")}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-between">
-              <h2 className="text-primary/50 font-ligh">
-                Članki objavljeni ta mesec:{" "}
-                {providerStatsMap.get(provider.key)?.month.count ?? 0}
-              </h2>
-            </div>
+            Kako ocenjujemo
           </Link>
-        ))}
-      </div>
+        </p>
+      </header>
+
+      {variant === "a" && <MojeBranjeVariant data={loaderData} />}
+      {variant === "b" && <SpekterVariant data={loaderData} />}
+      {variant === "c" && <PrimerjavaVariant data={loaderData} />}
+
+      <VariantSwitcher current={variant} onChange={setVariant} />
     </section>
   );
 }

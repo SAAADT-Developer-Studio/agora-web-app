@@ -40,3 +40,6 @@ export function utrinkiCacheKey(
     storyRankOrder,
   );
 }
+
+/** `/mediji` outlet landscape. Bump the version when `MediaLandscape` changes shape. */
+export const MEDIA_LANDSCAPE_CACHE_KEY = "data:media-landscape:v1" as CacheKey;
