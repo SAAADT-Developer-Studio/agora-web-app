@@ -18,15 +18,15 @@ export default function Footer() {
     <footer className="bg-surface text-surface-text border-primary/10 mt-20 border-t">
       <div className="mx-auto max-w-[1200px] px-4 py-8 md:px-6">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col items-start gap-2 md:flex-row md:items-center md:gap-4">
             <Wordmark />
             <span className="bg-primary/15 hidden h-5 w-px md:block" />
-            <p className="text-surface-text/55 hidden text-[14px] md:block">
+            <p className="text-surface-text/55 text-[14px]">
               Ista novica. Vsi vidiki.
             </p>
           </div>
           <nav aria-label="Noga">
-            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-[14px]">
+            <ul className="grid grid-cols-2 gap-x-4 gap-y-3 text-[14px] md:flex md:gap-x-5">
               {LINKS.map(({ name, to }) => (
                 <li key={to}>
                   <Link
@@ -42,14 +42,15 @@ export default function Footer() {
           </nav>
         </div>
 
-        <div className="border-primary/10 text-surface-text/45 mt-6 grid gap-3 border-t pt-4 text-[13px] md:grid-cols-3 md:items-center">
+        <div className="border-primary/10 text-surface-text/45 mt-6 grid grid-cols-2 items-center gap-y-3 border-t pt-4 text-[13px] md:grid-cols-3">
           <p className="flex items-center gap-2" suppressHydrationWarning>
             <BiasSpectrum className="w-10" />© {year} vidik.si
           </p>
-          <p className="md:text-center">
+          <p className="text-right md:text-center">
             <b>M</b>&amp;<b>B</b> Production
           </p>
-          <SocialLinks className="-ml-2 md:-mr-2 md:ml-0 md:justify-end" />
+          {/* First on phones, so the icons don't dangle under the small print. */}
+          <SocialLinks className="order-first col-span-2 -ml-2 md:order-none md:col-span-1 md:-mr-2 md:ml-0 md:justify-end" />
         </div>
       </div>
     </footer>
