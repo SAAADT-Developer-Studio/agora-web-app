@@ -94,7 +94,7 @@ function json(page: UtrinkiPage) {
 }
 
 describe("utrinki feed", () => {
-  it("keeps older pages reachable when every story is hidden", () => {
+  it("loads older pages on its own when every story is hidden", async () => {
     const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
     localStorage.setItem(
       UTRINKI_KEYS.hidden,
@@ -104,14 +104,33 @@ describe("utrinki feed", () => {
         ),
       ),
     );
+    const older = { ...source.stories[0], id: 555, title: "Starejša zgodba" };
+    const requested: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      requested.push(String(input));
+      return json({ ...pageOf([older], false), page: 1 });
+    });
 
-    renderFeed(source);
+    renderFeed({ ...source, hasMore: true });
+
+    expect(screen.getByText("Nalagam nove sklope …")).toBeTruthy();
+    expect(await screen.findByText("Starejša zgodba")).toBeTruthy();
+    expect(requested).toEqual(["/api/utrinki?stran=1"]);
+    expect(
+      screen.queryByRole("button", { name: "Starejši sklopi" }),
+    ).toBeNull();
+  });
+
+  it("offers a retry when the next page fails", async () => {
+    const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
+    vi.stubGlobal("fetch", async () => new Response("", { status: 500 }));
+
+    renderFeed(pageOf([source.stories[0]], true));
 
     expect(
-      screen.getByRole("button", { name: "Starejši sklopi" }),
+      await screen.findByRole("button", { name: "Poskusi znova" }),
     ).toBeTruthy();
-    expect(screen.queryByText("Ni sklopov")).toBeNull();
-    expect(screen.getByText("Vse si pregledal")).toBeTruthy();
+    expect(screen.getByText("Nalaganje ni uspelo")).toBeTruthy();
   });
 
   it("uses the empty-category copy when the page has no stories", () => {
@@ -141,8 +160,7 @@ describe("utrinki feed", () => {
     });
   });
 
-  it("does not jump when a later page arrives after a duplicate page", async () => {
-    const user = userEvent.setup();
+  it("keeps loading past duplicate pages and restores without a jump", async () => {
     const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
     const [first, second, , , , saved, extra] = source.stories;
     sessionStorage.setItem(
@@ -171,32 +189,21 @@ describe("utrinki feed", () => {
 
     renderFeed(pageOf([first, second], true));
     await waitFor(() => expect(queue.map((item) => item.stran)).toEqual(["1"]));
+    // Pages 1 and 2 only repeat stories already on the reel.
     queue[0].resolve(json({ ...pageOf([first, second], true), page: 1 }));
-    await screen.findByRole("button", { name: "Starejši sklopi" });
-
-    await user.click(screen.getByRole("button", { name: "Starejši sklopi" }));
     await waitFor(() =>
       expect(queue.map((item) => item.stran)).toEqual(["1", "2"]),
     );
     queue[1].resolve(json({ ...pageOf([first, second], true), page: 2 }));
-    await screen.findByRole("button", { name: "Starejši sklopi" });
-
-    jumps.length = 0;
-    sessionStorage.setItem(
-      UTRINKI_SCROLL_KEY,
-      JSON.stringify({
-        category: "aktualno",
-        storyId: saved.id,
-        page: 3,
-      }),
-    );
-    await user.click(
-      within(
-        document.querySelector<HTMLElement>(`[data-story-id="${first.id}"]`)!,
-      ).getByRole("button", { name: "Skrij sklop" }),
-    );
     await waitFor(() =>
       expect(queue.map((item) => item.stran)).toEqual(["1", "2", "3"]),
+    );
+
+    jumps.length = 0;
+    // The reel records its own position on mount; put the target back.
+    sessionStorage.setItem(
+      UTRINKI_SCROLL_KEY,
+      JSON.stringify({ category: "aktualno", storyId: saved.id, page: 3 }),
     );
     queue[2].resolve(json({ ...pageOf([extra, saved], false), page: 3 }));
 
@@ -205,9 +212,26 @@ describe("utrinki feed", () => {
         document.querySelector(`[data-story-id="${saved.id}"]`),
       ).toBeTruthy();
     });
-    // The restored position is the card that remained after Skrij (index 0).
-    // A stuck wantMore flag would first jump to the new chunk (index 1).
-    expect(jumps).toEqual(["0"]);
+    // Only the scroll restore moves the reel, straight to the saved story.
+    const savedIndex = document
+      .querySelector(`[data-story-id="${saved.id}"]`)
+      ?.getAttribute("data-feed-index");
+    expect(jumps).toEqual([savedIndex]);
+  });
+
+  it("stops asking when the server returns a different page", async () => {
+    const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
+    const requested: string[] = [];
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      requested.push(String(input));
+      // Past the cap the server answers with its last page again.
+      return json({ ...pageOf([source.stories[1]], true), page: 0 });
+    });
+
+    renderFeed(pageOf([source.stories[0]], true));
+
+    expect(await screen.findByText("Vse si pregledal")).toBeTruthy();
+    expect(requested).toHaveLength(1);
   });
 
   it("shows the swipe hint once per browser, ever", async () => {

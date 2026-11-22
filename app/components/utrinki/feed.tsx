@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { StoryCard } from "~/components/utrinki/story-card";
 import { SourcesSheet } from "~/components/utrinki/sources-sheet";
@@ -64,6 +65,9 @@ function hintAlreadyShown() {
     return false;
   }
 }
+
+/** Start loading the next page this many cards before the end. */
+const AUTOLOAD_AHEAD = 3;
 
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -161,7 +165,9 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
           if (appended === current) wantMore.current = false;
           return appended;
         });
-        setHasMore(body.hasMore);
+        // The server clamps past its page cap; a different page back means
+        // there is nothing further, so stop instead of asking forever.
+        setHasMore(body.hasMore && body.page === next);
         setOlderStatus("idle");
       } catch {
         if (generation !== requestGen.current) return;
@@ -423,6 +429,14 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     visible.find((story) => story.id === sourcesId) ??
     (sourcesId === activeStory?.id ? activeStory : null);
 
+  // Load the next page before the reader runs out, so the reel never stops
+  // on a button. A failed load waits for the retry button on the end card.
+  useEffect(() => {
+    if (!hasMore || olderStatus !== "idle") return;
+    if (activeIndex < visible.length - AUTOLOAD_AHEAD) return;
+    void fetchPage(latestPage.current + 1);
+  }, [activeIndex, visible.length, hasMore, olderStatus, fetchPage]);
+
   function loadOlder() {
     wantMore.current = true;
     void fetchPage(latestPage.current + 1);
@@ -500,7 +514,19 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   }
 
   return (
-    <Shell>
+    <Shell
+      backdrop={
+        activeIndex < visible.length ? (activeStory?.imageUrl ?? null) : null
+      }
+      onPrevious={
+        activeIndex > 0 ? () => scrollToIndex(activeIndex - 1) : undefined
+      }
+      onNext={
+        activeIndex < visible.length
+          ? () => scrollToIndex(activeIndex + 1)
+          : undefined
+      }
+    >
       <h1 className="sr-only">Utrinki</h1>
       <button
         type="button"
@@ -599,14 +625,71 @@ function unsave(
   captureReel("reel_save", { story_id: id, saved: false });
 }
 
-/** Fills the space under the site header in the header's own colours. */
-function Shell({ children }: { children: ReactNode }) {
+/**
+ * Fills the space under the site header in the header's own colours. On
+ * desktop the reel is a column over a blurred copy of the current photo,
+ * with up/down buttons beside it.
+ */
+function Shell({
+  children,
+  backdrop = null,
+  onPrevious,
+  onNext,
+}: {
+  children: ReactNode;
+  /** Photo of the story on screen; desktop only. */
+  backdrop?: string | null;
+  onPrevious?: () => void;
+  onNext?: () => void;
+}) {
   return (
-    <div className="bg-surface text-surface-text min-h-0 flex-1 [font-family:'Source_Sans_3','Source_Sans_Pro',Inter,system-ui,sans-serif]">
-      <div className="relative mx-auto h-full w-full max-w-[430px]">
+    <div className="bg-surface text-surface-text relative min-h-0 flex-1 overflow-hidden [font-family:'Source_Sans_3','Source_Sans_Pro',Inter,system-ui,sans-serif] md:bg-[#111]">
+      {backdrop && (
+        <img
+          key={backdrop}
+          src={backdrop}
+          alt=""
+          aria-hidden
+          className="motion-safe:animate-in motion-safe:fade-in pointer-events-none absolute -top-16 -left-16 hidden h-[calc(100%+8rem)] w-[calc(100%+8rem)] max-w-none object-cover blur-[60px] brightness-[0.55] saturate-[1.3] motion-safe:duration-500 md:block"
+        />
+      )}
+      <div className="md:bg-surface relative mx-auto h-full w-full max-w-[430px] md:shadow-[0_0_60px_rgba(0,0,0,0.4)]">
         {children}
       </div>
+      {(onPrevious || onNext) && (
+        <div className="absolute top-1/2 left-[calc(50%+235px)] hidden -translate-y-1/2 flex-col gap-3 md:flex">
+          <ReelArrow label="Prejšnji sklop" onClick={onPrevious}>
+            <ChevronUp className="size-6" aria-hidden />
+          </ReelArrow>
+          <ReelArrow label="Naslednji sklop" onClick={onNext}>
+            <ChevronDown className="size-6" aria-hidden />
+          </ReelArrow>
+        </div>
+      )}
     </div>
+  );
+}
+
+function ReelArrow({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      disabled={!onClick}
+      className="grid size-12 place-items-center rounded-full bg-white/90 text-[#222] shadow-[0_6px_18px_rgba(0,0,0,0.25)] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40 focus-visible:outline-none disabled:opacity-35"
+    >
+      {children}
+    </button>
   );
 }
 

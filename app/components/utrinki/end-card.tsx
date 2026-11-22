@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { LoaderCircle } from "lucide-react";
 import checkRing from "~/assets/utrinki/check-ring.svg";
 
 export function EndCard({
@@ -16,13 +17,37 @@ export function EndCard({
   onOlder: () => void;
   onFirst: () => void;
 }) {
+  // More stories are on the way (they load on their own); show progress
+  // instead of an ending.
+  if (hasMore && !failed && !empty) {
+    return (
+      <section
+        className="bg-surface text-surface-text relative grid h-full snap-start snap-always place-items-center"
+        aria-label="Nalagam nove sklope"
+        aria-busy={loading}
+      >
+        <div className="flex flex-col items-center gap-3 text-center">
+          <LoaderCircle
+            className="size-8 text-[#0084e5] motion-safe:animate-spin"
+            aria-hidden
+          />
+          <p className="text-surface-text/70 text-[15px] font-semibold">
+            Nalagam nove sklope …
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  // The next page failed to load: offer a retry instead of an ending.
+  const stalled = hasMore && failed && !empty;
   return (
     <section
       className="bg-surface text-surface-text relative h-full snap-start snap-always overflow-hidden"
       aria-label={empty ? "Ni sklopov" : "Konec sklopa"}
     >
-      <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center text-center">
-        {!empty && (
+      <div className="absolute inset-x-4 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center text-center">
+        {!empty && !stalled && (
           <div className="relative grid size-[72px] place-items-center">
             <img src={checkRing} alt="" width={72} height={72} />
             <span className="absolute text-[36px] leading-none font-bold text-[#0084e5]">
@@ -32,46 +57,45 @@ export function EndCard({
         )}
         <h2
           className={
-            empty ? "text-[28px] font-bold" : "mt-6 text-[28px] font-bold"
+            empty || stalled
+              ? "text-[28px] font-bold"
+              : "mt-6 text-[28px] font-bold"
           }
         >
-          {empty ? "Ni sklopov" : "Vse si pregledal"}
+          {empty
+            ? "Ni sklopov"
+            : stalled
+              ? "Nalaganje ni uspelo"
+              : "Vse si pregledal"}
         </h2>
-        <p className="mt-2 max-w-[20rem] text-[15px] leading-[21px] text-surface-text/70">
+        <p className="text-surface-text/70 mt-2 max-w-[20rem] text-[15px] leading-[21px]">
           {empty
             ? "V tej kategoriji trenutno ni sklopov."
-            : "Novi sklopi se pojavijo sproti."}
+            : stalled
+              ? "Starejših sklopov ni bilo mogoče naložiti."
+              : "Novi sklopi se pojavijo sproti."}
         </p>
         <Link
           to="/"
-          className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#0084e5] text-[15px] font-semibold text-white focus-visible:ring-2 focus-visible:ring-surface-text focus-visible:outline-none"
+          className="focus-visible:ring-surface-text mt-8 inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#0084e5] text-[15px] font-semibold text-white focus-visible:ring-2 focus-visible:outline-none"
         >
           Nazaj na Vidik
         </Link>
-        {hasMore && !empty && (
+        {stalled && (
           <button
             type="button"
             onClick={onOlder}
             disabled={loading}
-            className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-xl border-surface-text/20 bg-surface-text/5 border text-[15px] font-semibold focus-visible:ring-2 focus-visible:ring-surface-text focus-visible:outline-none disabled:opacity-60"
+            className="border-surface-text/20 bg-surface-text/5 focus-visible:ring-surface-text mt-3 inline-flex h-12 w-full items-center justify-center rounded-xl border text-[15px] font-semibold focus-visible:ring-2 focus-visible:outline-none disabled:opacity-60"
           >
-            {loading
-              ? "Nalagam…"
-              : failed
-                ? "Poskusi znova"
-                : "Starejši sklopi"}
+            {loading ? "Nalagam…" : "Poskusi znova"}
           </button>
-        )}
-        {failed && !empty && (
-          <p className="mt-2 text-[13px] text-surface-text/60">
-            Starejših sklopov ni bilo mogoče naložiti.
-          </p>
         )}
         {!empty && (
           <button
             type="button"
             onClick={onFirst}
-            className="mt-6 text-[14px] font-semibold text-surface-text/70"
+            className="text-surface-text/70 mt-6 text-[14px] font-semibold"
           >
             ↑ Nazaj na prvi sklop
           </button>
