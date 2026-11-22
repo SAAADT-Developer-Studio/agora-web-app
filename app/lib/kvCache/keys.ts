@@ -36,7 +36,7 @@ export function utrinkiCacheKey(
   storyRankOrder = false,
 ): CacheKey {
   return cacheKeyForOrder(
-    `data:story:utrinki:v1:${category}:${page}`,
+    `data:story:utrinki:v2:${category}:${page}`,
     storyRankOrder,
   );
 }

@@ -110,7 +110,7 @@ export function SourcesSheet({
         <DialogPrimitive.Content
           aria-modal="true"
           className={cn(
-            "fixed right-0 bottom-0 left-0 z-50 mx-auto flex w-full max-w-[390px] flex-col overflow-hidden rounded-t-[20px] bg-[#414141] text-[#f3f8fe] shadow-[0px_-8px_32px_-4px_rgba(0,0,0,0.28)] outline-none",
+            "fixed right-0 bottom-0 left-0 z-50 mx-auto flex w-full max-w-[430px] flex-col overflow-hidden rounded-t-[20px] bg-[#414141] text-[#f3f8fe] shadow-[0px_-8px_32px_-4px_rgba(0,0,0,0.28)] outline-none",
             expanded ? "h-dvh rounded-none" : "h-[min(76dvh,640px)]",
           )}
           onPointerDown={(event) => {
@@ -208,15 +208,13 @@ export function SourcesSheet({
                             accent[side],
                           )}
                         />
-                        <span className="mt-1 grid size-8 shrink-0 place-items-center overflow-hidden rounded-full border border-[#494949] bg-white">
-                          <ProviderMark
-                            provider={{
-                              key: article.providerKey,
-                              name: article.providerName,
-                            }}
-                            className="size-6"
-                          />
-                        </span>
+                        <ProviderMark
+                          provider={{
+                            key: article.providerKey,
+                            name: article.providerName,
+                          }}
+                          className="mt-1"
+                        />
                         <span className="min-w-0 flex-1">
                           <span className="block text-[11px] font-semibold text-[#f3f8fe]/65">
                             {article.providerName} ·{" "}

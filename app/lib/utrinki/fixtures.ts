@@ -114,6 +114,10 @@ function story(index: number): UtrinkiStory {
       index === 0
         ? "https://images.pexels.com/photos/5555877/pexels-photo-5555877.jpeg"
         : null,
+    imageCandidates:
+      index === 0
+        ? ["https://images.pexels.com/photos/5555877/pexels-photo-5555877.jpeg"]
+        : [],
     articleCount: articles.length,
     providerCount: providers.length,
     providers,

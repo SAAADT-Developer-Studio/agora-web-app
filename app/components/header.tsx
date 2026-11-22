@@ -78,7 +78,8 @@ function CategoryNav() {
   );
 }
 
-export function Header() {
+/** `categories={false}` drops the category row, e.g. on the full-height reel. */
+export function Header({ categories = true }: { categories?: boolean } = {}) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -110,7 +111,7 @@ export function Header() {
             <ThemeSwitch className="-mr-1.5" />
           </div>
         </div>
-        <CategoryNav />
+        {categories && <CategoryNav />}
       </header>
       <SideMenu open={open} onClose={() => setOpen(false)} />
     </>

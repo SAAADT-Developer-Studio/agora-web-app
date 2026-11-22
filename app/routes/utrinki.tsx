@@ -1,6 +1,8 @@
 import type { Route } from "./+types/utrinki";
 import { data } from "react-router";
+import type { ReactNode } from "react";
 import { ErrorComponent } from "~/components/error-component";
+import { Header } from "~/components/header";
 import { UtrinkiFeed } from "~/components/utrinki/feed";
 import { UtrinkiSkeleton } from "~/components/utrinki/states";
 import { getSeoMetas } from "~/lib/seo";
@@ -36,14 +38,39 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   });
 }
 
+/** The site header on top, the reel filling the rest of the screen. */
+function Frame({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex h-dvh flex-col overflow-hidden">
+      <Header categories={false} />
+      {children}
+    </div>
+  );
+}
+
 export function HydrateFallback() {
-  return <UtrinkiSkeleton />;
+  return (
+    <Frame>
+      <UtrinkiSkeleton />
+    </Frame>
+  );
 }
 
 export default function UtrinkiRoute({ loaderData }: Route.ComponentProps) {
-  return <UtrinkiFeed page={loaderData} />;
+  return (
+    <Frame>
+      <UtrinkiFeed page={loaderData} />
+    </Frame>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  return <ErrorComponent error={error} />;
+  return (
+    <>
+      <Header />
+      <main className="mx-auto w-full max-w-[1200px] flex-1 px-3 py-4 md:px-6">
+        <ErrorComponent error={error} />
+      </main>
+    </>
+  );
 }
