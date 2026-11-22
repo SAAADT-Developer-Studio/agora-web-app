@@ -63,7 +63,7 @@ export function OutletVoting({
               disabled={pending}
               aria-pressed={selected}
               className={cn(
-                "relative flex min-w-0 flex-col items-start rounded-lg border p-2 text-left transition-colors disabled:cursor-wait md:p-3",
+                "flex min-w-0 flex-col items-start rounded-lg border p-2 text-left transition-colors disabled:cursor-wait md:p-3",
                 selected
                   ? "border-primary bg-primary/6"
                   : "hover:border-primary/40 hover:bg-primary/3 border-current/12",
@@ -72,8 +72,16 @@ export function OutletVoting({
               <span
                 className={cn("h-1.5 w-full rounded-full", BIAS_FILL[value])}
               />
-              <span className="text-primary mt-2 text-xs leading-tight font-bold md:text-[15px]">
-                {biasKeyToLabel(value)}
+              <span className="mt-2 flex w-full items-start justify-between gap-1">
+                <span className="text-primary text-xs leading-tight font-bold md:text-[15px]">
+                  {biasKeyToLabel(value)}
+                </span>
+                {selected &&
+                  (pending ? (
+                    <Spinner className="size-4 shrink-0 fill-current md:size-5" />
+                  ) : (
+                    <CircleCheck className="size-4 shrink-0 md:size-5" />
+                  ))}
               </span>
               <span className="text-primary/55 mt-0.5 text-[11px] tabular-nums md:text-xs">
                 {outlet.votes.byRating[value]} glasov
@@ -81,15 +89,6 @@ export function OutletVoting({
               {outlet.biasRating === value && (
                 <span className="text-primary/55 mt-1 text-[10px] leading-tight md:text-[11px]">
                   naša ocena
-                </span>
-              )}
-              {selected && (
-                <span className="absolute top-2 right-1.5 md:top-3 md:right-2.5">
-                  {pending ? (
-                    <Spinner className="size-3 fill-current" />
-                  ) : (
-                    <CircleCheck className="size-4" />
-                  )}
                 </span>
               )}
             </button>
@@ -109,7 +108,7 @@ export function VoteSuggestions({ outlets }: { outlets: RelatedOutlet[] }) {
         Hvala! Glasuj še za druge medije
       </h3>
       <ul className="mt-3 grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2">
-        {outlets.map((o) => (
+        {outlets.slice(0, 4).map((o) => (
           <li key={o.key}>
             <OutletRow outlet={o} />
           </li>
