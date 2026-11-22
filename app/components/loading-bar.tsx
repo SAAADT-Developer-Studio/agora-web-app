@@ -4,7 +4,7 @@ import { useLoadingIndicator } from "~/hooks/use-loading-indicator";
 
 export function LoadingBar({
   height = 3,
-  color = "repeating-linear-gradient(to right, #00dc82 0%, #34cdfe 50%, #0047e1 100%)",
+  color = "var(--color-electricblue)",
 }: {
   height?: number;
   color?: string;
@@ -38,7 +38,6 @@ export function LoadingBar({
         height: `${height}px`,
         opacity: isLoading ? 1 : 0,
         background: color,
-        backgroundSize: `${progress > 0 ? (100 / progress) * 100 : 0}% auto`,
         transform: `scaleX(${progress / 100})`,
         transformOrigin: "left",
         transition: "transform 0.1s, height 0.4s, opacity 0.4s",

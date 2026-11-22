@@ -1,4 +1,5 @@
 import { getSeoMetas } from "~/lib/seo";
+import { Page, PageHeader } from "~/components/page";
 import type { Route } from "./+types/privacy-policy";
 import { LastUpdatedBadge } from "~/components/last-updated-badge";
 import { ErrorComponent } from "~/components/error-component";
@@ -14,17 +15,14 @@ export function headers() {
 
 export default function PrivacyPolicyPage({}: Route.ComponentProps) {
   return (
-    <div className="mx-auto max-w-5xl px-1 py-6 sm:px-4 md:px-6 md:py-8">
-      <div className="mb-10">
-        <LastUpdatedBadge date={LAST_UPDATED} className="mb-3" />
-        <h1 className="text-surface-text mb-4 text-4xl font-bold tracking-tight">
-          Politika zasebnosti
-        </h1>
-        <p className="text-surface-text/70 max-w-2xl leading-relaxed">
-          Vaša zasebnost je za nas pomembna. Spodaj je razloženo, kako zbiramo,
-          uporabljamo in varujemo vaše podatke.
-        </p>
-      </div>
+    <Page>
+      <PageHeader
+        title="Politika zasebnosti"
+        before={<LastUpdatedBadge date={LAST_UPDATED} className="mb-3" />}
+      >
+        Vaša zasebnost je za nas pomembna. Spodaj je razloženo, kako zbiramo,
+        uporabljamo in varujemo vaše podatke.
+      </PageHeader>
 
       <div className="space-y-4">
         <div className="border-primary/10 bg-primary/5 rounded-xl border p-4">
@@ -152,7 +150,7 @@ export default function PrivacyPolicyPage({}: Route.ComponentProps) {
           </ul>
         </section>
       </div>
-    </div>
+    </Page>
   );
 }
 
