@@ -8,12 +8,19 @@ import { cn } from "~/lib/utils";
 import { utrinkiStoryHref } from "~/lib/utrinki/model";
 import {
   isDeprioritized,
+  orderFeed,
+  sanitizeHidden,
   sanitizeSeen,
   UTRINKI_KEYS,
+  type HiddenMap,
+  type SeenMap,
 } from "~/lib/utrinki/store";
 
-const MAX_STORIES = 12;
-const EMPTY_SEEN = {};
+/** Circles shown in the row. */
+export const RAIL_SIZE = 12;
+/** Stories kept in reserve so watched ones can be swapped for unwatched ones. */
+const POOL_SIZE = 48;
+const EMPTY_MAP = {};
 
 export type RailStory = {
   id: number;
@@ -30,8 +37,9 @@ function storyIdOf(article: ArticleType) {
 }
 
 /**
- * Home stories first (same order as the reel), then the top story of each
- * category, without repeats.
+ * Candidate stories in rank order: home stories first (same order as the
+ * reel), then the top story of each category, then the rest of each
+ * category taken in turns, without repeats.
  */
 export function railStories(
   home: readonly ArticleType[],
@@ -40,7 +48,7 @@ export function railStories(
   const picked: RailStory[] = [];
   const seen = new Set<number>();
   const add = (article: ArticleType | undefined) => {
-    if (!article || picked.length >= MAX_STORIES) return;
+    if (!article || picked.length >= POOL_SIZE) return;
     const id = storyIdOf(article);
     if (id === null || seen.has(id)) return;
     seen.add(id);
@@ -53,8 +61,31 @@ export function railStories(
     });
   };
   for (const article of home) add(article);
-  for (const category of config.categories) add(byCategory[category.key][0]);
+  const lists = config.categories.map((category) => byCategory[category.key]);
+  const longest = Math.max(0, ...lists.map((list) => list.length));
+  for (let rank = 0; rank < longest; rank++) {
+    for (const list of lists) add(list[rank]);
+  }
   return picked;
+}
+
+/**
+ * The circles to show: unwatched stories first (even older ones), watched
+ * ones only to fill the row, hidden ones never. Same rule as the reel.
+ */
+export function visibleRailStories(
+  pool: readonly RailStory[],
+  seen: SeenMap,
+  hidden: HiddenMap,
+): RailStory[] {
+  const byId = new Map(pool.map((story) => [story.id, story]));
+  return orderFeed(
+    pool.map(({ id, updatedAt }) => ({ id, updatedAt: updatedAt ?? "" })),
+    seen,
+    hidden,
+  )
+    .slice(0, RAIL_SIZE)
+    .map(({ id }) => byId.get(id)!);
 }
 
 /** The ring shows how outlets are split: left red, centre grey, right blue. */
@@ -69,9 +100,14 @@ function ringGradient(bias: RailStory["bias"]) {
  * Row of story circles at the top of the home page. The first
  * circle opens the reel; each story opens the reel on that story.
  */
-export function UtrinkiRail({ stories }: { stories: RailStory[] }) {
-  const [seenRaw] = useLocalStorage<unknown>(UTRINKI_KEYS.seen, EMPTY_SEEN);
+export function UtrinkiRail({ stories: pool }: { stories: RailStory[] }) {
+  const [seenRaw] = useLocalStorage<unknown>(UTRINKI_KEYS.seen, EMPTY_MAP);
+  const [hiddenRaw] = useLocalStorage<unknown>(UTRINKI_KEYS.hidden, EMPTY_MAP);
   const seen = useMemo(() => sanitizeSeen(seenRaw), [seenRaw]);
+  const stories = useMemo(
+    () => visibleRailStories(pool, seen, sanitizeHidden(hiddenRaw)),
+    [pool, seen, hiddenRaw],
+  );
   if (stories.length === 0) return null;
 
   return (
