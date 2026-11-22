@@ -101,6 +101,8 @@ describe("utrinki loader", () => {
     expect(story?.title).toBe('Brezovec "brez maske"');
     expect(story?.summary).toBe("Koalicija razpravlja o odstopu.");
     expect(story?.imageUrl).toBe("https://cdn.example/still.jpg");
+    // Same URL from every member collapses to one candidate; the .mp4 is skipped.
+    expect(story?.imageCandidates).toEqual(["https://cdn.example/still.jpg"]);
     expect(story?.storyPath).toBe("/zgodba/42");
     expect(story?.categoryLabel).toBe("POLITIKA");
     expect(story?.bias).toMatchObject({

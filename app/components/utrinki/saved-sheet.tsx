@@ -24,7 +24,7 @@ export function SavedSheet({
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogPortal>
         <DialogOverlay className="bg-[rgba(5,6,7,0.58)] backdrop-blur-none" />
-        <DialogPrimitive.Content className="fixed right-0 bottom-0 left-0 z-50 mx-auto flex h-[min(70dvh,560px)] w-full max-w-[390px] flex-col rounded-t-[20px] bg-[#414141] text-[#f3f8fe] shadow-[0px_-8px_32px_-4px_rgba(0,0,0,0.28)] outline-none">
+        <DialogPrimitive.Content className="fixed right-0 bottom-0 left-0 z-50 mx-auto flex h-[min(70dvh,560px)] w-full max-w-[430px] flex-col rounded-t-[20px] bg-[#414141] text-[#f3f8fe] shadow-[0px_-8px_32px_-4px_rgba(0,0,0,0.28)] outline-none">
           <div className="flex justify-center pt-2.5">
             <span className="h-1 w-10 rounded-full bg-[#f3f8fe]/30" />
           </div>

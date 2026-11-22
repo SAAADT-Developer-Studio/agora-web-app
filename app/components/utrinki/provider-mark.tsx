@@ -1,55 +1,64 @@
 import { useState } from "react";
 import { ProviderImage } from "~/components/provider-image";
+import { cn } from "~/lib/utils";
 
+/** Outlet logo that fills its round frame edge to edge (no white padding). */
 export function ProviderMark({
   provider,
-  className = "size-7",
+  className,
 }: {
   provider: { key: string; name: string };
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  if (failed) {
-    return (
-      <span className="text-[10px] font-bold tracking-tight text-[#232323] uppercase">
-        {provider.name.slice(0, 2)}
-      </span>
-    );
-  }
   return (
-    <ProviderImage
-      provider={provider}
-      size={60}
-      className={`${className} object-contain`}
-      onError={() => setFailed(true)}
-    />
+    <span
+      className={cn(
+        "grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-[#2a2d33]",
+        className,
+      )}
+    >
+      {failed ? (
+        <span className="text-[10px] font-bold tracking-tight text-[#f3f8fe] uppercase">
+          {provider.name.slice(0, 2)}
+        </span>
+      ) : (
+        <ProviderImage
+          provider={provider}
+          size={60}
+          className="size-full object-cover"
+          onError={() => setFailed(true)}
+        />
+      )}
+    </span>
   );
 }
 
 export function ProviderStack({
   providers,
   total,
+  max = 4,
 }: {
   providers: { key: string; name: string }[];
   total: number;
+  max?: number;
 }) {
-  const shown = providers.slice(0, 4);
+  const shown = providers.slice(0, max);
   const extra = Math.max(total - shown.length, 0);
   return (
-    <div className="flex items-center">
-      {shown.map((provider) => (
-        <span
+    <span className="flex items-center">
+      {shown.map((provider, index) => (
+        <ProviderMark
           key={provider.key}
-          className="-mr-2 grid size-[34px] place-items-center overflow-hidden rounded-full border-2 border-[#1f1f1f] bg-white"
-        >
-          <ProviderMark provider={provider} />
-        </span>
+          provider={provider}
+          className={cn("ring-surface ring-2", index > 0 && "-ml-2")}
+        />
       ))}
       {extra > 0 && (
-        <span className="grid size-[34px] place-items-center rounded-full border-2 border-[#1f1f1f] bg-[#0084e5] text-[11px] font-semibold text-[#f3f8fe]">
+        <span className="ring-surface bg-surface-light text-surface-text -ml-2 grid size-8 place-items-center rounded-full text-[11px] font-semibold ring-2">
           +{extra}
         </span>
       )}
-    </div>
+    </span>
   );
 }

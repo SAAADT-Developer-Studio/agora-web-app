@@ -4,7 +4,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
-import { ReelChrome } from "~/components/utrinki/chrome";
 import { SourcesSheet } from "~/components/utrinki/sources-sheet";
 import { useLocalStorage } from "~/hooks/use-local-storage";
 import { fixtureUtrinkiPage } from "~/lib/utrinki/fixtures";
@@ -28,37 +27,6 @@ function storyWith(count: number, left = 11): UtrinkiStory {
     bias: { ...base.bias, left },
   };
 }
-
-describe("utrinki menu", () => {
-  it("traps focus, closes on Escape, and returns focus to the menu button", async () => {
-    const user = userEvent.setup();
-    const onHide = vi.fn();
-    render(withRouter(<ReelChrome category="politika" onHide={onHide} />));
-
-    const menu = screen.getByRole("button", { name: "Meni" });
-    await user.click(menu);
-    const dialog = screen.getByRole("dialog");
-    expect(dialog.getAttribute("aria-modal")).toBe("true");
-    expect(dialog.contains(document.activeElement)).toBe(true);
-    expect(screen.getByText("Izbrana kategorija: POLITIKA")).toBeTruthy();
-
-    const hide = screen.getByRole("button", { name: "Skrij" });
-    expect(hide.tabIndex).not.toBe(-1);
-    hide.focus();
-    await user.tab();
-    expect(dialog.contains(document.activeElement)).toBe(true);
-
-    hide.focus();
-    await user.keyboard("{Enter}");
-    expect(onHide).toHaveBeenCalledOnce();
-
-    await user.click(menu);
-    expect(screen.getByRole("dialog")).toBeTruthy();
-    await user.keyboard("{Escape}");
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(document.activeElement).toBe(menu);
-  });
-});
 
 describe("utrinki sources sheet", () => {
   it("resets the filter when the sheet is swiped closed", async () => {

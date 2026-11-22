@@ -1,9 +1,7 @@
 import { Link } from "react-router";
-import { useState } from "react";
 import checkRing from "~/assets/utrinki/check-ring.svg";
 
 export function EndCard({
-  imageUrl,
   hasMore,
   loading,
   failed = false,
@@ -11,7 +9,6 @@ export function EndCard({
   onOlder,
   onFirst,
 }: {
-  imageUrl: string | null;
   hasMore: boolean;
   loading: boolean;
   failed?: boolean;
@@ -19,25 +16,12 @@ export function EndCard({
   onOlder: () => void;
   onFirst: () => void;
 }) {
-  const [imageFailed, setImageFailed] = useState(false);
   return (
     <section
-      className="relative h-dvh snap-start snap-always overflow-hidden bg-[#1f1f1f] text-[#f3f8fe]"
+      className="bg-surface text-surface-text relative h-full snap-start snap-always overflow-hidden"
       aria-label={empty ? "Ni sklopov" : "Konec sklopa"}
     >
-      {imageUrl && !imageFailed ? (
-        <img
-          src={imageUrl}
-          alt=""
-          className="absolute inset-0 size-full object-cover"
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <div className="absolute inset-0 bg-[#111318]" />
-      )}
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.08)_0%,rgba(0,0,0,0.12)_42%,rgba(0,0,0,0.96)_100%)]" />
-      <div className="absolute inset-0 bg-[rgba(17,19,24,0.86)]" />
-      <div className="absolute inset-x-4 top-[250px] z-10 flex flex-col items-center text-center">
+      <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center text-center">
         {!empty && (
           <div className="relative grid size-[72px] place-items-center">
             <img src={checkRing} alt="" width={72} height={72} />
@@ -53,14 +37,14 @@ export function EndCard({
         >
           {empty ? "Ni sklopov" : "Vse si pregledal"}
         </h2>
-        <p className="mt-2 max-w-[20rem] text-[15px] leading-[21px] text-[#f3f8fe]/75">
+        <p className="mt-2 max-w-[20rem] text-[15px] leading-[21px] text-surface-text/70">
           {empty
             ? "V tej kategoriji trenutno ni sklopov."
             : "Novi sklopi se pojavijo sproti."}
         </p>
         <Link
           to="/"
-          className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#0084e5] text-[15px] font-semibold focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+          className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#0084e5] text-[15px] font-semibold text-white focus-visible:ring-2 focus-visible:ring-surface-text focus-visible:outline-none"
         >
           Nazaj na Vidik
         </Link>
@@ -69,7 +53,7 @@ export function EndCard({
             type="button"
             onClick={onOlder}
             disabled={loading}
-            className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-xl border border-white/30 bg-white/6 text-[15px] font-semibold focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none disabled:opacity-60"
+            className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-xl border-surface-text/20 bg-surface-text/5 border text-[15px] font-semibold focus-visible:ring-2 focus-visible:ring-surface-text focus-visible:outline-none disabled:opacity-60"
           >
             {loading
               ? "Nalagam…"
@@ -79,7 +63,7 @@ export function EndCard({
           </button>
         )}
         {failed && !empty && (
-          <p className="mt-2 text-[13px] text-[#f3f8fe]/70">
+          <p className="mt-2 text-[13px] text-surface-text/60">
             Starejših sklopov ni bilo mogoče naložiti.
           </p>
         )}
@@ -87,7 +71,7 @@ export function EndCard({
           <button
             type="button"
             onClick={onFirst}
-            className="mt-6 text-[14px] font-semibold text-[#f3f8fe]/80"
+            className="mt-6 text-[14px] font-semibold text-surface-text/70"
           >
             ↑ Nazaj na prvi sklop
           </button>

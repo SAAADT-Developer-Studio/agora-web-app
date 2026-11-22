@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { Toaster } from "sonner";
@@ -119,14 +119,14 @@ describe("utrinki feed", () => {
     const story = source.stories[0];
     renderFeed(pageOf([story], false));
 
-    await user.click(screen.getByRole("button", { name: "Meni" }));
-    await user.click(screen.getByRole("button", { name: "Skrij" }));
+    await user.click(screen.getByRole("button", { name: "Skrij sklop" }));
     await user.click(await screen.findByRole("button", { name: "Razveljavi" }));
 
     await waitFor(() => {
-      const cta = [
-        ...document.querySelectorAll(`[data-story-id="${story.id}"] a`),
-      ].find((link) => link.textContent?.includes("Preberi celoten sklop"));
+      const cta = document.querySelector(
+        `[data-story-id="${story.id}"] [data-story-cta]`,
+      );
+      expect(cta).toBeTruthy();
       expect(document.activeElement).toBe(cta);
     });
   });
@@ -178,8 +178,11 @@ describe("utrinki feed", () => {
         page: 3,
       }),
     );
-    await user.click(screen.getByRole("button", { name: "Meni" }));
-    await user.click(screen.getByRole("button", { name: "Skrij" }));
+    await user.click(
+      within(
+        document.querySelector<HTMLElement>(`[data-story-id="${first.id}"]`)!,
+      ).getByRole("button", { name: "Skrij sklop" }),
+    );
     await waitFor(() => expect(queue.map((item) => item.stran)).toEqual(["1", "2", "3"]));
     queue[2].resolve(
       json({ ...pageOf([extra, saved], false), page: 3 }),
@@ -193,5 +196,18 @@ describe("utrinki feed", () => {
     // The restored position is the card that remained after Skrij (index 0).
     // A stuck wantMore flag would first jump to the new chunk (index 1).
     expect(jumps).toEqual(["0"]);
+  });
+
+  it("shows the swipe hint once per browser, ever", async () => {
+    const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
+    renderFeed(source);
+
+    expect(await screen.findByText("Povleci navzgor", {}, { timeout: 2000 })).toBeTruthy();
+    expect(localStorage.getItem(UTRINKI_KEYS.hint)).not.toBeNull();
+
+    cleanup();
+    renderFeed(source);
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    expect(screen.queryByText("Povleci navzgor")).toBeNull();
   });
 });

@@ -42,6 +42,8 @@ export type UtrinkiStory = {
   categoryLabel: string;
   updatedAt: string;
   imageUrl: string | null;
+  /** Hero candidates in carousel order; the reel shows the largest that loads. */
+  imageCandidates: string[];
   articleCount: number;
   providerCount: number;
   providers: UtrinkiProvider[];
@@ -257,8 +259,10 @@ function dominantCategory(members: readonly UtrinkiMember[]) {
   return best;
 }
 
-function heroImage(members: readonly UtrinkiMember[]) {
-  const id = getCarouselArticleIds(
+const HERO_CANDIDATES = 4;
+
+function heroImages(members: readonly UtrinkiMember[]) {
+  const ids = getCarouselArticleIds(
     members.map((member) => ({
       id: member.id,
       imageUrls: member.imageUrls,
@@ -267,10 +271,42 @@ function heroImage(members: readonly UtrinkiMember[]) {
         biasRating: member.newsProvider.biasRating,
       },
     })),
-  ).at(0);
-  const url = members.find((member) => member.id === id)?.imageUrls?.[0];
-  if (!url || url.toLowerCase().endsWith(".mp4")) return null;
-  return url;
+  );
+  const byId = new Map(members.map((member) => [member.id, member]));
+  const urls: string[] = [];
+  for (const id of ids) {
+    const url = byId.get(id)?.imageUrls?.[0];
+    if (!url || url.toLowerCase().endsWith(".mp4") || urls.includes(url)) {
+      continue;
+    }
+    urls.push(url);
+    if (urls.length === HERO_CANDIDATES) break;
+  }
+  return urls;
+}
+
+export type StoryHook = { text: string; tone: "left" | "right" | "neutral" };
+
+/**
+ * One line that gives a reason to open the story: who is (not) covering it.
+ * Built only from outlet ratings, so it never claims more than the data says.
+ */
+export function storyHook(
+  bias: Pick<UtrinkiBias, "left" | "center" | "right">,
+  providerCount: number,
+): StoryHook | null {
+  const rated = bias.left + bias.center + bias.right;
+  if (providerCount < 2 || rated < 2) return null;
+  if (bias.left > 0 && bias.right === 0) {
+    return { text: "Desno usmerjeni mediji o tem ne poročajo", tone: "left" };
+  }
+  if (bias.right > 0 && bias.left === 0) {
+    return { text: "Levo usmerjeni mediji o tem ne poročajo", tone: "right" };
+  }
+  if (bias.left === 0 && bias.right === 0) {
+    return { text: "Poročajo le sredinski mediji", tone: "neutral" };
+  }
+  return { text: "Poročajo levi in desni mediji", tone: "neutral" };
 }
 
 export function toUtrinkiStory(input: {
@@ -308,6 +344,7 @@ export function toUtrinkiStory(input: {
   const counts = countBiasSides(articles.map((article) => article.biasRating));
   const percents = biasPercents(counts);
   const category = dominantCategory(input.members);
+  const images = heroImages(input.members);
   const times = articles.map((article) => Date.parse(article.publishedAt));
   const bullets = parseStoryBullets(
     input.bullets,
@@ -332,7 +369,8 @@ export function toUtrinkiStory(input: {
     category,
     categoryLabel: category ? getCategory(category).name : "AKTUALNO",
     updatedAt: new Date(input.lastArticlePublishedAt).toISOString(),
-    imageUrl: heroImage(input.members),
+    imageUrl: images[0] ?? null,
+    imageCandidates: images,
     articleCount: articles.length,
     providerCount: providers.length,
     providers,

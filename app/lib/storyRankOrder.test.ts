@@ -115,13 +115,13 @@ describe("listing cache keys", () => {
       "data:story:category:politika:observed-rank",
     );
     expect(utrinkiCacheKey("aktualno", 0)).toBe(
-      "data:story:utrinki:v1:aktualno:0",
+      "data:story:utrinki:v2:aktualno:0",
     );
     expect(utrinkiCacheKey("politika", 2, false)).toBe(
-      "data:story:utrinki:v1:politika:2",
+      "data:story:utrinki:v2:politika:2",
     );
     expect(utrinkiCacheKey("politika", 2, true)).toBe(
-      "data:story:utrinki:v1:politika:2:observed-rank",
+      "data:story:utrinki:v2:politika:2:observed-rank",
     );
   });
 });
