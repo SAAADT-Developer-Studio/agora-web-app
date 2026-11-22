@@ -4,8 +4,11 @@ import { loadUtrinkiPage } from "~/lib/utrinki/load";
 import {
   assembleUtrinkiPage,
   formatCoverageSpan,
+  parseUtrinkiFocus,
   parseUtrinkiQuery,
   toUtrinkiStory,
+  utrinkiStoryHref,
+  withFocusedStory,
   appendUniqueStories,
   shortAgo,
   updatedKicker,
@@ -16,6 +19,7 @@ import {
   type UtrinkiStory,
 } from "~/lib/utrinki/model";
 import { dwellBucket } from "~/lib/utrinki/analytics";
+import { fixtureUtrinkiPage } from "~/lib/utrinki/fixtures";
 
 function member(
   id: number,
@@ -101,6 +105,8 @@ describe("utrinki loader", () => {
     expect(story?.title).toBe('Brezovec "brez maske"');
     expect(story?.summary).toBe("Koalicija razpravlja o odstopu.");
     expect(story?.imageUrl).toBe("https://cdn.example/still.jpg");
+    // Same URL from every member collapses to one candidate; the .mp4 is skipped.
+    expect(story?.imageCandidates).toEqual(["https://cdn.example/still.jpg"]);
     expect(story?.storyPath).toBe("/zgodba/42");
     expect(story?.categoryLabel).toBe("POLITIKA");
     expect(story?.bias).toMatchObject({
@@ -218,5 +224,41 @@ describe("utrinki loader", () => {
     expect(dwellBucket(3000)).toBe("3-10s");
     expect(dwellBucket(10_000)).toBe("10-30s");
     expect(dwellBucket(30_000)).toBe("30s+");
+  });
+
+  it("parses and builds the open-on-a-story link", () => {
+    expect(parseUtrinkiFocus(new URLSearchParams("zgodba=42"))).toBe(42);
+    expect(parseUtrinkiFocus(new URLSearchParams("zgodba=-1"))).toBeNull();
+    expect(parseUtrinkiFocus(new URLSearchParams("zgodba=x"))).toBeNull();
+    expect(parseUtrinkiFocus(new URLSearchParams(""))).toBeNull();
+    expect(utrinkiStoryHref(42)).toBe("/utrinki?zgodba=42");
+  });
+
+  it("moves the focused story first, or fetches it when missing", async () => {
+    const base = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
+    const [first, second, third] = base.stories;
+    const page = { ...base, stories: [first, second, third] };
+
+    const moved = await withFocusedStory(page, third.id, async () => {
+      throw new Error("should not load");
+    });
+    expect(moved.stories.map((story) => story.id)).toEqual([
+      third.id,
+      first.id,
+      second.id,
+    ]);
+    expect(moved.focus).toBe(third.id);
+
+    const extra = { ...first, id: 777 };
+    const fetched = await withFocusedStory(page, 777, async () => extra);
+    expect(fetched.stories.map((story) => story.id)).toEqual([
+      777,
+      first.id,
+      second.id,
+      third.id,
+    ]);
+
+    const missing = await withFocusedStory(page, 888, async () => null);
+    expect(missing).toBe(page);
   });
 });

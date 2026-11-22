@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { storyHook } from "~/lib/utrinki/model";
 import {
   biasCountsAddUp,
   biasPercents,
@@ -54,5 +55,26 @@ describe("utrinki bias", () => {
       center: 0,
       right: 0,
     });
+  });
+});
+
+describe("storyHook", () => {
+  const hook = (left: number, center: number, right: number, providers = 5) =>
+    storyHook({ left, center, right }, providers)?.text ?? null;
+
+  it("names the side that is missing", () => {
+    expect(hook(3, 2, 0)).toBe("Desno usmerjeni mediji o tem ne poročajo");
+    expect(hook(0, 1, 4)).toBe("Levo usmerjeni mediji o tem ne poročajo");
+  });
+
+  it("covers centre-only and both-sides stories", () => {
+    expect(hook(0, 3, 0)).toBe("Poročajo le sredinski mediji");
+    expect(hook(2, 0, 2)).toBe("Poročajo levi in desni mediji");
+  });
+
+  it("stays quiet without enough rated outlets", () => {
+    expect(hook(1, 0, 0, 1)).toBeNull();
+    expect(hook(1, 0, 0, 4)).toBeNull();
+    expect(hook(0, 0, 0)).toBeNull();
   });
 });

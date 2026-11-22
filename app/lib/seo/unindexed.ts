@@ -1,13 +1,8 @@
-/** Shared noindex policy for the hidden `/utrinki` reel. */
+/** `noindex` for the `/api/utrinki` JSON continuation. The `/utrinki` document is indexable. */
 export const UNINDEXED_ROBOTS = "noindex, nofollow";
 
 export function isUnindexedPath(pathname: string) {
-  return (
-    pathname === "/utrinki" ||
-    pathname.startsWith("/utrinki/") ||
-    pathname === "/api/utrinki" ||
-    pathname.startsWith("/api/utrinki/")
-  );
+  return pathname === "/api/utrinki" || pathname.startsWith("/api/utrinki/");
 }
 
 export function withUnindexedRobots(response: Response, pathname: string) {

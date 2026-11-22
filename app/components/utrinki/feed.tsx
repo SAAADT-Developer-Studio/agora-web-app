@@ -7,30 +7,30 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ChevronUp } from "lucide-react";
-import { useNavigation } from "react-router";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { StoryCard } from "~/components/utrinki/story-card";
 import { SourcesSheet } from "~/components/utrinki/sources-sheet";
 import { SavedSheet } from "~/components/utrinki/saved-sheet";
 import { EndCard } from "~/components/utrinki/end-card";
 import {
-  CategoryRail,
-  ReelChrome,
-  ReelProgress,
-} from "~/components/utrinki/chrome";
+  SWIPE_HINT_CYCLE_MS,
+  SWIPE_HINT_CYCLES,
+  SwipeHint,
+} from "~/components/utrinki/swipe-hint";
 import { captureReel, dwellBucket } from "~/lib/utrinki/analytics";
 import { useUtrinkiStore } from "~/lib/utrinki/use-utrinki-store";
 import {
   orderFeed,
   readScroll,
+  sanitizeHint,
+  UTRINKI_KEYS,
   writeScroll,
   type SavedMap,
 } from "~/lib/utrinki/store";
 import {
   appendUniqueStories,
   isUtrinkiPage,
-  parseUtrinkiQuery,
   utrinkiDataHref,
   type UtrinkiCategory,
   type UtrinkiPage,
@@ -56,6 +56,19 @@ async function shareStory(story: UtrinkiStory) {
   }
 }
 
+/** Read straight from storage: the store hook reports defaults until mount. */
+function hintAlreadyShown() {
+  try {
+    const raw = localStorage.getItem(UTRINKI_KEYS.hint);
+    return raw !== null && sanitizeHint(JSON.parse(raw)) !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** Start loading the next page this many cards before the end. */
+const AUTOLOAD_AHEAD = 3;
+
 function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -71,7 +84,6 @@ function usePrefersReducedMotion() {
 export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   const store = useUtrinkiStore();
   const reduced = usePrefersReducedMotion();
-  const navigation = useNavigation();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [pages, setPages] = useState<UtrinkiStory[][]>([page.stories]);
   const [hasMore, setHasMore] = useState(page.hasMore);
@@ -81,7 +93,8 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   );
   const [sourcesId, setSourcesId] = useState<number | null>(null);
   const [savedOpen, setSavedOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [hintVisible, setHintVisible] = useState(false);
+  const hintChecked = useRef(false);
   const [olderStatus, setOlderStatus] = useState<"idle" | "loading" | "error">(
     "idle",
   );
@@ -99,12 +112,6 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     started: number;
   } | null>(null);
 
-  const pendingCategory = useMemo(() => {
-    if (navigation.state === "idle" || !navigation.location) return null;
-    return parseUtrinkiQuery(new URLSearchParams(navigation.location.search))
-      .category;
-  }, [navigation.location, navigation.state]);
-
   useEffect(() => {
     requestGen.current += 1;
     inflightPage.current = null;
@@ -116,6 +123,8 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     setOlderStatus("idle");
     setSeenThisVisit(new Set());
     setOrderSeen(seenRef.current);
+    // A new page (or a new ?zgodba= link) starts at its first card.
+    scrollerRef.current?.scrollTo?.({ top: 0 });
   }, [page.category, page.page, page.stories, page.hasMore]);
 
   useLayoutEffect(() => {
@@ -156,7 +165,9 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
           if (appended === current) wantMore.current = false;
           return appended;
         });
-        setHasMore(body.hasMore);
+        // The server clamps past its page cap; a different page back means
+        // there is nothing further, so stop instead of asking forever.
+        setHasMore(body.hasMore && body.page === next);
         setOlderStatus("idle");
       } catch {
         if (generation !== requestGen.current) return;
@@ -176,8 +187,18 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     return copy;
   }, [orderSeen, seenThisVisit]);
   const orderedPages = useMemo(
-    () => pages.map((chunk) => orderFeed(chunk, seenForOrder, hidden)),
-    [pages, seenForOrder, hidden],
+    () =>
+      pages.map((chunk, index) => {
+        const ordered = orderFeed(chunk, seenForOrder, hidden);
+        // A story opened from a link stays first even if seen or hidden.
+        const focused =
+          index === 0 && page.focus !== undefined
+            ? chunk.find((story) => story.id === page.focus)
+            : undefined;
+        if (!focused) return ordered;
+        return [focused, ...ordered.filter((story) => story !== focused)];
+      }),
+    [pages, seenForOrder, hidden, page.focus],
   );
   const visible = useMemo(() => orderedPages.flat(), [orderedPages]);
 
@@ -248,6 +269,7 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   }, [visible.length, hasMore]);
 
   useEffect(() => {
+    if (page.focus !== undefined) return;
     const saved = readScroll(sessionStorage);
     if (!saved || saved.category !== page.category) return;
     const index = visible.findIndex((story) => story.id === saved.storyId);
@@ -313,7 +335,6 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
       storyId: story.id,
       page: chunkPage,
     });
-    if (activeIndex > 0 && !store.hintDismissed) store.dismissHint();
     return () => window.clearTimeout(seenTimer);
     // remember/dismiss identity changes every render; the index is the trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -335,8 +356,8 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     const onKey = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target instanceof HTMLElement ? event.target : null;
-      if (target?.closest("[data-chip-rail], input, textarea")) return;
-      if (sourcesId !== null || savedOpen || menuOpen) return;
+      if (target?.closest("input, textarea")) return;
+      if (sourcesId !== null || savedOpen) return;
       const last = visible.length;
       if (
         event.key === "ArrowDown" ||
@@ -365,17 +386,56 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   }, [
     activeIndex,
     reduced,
-    menuOpen,
     savedOpen,
     scrollToIndex,
     sourcesId,
     visible.length,
   ]);
 
+  // The swipe hint plays once per browser, ever: it is marked as shown the
+  // moment it appears, so leaving mid-animation does not bring it back.
+  useEffect(() => {
+    if (hintChecked.current || visible.length < 2) return undefined;
+    hintChecked.current = true;
+    if (hintAlreadyShown()) return undefined;
+    const show = window.setTimeout(() => {
+      store.dismissHint();
+      setHintVisible(true);
+    }, 700);
+    return () => window.clearTimeout(show);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible.length]);
+
+  useEffect(() => {
+    if (!hintVisible) return undefined;
+    const hide = () => setHintVisible(false);
+    const timer = window.setTimeout(
+      hide,
+      SWIPE_HINT_CYCLE_MS * SWIPE_HINT_CYCLES + 300,
+    );
+    // Only real input closes it; programmatic scrolls (restore) must not.
+    const events = ["keydown", "pointerdown", "touchstart", "wheel"] as const;
+    for (const name of events) {
+      window.addEventListener(name, hide, { passive: true });
+    }
+    return () => {
+      window.clearTimeout(timer);
+      for (const name of events) window.removeEventListener(name, hide);
+    };
+  }, [hintVisible]);
+
   const activeStory = visible[activeIndex] ?? visible.at(-1) ?? null;
   const sourcesStory =
     visible.find((story) => story.id === sourcesId) ??
     (sourcesId === activeStory?.id ? activeStory : null);
+
+  // Load the next page before the reader runs out, so the reel never stops
+  // on a button. A failed load waits for the retry button on the end card.
+  useEffect(() => {
+    if (!hasMore || olderStatus !== "idle") return;
+    if (activeIndex < visible.length - AUTOLOAD_AHEAD) return;
+    void fetchPage(latestPage.current + 1);
+  }, [activeIndex, visible.length, hasMore, olderStatus, fetchPage]);
 
   function loadOlder() {
     wantMore.current = true;
@@ -396,9 +456,7 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
             );
             if (!card) return;
             card.scrollIntoView({ block: "start", behavior: "auto" });
-            const cta = [...card.querySelectorAll("a")].find((link) =>
-              link.textContent?.includes("Preberi celoten sklop"),
-            );
+            const cta = card.querySelector<HTMLElement>("[data-story-cta]");
             cta?.focus({ preventScroll: true });
           }, 0);
         },
@@ -415,6 +473,11 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
       updatedAt: story.updatedAt,
     });
     captureReel("reel_save", { story_id: story.id, saved });
+    if (saved) {
+      toast("Shranjeno.", {
+        action: { label: "Shranjeni", onClick: () => openSaved(story) },
+      });
+    }
   }
 
   function openSources(story: UtrinkiStory) {
@@ -435,45 +498,10 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     }
   }
 
-  const onEndCard = activeIndex >= visible.length;
-  const topBar = (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-30">
-      <div className="pointer-events-auto">
-        <ReelChrome
-          category={page.category}
-          onHide={
-            activeStory && !onEndCard
-              ? () => hideStoryFromFeed(activeStory)
-              : undefined
-          }
-          onMenuOpenChange={setMenuOpen}
-        />
-      </div>
-      <div className="pointer-events-auto pt-3.5">
-        <CategoryRail
-          category={page.category}
-          pending={pendingCategory}
-          draft={page.draft}
-        />
-      </div>
-      {visible.length > 0 && (
-        <div className="px-4 pt-4">
-          <ReelProgress
-            index={progress.end ? progress.count - 1 : progress.index}
-            count={progress.count}
-            complete={progress.end}
-          />
-        </div>
-      )}
-    </div>
-  );
-
   if (visible.length === 0) {
     return (
       <Shell>
-        {topBar}
         <EndCard
-          imageUrl={null}
           hasMore={hasMore}
           loading={olderStatus === "loading"}
           failed={olderStatus === "error"}
@@ -485,16 +513,24 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     );
   }
 
-  const showHint =
-    !store.hintDismissed && activeIndex === 0 && visible.length > 0;
-
   return (
-    <Shell>
-      {topBar}
+    <Shell
+      backdrop={
+        activeIndex < visible.length ? (activeStory?.imageUrl ?? null) : null
+      }
+      onPrevious={
+        activeIndex > 0 ? () => scrollToIndex(activeIndex - 1) : undefined
+      }
+      onNext={
+        activeIndex < visible.length
+          ? () => scrollToIndex(activeIndex + 1)
+          : undefined
+      }
+    >
       <h1 className="sr-only">Utrinki</h1>
       <button
         type="button"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-[8.5rem] focus:left-4 focus:z-40 focus:rounded-full focus:bg-[#0084e5] focus:px-3 focus:py-2 focus:text-[14px] focus:font-semibold"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-40 focus:rounded-full focus:bg-[#0084e5] focus:px-3 focus:py-2 focus:text-[14px] focus:font-semibold"
         onClick={() => scrollToIndex(Math.min(activeIndex + 1, visible.length))}
       >
         Naslednji sklop
@@ -503,8 +539,8 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
         ref={scrollerRef}
         className={
           reduced
-            ? "h-dvh overflow-y-auto overscroll-y-contain [scrollbar-width:none]"
-            : "h-dvh snap-y snap-mandatory overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            ? "h-full overflow-y-auto overscroll-y-contain [scrollbar-width:none]"
+            : "h-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         }
         aria-label="Utrinki"
         tabIndex={0}
@@ -515,12 +551,17 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
             : "Konec sklopa."}
         </p>
         {visible.map((story, index) => (
-          <div key={story.id} data-feed-index={index} data-story-id={story.id}>
+          <div
+            key={story.id}
+            data-feed-index={index}
+            data-story-id={story.id}
+            className="h-full"
+          >
             <StoryCard
               story={story}
               saved={Boolean(store.saved[String(story.id)])}
+              near={Math.abs(index - activeIndex) <= 1}
               onOpenSources={() => openSources(story)}
-              onOpenSaved={() => openSaved(story)}
               onToggleSave={() => toggleSave(story)}
               onShare={() => void shareStory(story)}
               onOpenStory={() =>
@@ -530,9 +571,8 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
             />
           </div>
         ))}
-        <div data-feed-index={visible.length}>
+        <div data-feed-index={visible.length} className="h-full">
           <EndCard
-            imageUrl={visible.at(-1)?.imageUrl ?? null}
             hasMore={hasMore}
             loading={olderStatus === "loading"}
             failed={olderStatus === "error"}
@@ -541,29 +581,7 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
           />
         </div>
       </div>
-      {showHint && (
-        <div className="pointer-events-none absolute inset-x-0 top-[30%] z-30 flex justify-center px-6">
-          <div className="pointer-events-auto flex max-w-[320px] items-center gap-2 rounded-full bg-black/70 px-4 py-2 text-[13px] font-semibold text-[#f3f8fe] ring-1 ring-white/20">
-            <ChevronUp
-              size={16}
-              className={reduced ? undefined : "motion-safe:animate-bounce"}
-              aria-hidden
-            />
-            <span>
-              {reduced
-                ? "Za naslednji sklop pritisni puščico navzdol."
-                : "Povleci navzgor za naslednji sklop."}
-            </span>
-            <button
-              type="button"
-              onClick={() => store.dismissHint()}
-              className="rounded-full px-2 py-1 text-[12px] text-[#0084e5]"
-            >
-              V redu
-            </button>
-          </div>
-        </div>
-      )}
+      {hintVisible && <SwipeHint reduced={reduced} />}
       <SourcesSheet
         story={sourcesId === null ? null : sourcesStory}
         onClose={() => setSourcesId(null)}
@@ -607,13 +625,71 @@ function unsave(
   captureReel("reel_save", { story_id: id, saved: false });
 }
 
-function Shell({ children }: { children: ReactNode }) {
+/**
+ * Fills the space under the site header in the header's own colours. On
+ * desktop the reel is a column over a blurred copy of the current photo,
+ * with up/down buttons beside it.
+ */
+function Shell({
+  children,
+  backdrop = null,
+  onPrevious,
+  onNext,
+}: {
+  children: ReactNode;
+  /** Photo of the story on screen; desktop only. */
+  backdrop?: string | null;
+  onPrevious?: () => void;
+  onNext?: () => void;
+}) {
   return (
-    <div className="fixed inset-0 z-40 bg-[#111318] [font-family:'Source_Sans_3','Source_Sans_Pro',Inter,system-ui,sans-serif] text-[#f3f8fe]">
-      <div className="relative mx-auto h-dvh w-full max-w-[390px] md:shadow-[0_18px_36px_rgba(10,15,23,0.35)]">
+    <div className="bg-surface text-surface-text relative min-h-0 flex-1 overflow-hidden [font-family:'Source_Sans_3','Source_Sans_Pro',Inter,system-ui,sans-serif] md:bg-[#111]">
+      {backdrop && (
+        <img
+          key={backdrop}
+          src={backdrop}
+          alt=""
+          aria-hidden
+          className="motion-safe:animate-in motion-safe:fade-in pointer-events-none absolute -top-16 -left-16 hidden h-[calc(100%+8rem)] w-[calc(100%+8rem)] max-w-none object-cover blur-[60px] brightness-[0.55] saturate-[1.3] motion-safe:duration-500 md:block"
+        />
+      )}
+      <div className="md:bg-surface relative mx-auto h-full w-full max-w-[430px] md:shadow-[0_0_60px_rgba(0,0,0,0.4)]">
         {children}
       </div>
+      {(onPrevious || onNext) && (
+        <div className="absolute top-1/2 left-[calc(50%+235px)] hidden -translate-y-1/2 flex-col gap-3 md:flex">
+          <ReelArrow label="Prejšnji sklop" onClick={onPrevious}>
+            <ChevronUp className="size-6" aria-hidden />
+          </ReelArrow>
+          <ReelArrow label="Naslednji sklop" onClick={onNext}>
+            <ChevronDown className="size-6" aria-hidden />
+          </ReelArrow>
+        </div>
+      )}
     </div>
+  );
+}
+
+function ReelArrow({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      disabled={!onClick}
+      className="grid size-12 place-items-center rounded-full bg-white/90 text-[#222] shadow-[0_6px_18px_rgba(0,0,0,0.25)] transition hover:bg-white focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/40 focus-visible:outline-none disabled:opacity-35"
+    >
+      {children}
+    </button>
   );
 }
 

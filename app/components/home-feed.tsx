@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Blindspots } from "~/components/blindspots";
 import CategorySection from "~/components/category-section";
 import HeroArticles from "~/components/hero-articles";
+import { UtrinkiRail, railStories } from "~/components/utrinki-rail";
 import { VotingCard } from "~/components/voting-card";
 import { config, defineCategoryMap } from "~/config";
 import type { ArticlesByCategory, ArticleType } from "~/lib/services/ranking";
@@ -39,8 +40,11 @@ export function HomeFeed({
     okolje: null,
   });
 
+  const rail = useMemo(() => railStories(articles.home, articles), [articles]);
+
   return (
     <div className="grid grid-cols-1 gap-3 pb-8 sm:grid-cols-2 md:gap-5 lg:grid-cols-3">
+      <UtrinkiRail stories={rail} />
       <HeroArticles articles={articles.home} />
 
       <Blindspots blindspots={articles.blindspots ?? EMPTY_BLINDSPOTS} />

@@ -1,6 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { Toaster } from "sonner";
@@ -88,7 +94,7 @@ function json(page: UtrinkiPage) {
 }
 
 describe("utrinki feed", () => {
-  it("keeps older pages reachable when every story is hidden", () => {
+  it("loads older pages on its own when every story is hidden", async () => {
     const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
     localStorage.setItem(
       UTRINKI_KEYS.hidden,
@@ -98,19 +104,42 @@ describe("utrinki feed", () => {
         ),
       ),
     );
+    const older = { ...source.stories[0], id: 555, title: "Starejša zgodba" };
+    const requested: string[] = [];
+    vi.stubGlobal("fetch", async (input: string) => {
+      requested.push(input);
+      return json({ ...pageOf([older], false), page: 1 });
+    });
 
-    renderFeed(source);
+    renderFeed({ ...source, hasMore: true });
 
-    expect(screen.getByRole("button", { name: "Starejši sklopi" })).toBeTruthy();
-    expect(screen.queryByText("Ni sklopov")).toBeNull();
-    expect(screen.getByText("Vse si pregledal")).toBeTruthy();
+    expect(screen.getByText("Nalagam nove sklope …")).toBeTruthy();
+    expect(await screen.findByText("Starejša zgodba")).toBeTruthy();
+    expect(requested).toEqual(["/api/utrinki?stran=1"]);
+    expect(
+      screen.queryByRole("button", { name: "Starejši sklopi" }),
+    ).toBeNull();
+  });
+
+  it("offers a retry when the next page fails", async () => {
+    const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
+    vi.stubGlobal("fetch", async () => new Response("", { status: 500 }));
+
+    renderFeed(pageOf([source.stories[0]], true));
+
+    expect(
+      await screen.findByRole("button", { name: "Poskusi znova" }),
+    ).toBeTruthy();
+    expect(screen.getByText("Nalaganje ni uspelo")).toBeTruthy();
   });
 
   it("uses the empty-category copy when the page has no stories", () => {
     renderFeed(pageOf([], false));
 
     expect(screen.getByText("Ni sklopov")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Starejši sklopi" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Starejši sklopi" }),
+    ).toBeNull();
   });
 
   it("moves focus to the restored card CTA after undo", async () => {
@@ -119,20 +148,19 @@ describe("utrinki feed", () => {
     const story = source.stories[0];
     renderFeed(pageOf([story], false));
 
-    await user.click(screen.getByRole("button", { name: "Meni" }));
-    await user.click(screen.getByRole("button", { name: "Skrij" }));
+    await user.click(screen.getByRole("button", { name: "Skrij sklop" }));
     await user.click(await screen.findByRole("button", { name: "Razveljavi" }));
 
     await waitFor(() => {
-      const cta = [
-        ...document.querySelectorAll(`[data-story-id="${story.id}"] a`),
-      ].find((link) => link.textContent?.includes("Preberi celoten sklop"));
+      const cta = document.querySelector(
+        `[data-story-id="${story.id}"] [data-story-cta]`,
+      );
+      expect(cta).toBeTruthy();
       expect(document.activeElement).toBe(cta);
     });
   });
 
-  it("does not jump when a later page arrives after a duplicate page", async () => {
-    const user = userEvent.setup();
+  it("keeps loading past duplicate pages and restores without a jump", async () => {
     const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
     const [first, second, , , , saved, extra] = source.stories;
     sessionStorage.setItem(
@@ -161,37 +189,79 @@ describe("utrinki feed", () => {
 
     renderFeed(pageOf([first, second], true));
     await waitFor(() => expect(queue.map((item) => item.stran)).toEqual(["1"]));
+    // Pages 1 and 2 only repeat stories already on the reel.
     queue[0].resolve(json({ ...pageOf([first, second], true), page: 1 }));
-    await screen.findByRole("button", { name: "Starejši sklopi" });
-
-    await user.click(screen.getByRole("button", { name: "Starejši sklopi" }));
-    await waitFor(() => expect(queue.map((item) => item.stran)).toEqual(["1", "2"]));
+    await waitFor(() =>
+      expect(queue.map((item) => item.stran)).toEqual(["1", "2"]),
+    );
     queue[1].resolve(json({ ...pageOf([first, second], true), page: 2 }));
-    await screen.findByRole("button", { name: "Starejši sklopi" });
+    await waitFor(() =>
+      expect(queue.map((item) => item.stran)).toEqual(["1", "2", "3"]),
+    );
 
     jumps.length = 0;
+    // The reel records its own position on mount; put the target back.
     sessionStorage.setItem(
       UTRINKI_SCROLL_KEY,
-      JSON.stringify({
-        category: "aktualno",
-        storyId: saved.id,
-        page: 3,
-      }),
+      JSON.stringify({ category: "aktualno", storyId: saved.id, page: 3 }),
     );
-    await user.click(screen.getByRole("button", { name: "Meni" }));
-    await user.click(screen.getByRole("button", { name: "Skrij" }));
-    await waitFor(() => expect(queue.map((item) => item.stran)).toEqual(["1", "2", "3"]));
-    queue[2].resolve(
-      json({ ...pageOf([extra, saved], false), page: 3 }),
-    );
+    queue[2].resolve(json({ ...pageOf([extra, saved], false), page: 3 }));
 
     await waitFor(() => {
       expect(
         document.querySelector(`[data-story-id="${saved.id}"]`),
       ).toBeTruthy();
     });
-    // The restored position is the card that remained after Skrij (index 0).
-    // A stuck wantMore flag would first jump to the new chunk (index 1).
-    expect(jumps).toEqual(["0"]);
+    // Only the scroll restore moves the reel, straight to the saved story.
+    const savedIndex = document
+      .querySelector(`[data-story-id="${saved.id}"]`)
+      ?.getAttribute("data-feed-index");
+    expect(jumps).toEqual([savedIndex]);
+  });
+
+  it("stops asking when the server returns a different page", async () => {
+    const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
+    const requested: string[] = [];
+    vi.stubGlobal("fetch", async (input: string) => {
+      requested.push(input);
+      // Past the cap the server answers with its last page again.
+      return json({ ...pageOf([source.stories[1]], true), page: 0 });
+    });
+
+    renderFeed(pageOf([source.stories[0]], true));
+
+    expect(await screen.findByText("Vse si pregledal")).toBeTruthy();
+    expect(requested).toHaveLength(1);
+  });
+
+  it("shows the swipe hint once per browser, ever", async () => {
+    const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
+    renderFeed(source);
+
+    expect(
+      await screen.findByText("Povleci navzgor", {}, { timeout: 2000 }),
+    ).toBeTruthy();
+    expect(localStorage.getItem(UTRINKI_KEYS.hint)).not.toBeNull();
+
+    cleanup();
+    renderFeed(source);
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    expect(screen.queryByText("Povleci navzgor")).toBeNull();
+  });
+
+  it("keeps a story opened from a link first, even when already seen", () => {
+    const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
+    const focus = source.stories[0];
+    localStorage.setItem(
+      UTRINKI_KEYS.seen,
+      JSON.stringify({
+        [String(focus.id)]: { seenAt: Date.now(), updatedAt: focus.updatedAt },
+      }),
+    );
+
+    renderFeed({ ...source, focus: focus.id });
+
+    const first = document.querySelector("[data-feed-index='0']");
+    expect(first?.getAttribute("data-story-id")).toBe(String(focus.id));
   });
 });
