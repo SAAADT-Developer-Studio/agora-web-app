@@ -4,6 +4,7 @@ import type { Database } from "~/lib/db";
 import { readUtrinkiPage } from "~/lib/utrinki/readPage";
 
 vi.mock("~/lib/utrinki/load", () => ({
+  hydrateUtrinkiStories: vi.fn(async () => []),
   loadUtrinkiPage: vi.fn(async () => ({
     stories: [],
     page: 0,

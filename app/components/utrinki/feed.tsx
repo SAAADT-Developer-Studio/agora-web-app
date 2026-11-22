@@ -119,6 +119,8 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     setOlderStatus("idle");
     setSeenThisVisit(new Set());
     setOrderSeen(seenRef.current);
+    // A new page (or a new ?zgodba= link) starts at its first card.
+    scrollerRef.current?.scrollTo?.({ top: 0 });
   }, [page.category, page.page, page.stories, page.hasMore]);
 
   useLayoutEffect(() => {
@@ -179,8 +181,18 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
     return copy;
   }, [orderSeen, seenThisVisit]);
   const orderedPages = useMemo(
-    () => pages.map((chunk) => orderFeed(chunk, seenForOrder, hidden)),
-    [pages, seenForOrder, hidden],
+    () =>
+      pages.map((chunk, index) => {
+        const ordered = orderFeed(chunk, seenForOrder, hidden);
+        // A story opened from a link stays first even if seen or hidden.
+        const focused =
+          index === 0 && page.focus !== undefined
+            ? chunk.find((story) => story.id === page.focus)
+            : undefined;
+        if (!focused) return ordered;
+        return [focused, ...ordered.filter((story) => story !== focused)];
+      }),
+    [pages, seenForOrder, hidden, page.focus],
   );
   const visible = useMemo(() => orderedPages.flat(), [orderedPages]);
 
@@ -251,6 +263,7 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
   }, [visible.length, hasMore]);
 
   useEffect(() => {
+    if (page.focus !== undefined) return;
     const saved = readScroll(sessionStorage);
     if (!saved || saved.category !== page.category) return;
     const index = visible.findIndex((story) => story.id === saved.storyId);
@@ -542,9 +555,7 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
           />
         </div>
       </div>
-      {hintVisible && (
-        <SwipeHint reduced={reduced} />
-      )}
+      {hintVisible && <SwipeHint reduced={reduced} />}
       <SourcesSheet
         story={sourcesId === null ? null : sourcesStory}
         onClose={() => setSourcesId(null)}

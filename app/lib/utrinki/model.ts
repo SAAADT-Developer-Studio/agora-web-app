@@ -62,6 +62,8 @@ export type UtrinkiPage = {
   category: UtrinkiCategory;
   /** Dev-only fixture flag. Omitted on cached production pages. */
   draft?: boolean;
+  /** Story the reel opens on (`?zgodba=`); it is first in `stories`. */
+  focus?: number;
 };
 
 export type UtrinkiMember = {
@@ -171,6 +173,30 @@ export function parseUtrinkiQuery(searchParams: URLSearchParams): {
       ? Math.min(pageRaw, UTRINKI_PAGE_CAP)
       : 0;
   return { category, page };
+}
+
+/** `?zgodba=123`: open the reel on that story. */
+export function parseUtrinkiFocus(searchParams: URLSearchParams) {
+  const id = Number(searchParams.get("zgodba"));
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+/** Reel link that opens on one story, e.g. from the home page row. */
+export function utrinkiStoryHref(storyId: number) {
+  return `/utrinki?zgodba=${storyId}`;
+}
+
+/** Puts the focused story first, fetching it when the page lacks it. */
+export async function withFocusedStory(
+  page: UtrinkiPage,
+  focus: number,
+  load: (id: number) => Promise<UtrinkiStory | null>,
+): Promise<UtrinkiPage> {
+  const rest = page.stories.filter((story) => story.id !== focus);
+  const found =
+    page.stories.find((story) => story.id === focus) ?? (await load(focus));
+  if (!found) return page;
+  return { ...page, stories: [found, ...rest], focus };
 }
 
 export function utrinkiWindow(page: number) {

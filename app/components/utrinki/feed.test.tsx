@@ -1,6 +1,12 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { Toaster } from "sonner";
@@ -101,7 +107,9 @@ describe("utrinki feed", () => {
 
     renderFeed(source);
 
-    expect(screen.getByRole("button", { name: "Starejši sklopi" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Starejši sklopi" }),
+    ).toBeTruthy();
     expect(screen.queryByText("Ni sklopov")).toBeNull();
     expect(screen.getByText("Vse si pregledal")).toBeTruthy();
   });
@@ -110,7 +118,9 @@ describe("utrinki feed", () => {
     renderFeed(pageOf([], false));
 
     expect(screen.getByText("Ni sklopov")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Starejši sklopi" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Starejši sklopi" }),
+    ).toBeNull();
   });
 
   it("moves focus to the restored card CTA after undo", async () => {
@@ -165,7 +175,9 @@ describe("utrinki feed", () => {
     await screen.findByRole("button", { name: "Starejši sklopi" });
 
     await user.click(screen.getByRole("button", { name: "Starejši sklopi" }));
-    await waitFor(() => expect(queue.map((item) => item.stran)).toEqual(["1", "2"]));
+    await waitFor(() =>
+      expect(queue.map((item) => item.stran)).toEqual(["1", "2"]),
+    );
     queue[1].resolve(json({ ...pageOf([first, second], true), page: 2 }));
     await screen.findByRole("button", { name: "Starejši sklopi" });
 
@@ -183,10 +195,10 @@ describe("utrinki feed", () => {
         document.querySelector<HTMLElement>(`[data-story-id="${first.id}"]`)!,
       ).getByRole("button", { name: "Skrij sklop" }),
     );
-    await waitFor(() => expect(queue.map((item) => item.stran)).toEqual(["1", "2", "3"]));
-    queue[2].resolve(
-      json({ ...pageOf([extra, saved], false), page: 3 }),
+    await waitFor(() =>
+      expect(queue.map((item) => item.stran)).toEqual(["1", "2", "3"]),
     );
+    queue[2].resolve(json({ ...pageOf([extra, saved], false), page: 3 }));
 
     await waitFor(() => {
       expect(
@@ -202,12 +214,30 @@ describe("utrinki feed", () => {
     const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
     renderFeed(source);
 
-    expect(await screen.findByText("Povleci navzgor", {}, { timeout: 2000 })).toBeTruthy();
+    expect(
+      await screen.findByText("Povleci navzgor", {}, { timeout: 2000 }),
+    ).toBeTruthy();
     expect(localStorage.getItem(UTRINKI_KEYS.hint)).not.toBeNull();
 
     cleanup();
     renderFeed(source);
     await new Promise((resolve) => setTimeout(resolve, 900));
     expect(screen.queryByText("Povleci navzgor")).toBeNull();
+  });
+
+  it("keeps a story opened from a link first, even when already seen", () => {
+    const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
+    const focus = source.stories[0];
+    localStorage.setItem(
+      UTRINKI_KEYS.seen,
+      JSON.stringify({
+        [String(focus.id)]: { seenAt: Date.now(), updatedAt: focus.updatedAt },
+      }),
+    );
+
+    renderFeed({ ...source, focus: focus.id });
+
+    const first = document.querySelector("[data-feed-index='0']");
+    expect(first?.getAttribute("data-story-id")).toBe(String(focus.id));
   });
 });
