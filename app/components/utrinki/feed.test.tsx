@@ -264,4 +264,23 @@ describe("utrinki feed", () => {
     const first = document.querySelector("[data-feed-index='0']");
     expect(first?.getAttribute("data-story-id")).toBe(String(focus.id));
   });
+
+  it("puts the story on screen in the address bar", () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/utrinki?kategorija=politika&stran=1",
+    );
+    const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
+    const replace = vi.spyOn(window.history, "replaceState");
+
+    renderFeed(pageOf(source.stories.slice(0, 2), false));
+
+    expect(replace.mock.calls.at(-1)?.[2]).toBe(
+      `/utrinki?kategorija=politika&zgodba=${source.stories[0].id}`,
+    );
+    expect(window.location.search).toBe(
+      `?kategorija=politika&zgodba=${source.stories[0].id}`,
+    );
+  });
 });

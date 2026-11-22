@@ -31,6 +31,7 @@ import {
 import {
   appendUniqueStories,
   isUtrinkiPage,
+  reelStoryUrl,
   utrinkiDataHref,
   type UtrinkiCategory,
   type UtrinkiPage,
@@ -63,6 +64,23 @@ function hintAlreadyShown() {
     return raw !== null && sanitizeHint(JSON.parse(raw)) !== null;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Keep the address bar on the story being read, so every card has its own
+ * link (copy, share, reload). Replaces the entry instead of adding one, so
+ * Back still leaves the reel, and skips the router so nothing reloads.
+ */
+function syncStoryUrl(storyId: number) {
+  try {
+    if (window.location.pathname !== "/utrinki") return;
+    const next = reelStoryUrl(window.location.href, storyId);
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (next === current) return;
+    window.history.replaceState(window.history.state, "", next);
+  } catch {
+    // Some embedded browsers refuse history writes; the reel still works.
   }
 }
 
@@ -335,6 +353,7 @@ export function UtrinkiFeed({ page }: { page: UtrinkiPage }) {
       storyId: story.id,
       page: chunkPage,
     });
+    syncStoryUrl(story.id);
     return () => window.clearTimeout(seenTimer);
     // remember/dismiss identity changes every render; the index is the trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps

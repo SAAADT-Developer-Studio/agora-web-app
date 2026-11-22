@@ -6,6 +6,7 @@ import { Header } from "~/components/header";
 import { UtrinkiFeed } from "~/components/utrinki/feed";
 import { UtrinkiSkeleton } from "~/components/utrinki/states";
 import { getSeoMetas } from "~/lib/seo";
+import { storyHook } from "~/lib/utrinki/model";
 import { readUtrinkiPage } from "~/lib/utrinki/readPage";
 
 export function links() {
@@ -17,7 +18,21 @@ export function links() {
   ];
 }
 
-export function meta({ location }: Route.MetaArgs) {
+export function meta({ loaderData, location }: Route.MetaArgs) {
+  // A link to one story (`?zgodba=`) previews that story when shared.
+  const story = loaderData?.focus !== undefined ? loaderData.stories[0] : null;
+  if (story) {
+    const hook = storyHook(story.bias, story.providerCount);
+    return getSeoMetas({
+      title: `${story.title} | Utrinki | Vidik`,
+      description: hook
+        ? `${hook.text}. ${story.coverageLabel}.`
+        : `${story.coverageLabel}. Kako o tem poročajo slovenski mediji.`,
+      pathname: location.pathname,
+      image: story.imageUrl ?? undefined,
+      ogType: "article",
+    });
+  }
   return getSeoMetas({
     title: "Utrinki | Vidik",
     description:
