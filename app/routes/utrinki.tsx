@@ -6,7 +6,6 @@ import { Header } from "~/components/header";
 import { UtrinkiFeed } from "~/components/utrinki/feed";
 import { UtrinkiSkeleton } from "~/components/utrinki/states";
 import { getSeoMetas } from "~/lib/seo";
-import { UNINDEXED_ROBOTS } from "~/lib/seo/unindexed";
 import { readUtrinkiPage } from "~/lib/utrinki/readPage";
 
 export function links() {
@@ -22,17 +21,14 @@ export function meta({ location }: Route.MetaArgs) {
   return getSeoMetas({
     title: "Utrinki | Vidik",
     description:
-      "Kratki sklopi slovenskih novic: kaj se je zgodilo in kako o tem poročajo mediji. Stran ni del javnega kazala.",
+      "Kratki sklopi slovenskih novic: kaj se je zgodilo in kako o tem poročajo mediji.",
     pathname: location.pathname,
-    robots: UNINDEXED_ROBOTS,
     ogType: "website",
   });
 }
 
 export function headers({ loaderHeaders }: Route.HeadersArgs) {
-  const responseHeaders = new Headers(loaderHeaders);
-  responseHeaders.set("X-Robots-Tag", UNINDEXED_ROBOTS);
-  return responseHeaders;
+  return loaderHeaders;
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {

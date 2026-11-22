@@ -29,7 +29,7 @@ export function getCategoryCacheKey(
   return cacheKeyForOrder(`data:story:category:${category}`, storyRankOrder);
 }
 
-/** One page of the hidden `/utrinki` reel. */
+/** One page of the `/utrinki` reel. */
 export function utrinkiCacheKey(
   category: string,
   page: number,

@@ -106,8 +106,8 @@ describe("utrinki feed", () => {
     );
     const older = { ...source.stories[0], id: 555, title: "Starejša zgodba" };
     const requested: string[] = [];
-    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
-      requested.push(String(input));
+    vi.stubGlobal("fetch", async (input: string) => {
+      requested.push(input);
       return json({ ...pageOf([older], false), page: 1 });
     });
 
@@ -222,8 +222,8 @@ describe("utrinki feed", () => {
   it("stops asking when the server returns a different page", async () => {
     const source = fixtureUtrinkiPage({ category: "aktualno", page: 0 });
     const requested: string[] = [];
-    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
-      requested.push(String(input));
+    vi.stubGlobal("fetch", async (input: string) => {
+      requested.push(input);
       // Past the cap the server answers with its last page again.
       return json({ ...pageOf([source.stories[1]], true), page: 0 });
     });
