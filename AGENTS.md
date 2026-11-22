@@ -31,7 +31,7 @@ Changing article-fetch logic usually means updating both the loader and `fetchHo
 
 ## Routing & config
 
-- Route definitions: `app/routes.ts`. Public URL segments are Slovenian (`/mediji`, `/metodologija`, `/zgodba/:storyId`, `/clanek/:articleId`). `/novo` (the old hidden story preview) 301s to `/`. `/utrinki` is a hidden reel of the same story order as `/`: `noindex`, `Disallow` in robots.txt, and absent from the sitemap and nav. `/dev/*` is English and internal.
+- Route definitions: `app/routes.ts`. Public URL segments are Slovenian (`/mediji`, `/metodologija`, `/zgodba/:storyId`, `/clanek/:articleId`). `/novo` (the old hidden story preview) 301s to `/`. `/utrinki` is an indexable reel of the same story order as `/`: listed in the sitemap, allowed by robots.txt, and absent from the nav. `/dev/*` is English and internal.
 - **Categories**: keys live only in `app/config.ts` (`CategoryKey` / `CategoryKeyValue`). Domain configs (nav metadata, SEO, ranking priority, home side sections) must use `defineCategoryMap()` / `CategoryMap<T>` so TypeScript fails if a key is added without updating every map. Use `isCategoryKey()` for runtime checks — don't rebuild category sets ad hoc.
 - Article images: `config.imagesUrl` (`https://images.vidik.si`).
 - React Router route modules cannot import other route modules. Shared UI belongs in `app/components/` (e.g. `story-page.tsx` renders `/zgodba/:storyId`).
