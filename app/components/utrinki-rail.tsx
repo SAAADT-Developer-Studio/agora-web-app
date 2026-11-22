@@ -66,7 +66,7 @@ function ringGradient(bias: RailStory["bias"]) {
 }
 
 /**
- * Phone-only row of story circles at the top of the home page. The first
+ * Row of story circles at the top of the home page. The first
  * circle opens the reel; each story opens the reel on that story.
  */
 export function UtrinkiRail({ stories }: { stories: RailStory[] }) {
@@ -75,8 +75,11 @@ export function UtrinkiRail({ stories }: { stories: RailStory[] }) {
   if (stories.length === 0) return null;
 
   return (
-    <nav aria-label="Utrinki" className="col-span-full -mx-3 -mt-1 md:hidden">
-      <ul className="flex snap-x scroll-px-3 gap-3 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <nav
+      aria-label="Utrinki"
+      className="col-span-full -mx-3 -mt-1 md:mx-0 md:mt-0"
+    >
+      <ul className="flex snap-x scroll-px-3 gap-3 overflow-x-auto px-3 pb-1 [scrollbar-width:none] md:scroll-px-0 md:gap-4 md:px-0 [&::-webkit-scrollbar]:hidden">
         <li className="snap-start">
           <Link
             to="/utrinki"
