@@ -186,6 +186,18 @@ export function utrinkiStoryHref(storyId: number) {
   return `/utrinki?zgodba=${storyId}`;
 }
 
+/**
+ * The address for the story on screen: `?zgodba=` set, the page number
+ * dropped (the link opens on the story), other params such as the category
+ * kept. Returns path + query + hash.
+ */
+export function reelStoryUrl(currentHref: string, storyId: number) {
+  const url = new URL(currentHref);
+  url.searchParams.set("zgodba", String(storyId));
+  url.searchParams.delete("stran");
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
 /** Puts the focused story first, fetching it when the page lacks it. */
 export async function withFocusedStory(
   page: UtrinkiPage,

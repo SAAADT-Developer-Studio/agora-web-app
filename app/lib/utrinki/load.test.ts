@@ -6,6 +6,7 @@ import {
   formatCoverageSpan,
   parseUtrinkiFocus,
   parseUtrinkiQuery,
+  reelStoryUrl,
   toUtrinkiStory,
   utrinkiStoryHref,
   withFocusedStory,
@@ -260,5 +261,17 @@ describe("utrinki loader", () => {
 
     const missing = await withFocusedStory(page, 888, async () => null);
     expect(missing).toBe(page);
+  });
+
+  it("builds the address for the story on screen", () => {
+    expect(reelStoryUrl("https://vidik.si/utrinki", 7)).toBe(
+      "/utrinki?zgodba=7",
+    );
+    expect(
+      reelStoryUrl(
+        "https://vidik.si/utrinki?kategorija=politika&stran=2&zgodba=3",
+        9,
+      ),
+    ).toBe("/utrinki?kategorija=politika&zgodba=9");
   });
 });
