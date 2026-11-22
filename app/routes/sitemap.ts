@@ -23,6 +23,10 @@ export async function loader({ context }: Route.LoaderArgs) {
   const sitemap = new Sitemap();
 
   sitemap.append(new URL(href("/"), origin), { lastmod, priority: 1.0 });
+  sitemap.append(new URL(href("/utrinki"), origin), {
+    lastmod,
+    priority: 0.8,
+  });
 
   for (const category of config.categories) {
     sitemap.append(
