@@ -1,15 +1,12 @@
 import { Link } from "react-router";
 import { ArrowRight, Bookmark, EyeOff, Share } from "lucide-react";
+import useEmblaCarousel from "embla-carousel-react";
 import { useEffect, useState } from "react";
 import { cn } from "~/lib/utils";
 import logoNoText from "~/assets/logo-no-text.svg";
 import { ProviderStack } from "~/components/utrinki/provider-mark";
 import { useClientNow } from "~/components/render-clock";
-import {
-  shortAgo,
-  storyHook,
-  type UtrinkiStory,
-} from "~/lib/utrinki/model";
+import { shortAgo, storyHook, type UtrinkiStory } from "~/lib/utrinki/model";
 
 function IconButton({
   label,
@@ -36,82 +33,82 @@ function IconButton({
   );
 }
 
-/** Ignore a bigger candidate unless it has at least this much more area. */
-const UPGRADE_RATIO = 1.25;
-const PROBE_TIMEOUT_MS = 2500;
-
 /**
- * Picks the largest hero among the candidates once the card is near the
- * viewport. The first candidate paints immediately; a bigger one replaces it
- * only after it has loaded, so there is no blank frame.
+ * Article photos in carousel order. Same Embla setup as `HeroImageCarousel`
+ * on the story page (`app/components/story-page.tsx`): loop, touch swipe, and
+ * mouse drag. `touch-pan-y` leaves vertical pans to the reel.
  */
-function useBestImage(candidates: readonly string[], probe: boolean) {
-  const [src, setSrc] = useState<string | null>(candidates[0] ?? null);
-  const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set());
-  const key = candidates.join("|");
+function StoryImageCarousel({
+  urls,
+  storyPath,
+  near,
+  onOpenStory,
+  onImageError,
+}: {
+  urls: readonly string[];
+  storyPath: UtrinkiStory["storyPath"];
+  near: boolean;
+  onOpenStory: () => void;
+  onImageError: (url: string) => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
 
   useEffect(() => {
-    setSrc(candidates[0] ?? null);
-    setFailed(new Set());
-    // `key` stands in for the array identity.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
-
-  useEffect(() => {
-    if (!probe || candidates.length < 2) return undefined;
-    let cancelled = false;
-    const areas = new Map<string, number>();
-    let settled = 0;
-    const finish = () => {
-      if (cancelled) return;
-      cancelled = true;
-      let best: string | null = null;
-      let bestArea = 0;
-      for (const [url, area] of areas) {
-        if (area > bestArea) {
-          best = url;
-          bestArea = area;
-        }
-      }
-      if (!best) return;
-      setSrc((current) => {
-        const currentArea = current ? (areas.get(current) ?? 0) : 0;
-        return bestArea > currentArea * UPGRADE_RATIO ? best : current;
-      });
-    };
-    const settle = () => {
-      settled += 1;
-      if (settled === candidates.length) finish();
-    };
-    const images = candidates.map((url) => {
-      const image = new Image();
-      image.decoding = "async";
-      image.addEventListener("load", () => {
-        areas.set(url, image.naturalWidth * image.naturalHeight);
-        settle();
-      });
-      image.addEventListener("error", settle);
-      image.src = url;
-      return image;
-    });
-    const timer = window.setTimeout(finish, PROBE_TIMEOUT_MS);
+    if (!emblaApi) return undefined;
+    const onSelect = () => setCurrentIndex(emblaApi.selectedScrollSnap());
+    onSelect();
+    emblaApi.on("select", onSelect).on("reInit", onSelect);
     return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-      // Abort downloads that have not finished yet.
-      for (const image of images) image.src = "";
+      emblaApi.off("select", onSelect).off("reInit", onSelect);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, probe]);
+  }, [emblaApi]);
 
-  const onError = () => {
-    if (!src) return;
-    const nextFailed = new Set(failed).add(src);
-    setFailed(nextFailed);
-    setSrc(candidates.find((url) => !nextFailed.has(url)) ?? null);
-  };
-
-  return { src, onError };
+  return (
+    <div className="absolute inset-0">
+      <div
+        ref={emblaRef}
+        className="h-full cursor-grab overflow-hidden active:cursor-grabbing"
+      >
+        <div className="flex h-full touch-pan-y">
+          {urls.map((url, index) => (
+            <Link
+              key={`${index}:${url}`}
+              to={storyPath}
+              tabIndex={-1}
+              aria-hidden
+              onClick={onOpenStory}
+              className="relative block h-full min-w-0 shrink-0 grow-0 basis-full"
+            >
+              <img
+                src={url}
+                alt=""
+                draggable={false}
+                loading={near ? "eager" : "lazy"}
+                onError={() => onImageError(url)}
+                className="size-full touch-pan-y object-cover object-[50%_35%] select-none"
+              />
+            </Link>
+          ))}
+        </div>
+      </div>
+      <div className="absolute top-3 right-3 z-10 flex gap-1 rounded-full bg-black/35 px-2 py-1.5 backdrop-blur-sm">
+        {urls.map((url, index) => (
+          <button
+            key={`${index}:${url}`}
+            type="button"
+            aria-label={`Slika ${index + 1}`}
+            aria-current={index === currentIndex ? "true" : undefined}
+            onClick={() => emblaApi?.scrollTo(index)}
+            className={cn(
+              "h-1.5 rounded-full bg-white transition-all",
+              index === currentIndex ? "w-4" : "w-1.5 opacity-50",
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 const hookTone = {
@@ -133,7 +130,7 @@ export function StoryCard({
 }: {
   story: UtrinkiStory;
   saved: boolean;
-  /** Within one card of the active one: load images eagerly and probe sizes. */
+  /** Within one card of the active one: load images eagerly. */
   near?: boolean;
   onOpenSources: () => void;
   onToggleSave: () => void;
@@ -149,35 +146,60 @@ export function StoryCard({
       : story.imageUrl
         ? [story.imageUrl]
         : [];
-  const { src, onError } = useBestImage(candidates, near);
+  const candidateKey = candidates.join("|");
+  const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => {
+    setFailed(new Set());
+  }, [candidateKey]);
+  const slides = candidates.filter((url) => !failed.has(url));
+  const onImageError = (url: string) => {
+    setFailed((current) => {
+      if (current.has(url)) return current;
+      const next = new Set(current);
+      next.add(url);
+      return next;
+    });
+  };
   return (
     <article
       className="bg-surface text-surface-text relative flex h-full snap-start snap-always flex-col overflow-hidden"
       aria-labelledby={`utrinki-title-${story.id}`}
     >
-      <Link
-        to={story.storyPath}
-        onClick={onOpenStory}
-        tabIndex={-1}
-        aria-hidden
-        className="bg-surface-text/[0.06] relative mx-3 mt-3 block min-h-0 flex-1 overflow-hidden rounded-2xl shadow-[0_12px_28px_-14px_rgba(0,0,0,0.45)]"
-      >
-        {src ? (
-          <img
-            key={src}
-            src={src}
-            alt=""
-            loading={near ? "eager" : "lazy"}
-            className="size-full object-cover object-[50%_35%] motion-safe:animate-in motion-safe:fade-in"
-            onError={onError}
+      <div className="bg-surface-text/[0.06] relative mx-3 mt-3 min-h-0 flex-1 overflow-hidden rounded-2xl shadow-[0_12px_28px_-14px_rgba(0,0,0,0.45)]">
+        {slides.length > 1 ? (
+          <StoryImageCarousel
+            urls={slides}
+            storyPath={story.storyPath}
+            near={near}
+            onOpenStory={onOpenStory}
+            onImageError={onImageError}
           />
         ) : (
-          <span className="grid size-full place-items-center">
-            <img src={logoNoText} alt="" className="h-16 w-16 opacity-40" />
-            <span className="sr-only">Brez fotografije</span>
-          </span>
+          <Link
+            to={story.storyPath}
+            onClick={onOpenStory}
+            tabIndex={-1}
+            aria-hidden
+            className="absolute inset-0 block"
+          >
+            {slides[0] ? (
+              <img
+                key={slides[0]}
+                src={slides[0]}
+                alt=""
+                loading={near ? "eager" : "lazy"}
+                onError={() => onImageError(slides[0])}
+                className="motion-safe:animate-in motion-safe:fade-in size-full object-cover object-[50%_35%]"
+              />
+            ) : (
+              <span className="grid size-full place-items-center">
+                <img src={logoNoText} alt="" className="h-16 w-16 opacity-40" />
+                <span className="sr-only">Brez fotografije</span>
+              </span>
+            )}
+          </Link>
         )}
-      </Link>
+      </div>
       <div
         className="relative shrink-0 px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))]"
         onPointerDown={(event) => {
@@ -203,16 +225,25 @@ export function StoryCard({
         </p>
         <h2
           id={`utrinki-title-${story.id}`}
-          className="mt-1.5 line-clamp-3 text-[26px] leading-[30px] font-bold text-balance"
+          className="mt-1.5 text-[26px] leading-[30px] font-bold text-balance first-letter:uppercase"
         >
-          <Link to={story.storyPath} onClick={onOpenStory}>
+          {/* The link is the block that holds the text, so first-letter and
+              line-clamp apply to the headline itself. */}
+          <Link
+            to={story.storyPath}
+            onClick={onOpenStory}
+            className="line-clamp-3 block first-letter:uppercase"
+          >
             {story.title}
           </Link>
         </h2>
         {hook && (
-          <p className="mt-2 flex items-center gap-2 text-surface-text/85 text-[15px] leading-5 font-semibold">
+          <p className="text-surface-text/85 mt-2 flex items-center gap-2 text-[15px] leading-5 font-semibold">
             <span
-              className={cn("h-2.5 w-2.5 shrink-0 rounded-full", hookTone[hook.tone])}
+              className={cn(
+                "h-2.5 w-2.5 shrink-0 rounded-full",
+                hookTone[hook.tone],
+              )}
               aria-hidden
             />
             {hook.text}
@@ -229,7 +260,7 @@ export function StoryCard({
               providers={story.providers}
               total={story.providerCount}
             />
-            <span className="min-w-0 flex-1 truncate text-surface-text/70 text-[13px] font-semibold">
+            <span className="text-surface-text/70 min-w-0 flex-1 truncate text-[13px] font-semibold">
               {story.coverageLabel}
             </span>
           </span>
