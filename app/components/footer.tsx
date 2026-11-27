@@ -47,9 +47,9 @@ export default function Footer() {
         </div>
 
         <div className="border-primary/10 text-surface-text/45 mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 border-t pt-4 text-[13px] md:mt-6 md:grid md:grid-cols-3">
-          <p className="flex items-center gap-2" suppressHydrationWarning>
+          <div className="flex items-center gap-2" suppressHydrationWarning>
             <BiasSpectrum className="w-10" />© {year} vidik.si
-          </p>
+          </div>
           <p className="before:mr-2 before:content-['·'] md:text-center md:before:content-none">
             <b>M</b>&amp;<b>B</b> Production
           </p>
