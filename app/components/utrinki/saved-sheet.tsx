@@ -64,7 +64,7 @@ export function SavedSheet({
                     <span className="block text-[11px] font-semibold tracking-wide text-[#0084e5] uppercase">
                       {entry.categoryLabel}
                     </span>
-                    <span className="mt-0.5 line-clamp-2 text-[15px] leading-5 font-semibold">
+                    <span className="mt-0.5 line-clamp-2 text-[15px] leading-5 font-semibold first-letter:uppercase">
                       {entry.title}
                     </span>
                     <span className="mt-2 flex gap-3 text-[13px] font-semibold">
